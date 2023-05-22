@@ -296,7 +296,7 @@ class Block(DessiaObject):
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
-        return f"name='{self.name}', position={self.position}"
+        return f"name=\"{self.name}\", position={self.position}"
 
     def evaluate(self, values, **kwargs):
         """ Not implemented for abstract block class 'evaluate' method. """
@@ -1453,7 +1453,7 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
 
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
