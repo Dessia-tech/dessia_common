@@ -1919,7 +1919,7 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         """
-        Returns a list of all activable blocks.
+        Returns a list of all blocks that can be activated.
 
         Activable blocks are blocks that have all inputs ready for evaluation.
         """

@@ -37,7 +37,9 @@ JSON
 jsonschema
 kwargs
 le
+len
 lhs
+linspace
 lp
 lt
 lte
@@ -48,12 +50,14 @@ nbv
 ndarray
 networkx
 numpy
+Openpyxl
 orjson
 rtype
 schemas
 scipy
 serializable
 sklearn
+sqrt
 STL
 str
 StringFile

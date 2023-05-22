@@ -747,7 +747,7 @@ def pointers_analysis(obj):
     Analyse on object to output stats on pointer use in the object.
 
     Maybe useless now that we use uuids.
-    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
+    :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
         dict_ = obj
