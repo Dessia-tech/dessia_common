@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.2
+MIN_NOTE = 9.3
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
