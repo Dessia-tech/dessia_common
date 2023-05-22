@@ -36,5 +36,5 @@ os.path.isfile('generic_xlsx.xlsx')
 check_list = system1.check_list()
 
 system1.save_to_file('system1')
-system1_lff = DessiaObject.load_from_file('system1.json')
+system1_lff = DessiaObject.from_json('system1.json')
 assert system1_lff == system1

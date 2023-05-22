@@ -262,7 +262,7 @@ def add_references(dict_, memo, id_memo):
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
-    """ Serialize a sequence (list or tuple) using jsonpointers. """
+    """ Serialize a sequence (list or tuple) using json-pointers. """
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
@@ -544,7 +544,7 @@ def pointer_graph(value):
     Create a graph of subattributes of an object.
 
     Edges representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub attribute to an attribute
      * the pointer link between the 2 elements
     """
     nodes = set()

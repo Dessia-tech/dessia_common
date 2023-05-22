@@ -4,6 +4,7 @@ BinaryFile
 bool
 builtins
 classmethod
+classname
 cls
 CMA
 config
@@ -18,6 +19,8 @@ dessia
 DessiaObject
 dict
 docstring
+Dessia's
+DessiaFilter
 filepath
 frontend
 init
@@ -42,11 +45,15 @@ STL
 str
 StringFile
 stringified
+stringify
 Stringify
 submodule
 subobjects
+subscriptable
 traceback
+typings
 uuid
 uuids
 visjs
 volmdlr
+XLS

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 - Blocks : display blocks are now more configurable (custom selector and type)
 - DessiaObject: add type to load_from_file method
 - Files: .doc & .docx files typings
@@ -16,12 +17,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add more Error Checks
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
+- Typings : add AttributeType and ClassAttributeType
+
+
+### Changed
+ 
+- Blocks : add the possibility to have TypedValue in SetModelAttribute
+- files: add functions to init StringFile and BinaryFile from local path
+- document generator: add new module to write in docx file
+- DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
+- Export: export all 3d formats in zip file
+- MarkdownWriter: add some functions (table_of_contents, header)
+
 
 ### Fixed
 
 - Schemas refactor : allow incomplete schemas
 - Schemas refactor : old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 
 
 ### Refactored
@@ -32,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change serialize_typing function name to serialize_annotation
 - Change tests. Unittests are in 'tests' folder. Other tests in scripts
 - Check Platform is now verbose and split into several functions
+- Document generator : Refactor document_generator module
 - Workflow : to_dict method do not use pointers anymore
 - Workflow : Remove some attributes from serialization
 
@@ -42,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Chore
 
-- Fix Spelling
+- Fix Spelling (x2)
 
 ### Perf
 
