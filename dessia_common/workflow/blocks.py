@@ -815,7 +815,7 @@ class GetModelAttribute(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"GetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
@@ -863,7 +863,7 @@ class SetModelAttribute(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"SetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 

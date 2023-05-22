@@ -5,7 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## 0.14.0
 
 ### Added
@@ -63,6 +62,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Perf
 
 - use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
+
+
+## 0.13.3
+
+### Changed
+
+- package_version is removed from serialization
+- License changed from GPL to Lesser GPL 
+
+### Fix
+- Workflow name correction: correct the name if it contains an apostrophe.
 
 
 ## 0.13.2
