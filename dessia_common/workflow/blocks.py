@@ -31,7 +31,7 @@ def set_inputs_from_function(method, inputs=None):
     nargs, ndefault_args = split_argspecs(args_specs)
 
     for iarg, argument in enumerate(args_specs.args):
-        if argument not in ['self', 'cls', 'progress_callback']:
+        if argument not in ["self", "cls", "progress_callback"]:
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
@@ -50,8 +50,8 @@ def set_inputs_from_function(method, inputs=None):
 def output_from_function(function, name: str = "result output"):
     """ Inspect given function argspecs and compute block output from it. """
     annotations = get_type_hints(function)
-    if 'return' in annotations:
-        type_ = type_from_annotation(annotations['return'], function.__module__)
+    if "return" in annotations:
+        type_ = type_from_annotation(annotations["return"], function.__module__)
         return TypedVariable(type_=type_, name=name)
     return Variable(name=name)
 
@@ -73,7 +73,7 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
-        outputs = [TypedVariable(type_=self.model_class, name='Instanciated object')]
+        outputs = [TypedVariable(type_=self.model_class, name="Instanciated object")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -93,7 +93,7 @@ class InstantiateModel(Block):
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
-        return {self.model_class.__module__.split('.')[0]: 1}
+        return {self.model_class.__module__.split(".")[0]: 1}
 
     def _docstring(self):
         """ Parse given class' docstring. """
@@ -109,7 +109,7 @@ class InstantiateModel(Block):
         """ Write block config into a chunk of script. """
         script = f"InstantiateModel(model_class=" \
                  f"{self.model_class.__name__}, {self.base_script()})"
-        imports = [full_classname(object_=self.model_class, compute_for='class'), self.full_classname]
+        imports = [full_classname(object_=self.model_class, compute_for="class"), self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
 
@@ -167,11 +167,11 @@ class ClassMethod(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"ClassMethod(method_type=ClassMethodType(" \
-                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
+                 f"{self.method_type.class_.__name__}, \"{self.method_type.name}\")" \
                  f", {self.base_script()})"
 
-        imports = [full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -189,7 +189,7 @@ class ModelMethod(Block):
 
     def __init__(self, method_type: MethodType[Type], name: str = '', position: Tuple[float, float] = None):
         self.method_type = method_type
-        inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
+        inputs = [TypedVariable(type_=method_type.class_, name="model at input")]
         self.method = method_type.get_method()
         inputs = set_inputs_from_function(self.method, inputs)
 
@@ -226,7 +226,7 @@ class ModelMethod(Block):
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
-        return {self.method_type.class_.__module__.split('.')[0]: 1}
+        return {self.method_type.class_.__module__.split(".")[0]: 1}
 
     def _docstring(self):
         """ Parse given method's docstring. """
@@ -241,11 +241,11 @@ class ModelMethod(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"ModelMethod(method_type=MethodType(" \
-                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
+                 f"{self.method_type.class_.__name__}, \"{self.method_type.name}\")" \
                  f", {self.base_script()})"
 
-        imports = [full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -262,7 +262,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name="sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -295,7 +295,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name="sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -375,7 +375,7 @@ class WorkflowBlock(Block):
 
     def _to_script(self, prefix: str) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        prefix = f'{prefix}sub_'
+        prefix = f"{prefix}sub_"
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
             f"{workflow_script.declaration}" \
@@ -405,13 +405,13 @@ class ForEach(Block):
         inputs = []
         for i, workflow_input in enumerate(self.workflow_block.inputs):
             if i == iter_input_index:
-                variable_name = 'Iterable input: ' + workflow_input.name
+                variable_name = f"Iterable input: {workflow_input.name}"
                 inputs.append(Variable(name=variable_name))
             else:
                 input_ = workflow_input.copy()
-                input_.name = 'binding ' + input_.name
+                input_.name = f"Binding: {input_.name}"
                 inputs.append(input_)
-        output_variable = Variable(name='Foreach output')
+        output_variable = Variable(name="Foreach output")
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
@@ -498,8 +498,8 @@ class Flatten(Block):
     """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        inputs = [Variable(name='input_sequence')]
-        outputs = [Variable(name='flatten_sequence')]
+        inputs = [Variable(name="input_sequence")]
+        outputs = [Variable(name="flatten_sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -524,8 +524,8 @@ class Product(Block):
 
     def __init__(self, number_list: int, name: str = '', position: Tuple[float, float] = None):
         self.number_list = number_list
-        inputs = [Variable(name='list_product_' + str(i)) for i in range(self.number_list)]
-        output_variable = Variable(name='Product output')
+        inputs = [Variable(name=f"list_product_{i}") for i in range(self.number_list)]
+        output_variable = Variable(name="Product output")
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
@@ -561,8 +561,8 @@ class Filter(Block):
                  position: Tuple[float, float] = None):
         self.filters = filters
         self.logical_operator = logical_operator
-        inputs = [Variable(name='input_list')]
-        outputs = [Variable(name='output_list')]
+        inputs = [Variable(name="input_list")]
+        outputs = [Variable(name="output_list")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent(self, other):
@@ -582,10 +582,10 @@ class Filter(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         filter_variables = [f"DessiaFilter("
-                            f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
-                            f"bound={f.bound}, name='{f.name}')" for f in self.filters]
-        filters = '[' + ",".join(filter_variables) + ']'
-        script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', {self.base_script()})"
+                            f"attribute=\"{f.attribute}\", comparison_operator=\"{f.comparison_operator}\", "
+                            f"bound={f.bound}, name=\"{f.name}\")" for f in self.filters]
+        filters = f"[{', '.join(filter_variables)}]"
+        script = f"Filter(filters={filters}, logical_operator=\"{self.logical_operator}\", {self.base_script()})"
 
         imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
@@ -595,7 +595,7 @@ class Display(Block):
     """ Abstract block class for display behaviors. """
 
     _displayable_input = 0
-    _non_editable_attributes = ['inputs']
+    _non_editable_attributes = ["inputs"]
 
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
                  selector: Optional[str] = None, type_: Optional[str] = None, position: Tuple[float, float] = None):
@@ -635,7 +635,7 @@ class Display(Block):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"{self.__class__.__name__}(name='{self.name}')"
+        script = f"{self.__class__.__name__}(name=\"{self.name}\")"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -677,17 +677,17 @@ class MultiPlot(Display):
         samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
                                       reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                      for i, o in enumerate(objects)]
-        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+        tooltip = plot_data.Tooltip(name="Tooltip", attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=samples2d, name='Scatter Plot')
+                                        elements=samples2d, name="Scatter Plot")
 
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+        parallelplot = plot_data.ParallelPlot(disposition="horizontal", axes=self.attributes,
                                               rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name='Results plot')
+                                            coords=[(0, 0), (0, 300)], name="Results plot")
         return [[multiplot.to_dict()]]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -753,8 +753,8 @@ class ModelAttribute(Block):
 
     def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
         self.attribute_name = attribute_name
-        inputs = [Variable(name='Model')]
-        outputs = [Variable(name='Model attribute')]
+        inputs = [Variable(name="Model")]
+        outputs = [Variable(name="Model attribute")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -767,11 +767,11 @@ class ModelAttribute(Block):
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
-        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
+        return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_name}")]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        script = f"ModelAttribute(attribute_name=\"{self.attribute_name}\", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
    
@@ -787,12 +787,12 @@ class GetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         if type_:
-            outputs = [TypedVariable(type_=type_, name='Model attribute')]  
+            outputs = [TypedVariable(type_=type_, name="Model attribute")]
         else:
-            outputs=[Variable(name='Model attribute')]
+            outputs = [Variable(name="Model attribute")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -810,15 +810,15 @@ class GetModelAttribute(Block):
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
-        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_type.name}')]
+        return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_type.name}")]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"GetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
-        imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
-                   full_classname(object_=self.attribute_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.attribute_type, compute_for="instance"),
+                   full_classname(object_=self.attribute_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -836,14 +836,14 @@ class SetModelAttribute(Block):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         type_ = get_attribute_type(self.attribute_type.name, parameters)
-        inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model')]
+        inputs = [TypedVariable(type_= self.attribute_type.class_, name="Model")]
         if type_:
             inputs.append(TypedVariable(type_=type_, 
-                                        name=f'Value to insert for attribute {self.attribute_type.name}'))
+                                        name=f"Value to insert for attribute {self.attribute_type.name}"))
         else:
-            inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
-        outputs = [TypedVariable(type_=self.attribute_type.class_, 
-                                    name=f'Model with changed attribute {self.attribute_type.name}')]
+            inputs.append(Variable(name=f"Value to insert for attribute {self.attribute_type.name}"))
+        outputs = [TypedVariable(type_=self.attribute_type.class_,
+                                 name=f"Model with changed attribute {self.attribute_type.name}")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -863,7 +863,7 @@ class SetModelAttribute(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"SetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
@@ -880,7 +880,7 @@ class Sum(Block):
     def __init__(self, number_elements: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name='Sum')], name=name, position=position)
+        Block.__init__(self, inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -908,7 +908,7 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
+        Block.__init__(self, [Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
                        position=position)
 
     def evaluate(self, values, **kwargs):
@@ -958,8 +958,8 @@ class ConcatenateStrings(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"ConcatenateStrings(number_elements={self.number_elements}, " \
-                 f"separator='{self.separator}', " \
-                 f"name='{self.name}')"
+                 f"separator=\"{self.separator}\", " \
+                 f"name=\"{self.name}\")"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -1012,12 +1012,12 @@ class Export(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"Export(method_type=MethodType(" \
-                 f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
-                 f", filename='{self.filename}', extension='{self.extension}'" \
+                 f"{self.method_type.class_.__name__}, \"{self.method_type.name}\")" \
+                 f", filename=\"{self.filename}\", extension=\"{self.extension}\"" \
                  f", text={self.text}, {self.base_script()})"
 
-        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class')]
+        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class")]
         return ToScriptElement(declaration=script, imports=imports)
 
 
@@ -1040,27 +1040,27 @@ class Archive(Block):
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method=True, id_memo=None):
         """ Serialize the block with custom logic. """
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
+        dict_["number_exports"] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
         return dict_
 
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = "#"):
         """ Custom dict_to_object method. """
         return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
-                   name=dict_['name'], position=dict_.get('position'))
+                   name=dict_["name"], position=dict_.get("position"))
 
     def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """
         name_input = self.inputs[-1]
         archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)
-        with ZipFile(archive, 'w') as zip_archive:
+        with ZipFile(archive, "w") as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
                 archive = generate_archive(zip_archive, value)
@@ -1074,7 +1074,7 @@ class Archive(Block):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
+        script = f"Archive(number_exports={self.number_exports}, filename=\"{self.filename}\", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
