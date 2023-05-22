@@ -13,6 +13,7 @@ cvar
 dataset
 dbscan
 dectree
+dendrogram
 deserialization
 deserialize
 dessia
@@ -21,8 +22,10 @@ dict
 docstring
 Dessia's
 DessiaFilter
+eps
 eq
 filepath
+Frobenius
 frontend
 ge
 gt
@@ -34,12 +37,15 @@ JSON
 jsonschema
 kwargs
 le
+lhs
+lp
 lt
 lte
 Mahalanobis
 matplotlib
 Minkowski
 nbv
+ndarray
 networkx
 numpy
 orjson
@@ -57,6 +63,8 @@ Stringify
 submodule
 subobjects
 subscriptable
+SVD
+tol
 traceback
 typings
 uuid
