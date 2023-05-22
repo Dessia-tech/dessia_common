@@ -3,7 +3,6 @@
 """ Serialization Tools. """
 
 import uuid
-import sys
 import warnings
 import inspect
 import collections
@@ -31,19 +30,7 @@ class SerializableObject(CoreDessiaObject):
 
     def base_dict(self):
         """ A base dict for to_dict: set up a dict with object class and version. """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
         dict_ = {'object_class': self.full_classname}
-        if package_version:
-            dict_['package_version'] = package_version
         return dict_
 
     def _serializable_dict(self):
@@ -433,7 +420,7 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
                 # This is not the right class, we should go see the parent
                 classes.remove(children_class)
     elif origin in [list, collections.abc.Iterator]:
-        # Homogenous sequences (lists)
+        # Homogeneous sequences (lists)
         sequence_subtype = args[0]
         deserialized_arg = [deserialize_argument(sequence_subtype, arg) for arg in argument]
         if origin is collections.abc.Iterator:

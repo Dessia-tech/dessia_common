@@ -34,7 +34,7 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict  # , is_serializable
+    serialize_dict, add_references  # , is_serializable
 
 from dessia_common.workflow.utils import ToScriptElement
 
@@ -275,7 +275,7 @@ class Block(DessiaObject):
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
-        return f"name='{self.name}', position={self.position}"
+        return f"name=\"{self.name}\", position={self.position}"
 
     def evaluate(self, values, **kwargs):
         """ Not implemented for abstract block class 'evaluate' method. """
@@ -293,7 +293,7 @@ class Pipe(DessiaObject):
     """
     Bind two variables of a Workflow.
 
-    :param input_variable: The input varaible of the pipe correspond to the start of the arrow, its tail.
+    :param input_variable: The input variable of the pipe correspond to the start of the arrow, its tail.
     :type input_variable: Variable
     :param output_variable: The output variable of the pipe correspond to the end of the arrow, its hat.
     :type output_variable: Variable
@@ -1045,7 +1045,7 @@ class Workflow(Block):
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
-        Return global adress of given variable as a tuple or an int.
+        Return global address of given variable as a tuple or an int.
 
         If variable is non block, return index of variable in variables sequence
         Else returns global adress (ib, i, ip)
@@ -1455,7 +1455,7 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
 
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
@@ -1682,7 +1682,8 @@ class WorkflowState(DessiaObject):
 
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
-        dict_["_references"] = id_memo
+        if path == '#':
+            add_references(dict_, memo, id_memo)
         # Uncomment when refs are handled as dict keys
         # activated_items = {}
         # for key, activated in self.activated_items.items():
@@ -2120,7 +2121,7 @@ class WorkflowRun(WorkflowState):
         """
         Compute WorkflowRun display settings.
 
-        Concatenate WorkflowState display_settings and instering Workflow ones.
+        Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
         doc_setting = workflow_settings[0]
