@@ -168,18 +168,17 @@ def breakdown(obj, path=''):
             bd_dict = merge_breakdown_dicts(bd_dict, breakdown(value, path2))
     else:
         # Put object and break it down
-        if path:  # avoid to get root object
-            if hasattr(obj, '__dict__'):
-                classname = obj.__class__.__name__
-                if classname in bd_dict:
-                    if obj in bd_dict[classname]:
-                        if len(path.split('.')) < len(bd_dict[classname][obj].split('.')):
-                            bd_dict[classname][obj] = path
-                    else:
+        if path and hasattr(obj, '__dict__'):  # avoid to get root object
+            classname = obj.__class__.__name__
+            if classname in bd_dict:
+                if obj in bd_dict[classname]:
+                    if len(path.split('.')) < len(bd_dict[classname][obj].split('.')):
                         bd_dict[classname][obj] = path
                 else:
-                    bd_dict[classname] = collections.OrderedDict()
                     bd_dict[classname][obj] = path
+            else:
+                bd_dict[classname] = collections.OrderedDict()
+                bd_dict[classname][obj] = path
 
         bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(obj, path=path))
 
