@@ -1230,7 +1230,7 @@ ORIGIN_TO_SCHEMA_CLASS = {
     tuple: HeterogeneousSequence, list: HomogeneousSequence,
     collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
     dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty,
     type: ClassProperty, AttributeType: AttributeTypeProperty
 }
 

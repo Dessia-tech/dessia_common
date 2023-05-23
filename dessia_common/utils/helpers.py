@@ -54,6 +54,8 @@ def full_classname(object_, compute_for: str = 'instance'):
         return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
     if compute_for == 'class':
         return f"{object_.__module__}.{object_.__name__}"
+    if compute_for == 'function':
+        return f"{object_.__module__}.{object_.__name__}"
     raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")
 
 

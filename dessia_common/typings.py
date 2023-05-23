@@ -49,6 +49,31 @@ class ClassMethodType(MethodType[T]):
         MethodType.__init__(self, class_=class_, name=name)
 
 
+class FunctionType(Generic[T]):
+    """ Typing that denotes a function. """
+
+    def __init__(self, module: T, name: str):
+        self.module = module
+        self.name = name
+
+    def __deepcopy__(self, memo=None):
+        return FunctionType(self.module, self.name)
+
+    def get_function(self):
+        """ Helper to get real function from function name. """
+        return getattr(self.module, self.name)
+
+    def to_dict(self):
+        """ Write Function Type as a dictionary. """
+        method_type_classname = full_classname(object_=self.__class__, compute_for="class")
+        return {"name": self.name, "object_class": method_type_classname}
+
+    @classmethod
+    def dict_to_object(cls, dict_) -> 'FunctionType':
+        """ Deserialize dictionary as a Function Type. """
+        return
+
+
 class AttributeType(Generic[T]):
     """ Typing that denotes an attribute of class T. """
 

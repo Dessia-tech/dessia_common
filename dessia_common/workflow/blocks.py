@@ -10,7 +10,7 @@ from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, 
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
+from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType, FunctionType
 from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
@@ -248,6 +248,53 @@ class ModelMethod(Block):
                    full_classname(object_=self.method_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+
+
+class ModelFunction(Block):
+    """
+    Run given function during workflow execution.
+    """
+
+    _non_serializable_attributes = ["function"]
+
+    def __init__(self, function_type: FunctionType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.function_type = function_type
+        self.function = self.function_type.get_function()
+        inputs = set_inputs_from_function(self.function)
+        outputs = output_from_function(self.function)
+        Block.__init__(self, inputs, outputs, name=name, position=position)
+        self.argument_names = [i.name for i in inputs]
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return 7 * len(self.name)
+
+    def equivalent(self, other: 'ModelFunction'):
+        """ Return whether the block is equivalent to the other given or not. """
+        same_function = self.name == other.name
+        return Block.equivalent(self, other) and same_function
+
+    def evaluate(self, values, **kwargs):
+        """ Run given function with arguments that are in values. """
+        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs) if v in values}
+        return [getattr(self.function_type.module, self.function_type.name)(**arguments), values[self.inputs[0]]]
+
+    def _docstring(self):
+        """ Parse given method's docstring. """
+        docstring = self.function.__doc__
+        annotations = get_type_hints(self.function)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        parsed_attributes = parsed_docstring["attributes"]
+        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
+        return block_docstring
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"ModelFunction(FunctionType({self.function.__module__}, {self.function_type.name}),'{self.name}')"
+        imports = [full_classname(object_=self.function, compute_for='function')]
+        return ToScriptElement(declaration=script, imports=imports)
+
 
 
 class Sequence(Block):
