@@ -28,10 +28,12 @@ _fullargsspec_cache = {}
 
 
 class BackendReference:
+    """ Enable Backend reference injection. """
     def __init__(self, object_id: str):
         self.object_id = object_id
 
     def to_dict(self, use_pointers: bool = False):
+        """ Is used for default value when computing schema to dict with objects default values. """
         return {"object_id": self.object_id}
 
 
@@ -127,6 +129,7 @@ class Schema:
 
     @property
     def standalone_properties(self):
+        """ Return all schema's standalone properties. """
         return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
 
     def to_dict(self):
@@ -332,6 +335,7 @@ class Property:
         return self.definition_default
 
     def inject_reference(self, object_id):
+        """ Exposed to backend in order to inject mongo reference in place of object default value. """
         if self.standalone_in_db:
             self.definition_default = BackendReference(object_id)
 
@@ -679,10 +683,15 @@ class UnionProperty(TypingProperty):
         """ Deserialize Union annotation. """
         return Union[TypingProperty._args_from_serialized(serialized)]
 
+    @property
+    def classes(self):
+        """ Compute all possible classes for this annotation. Every class specified in Union annotation. """
+        return self.args
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone_in_db})
+        chunk.update({'type': 'object', 'classes': self.classes, 'standalone_in_db': self.standalone_in_db})
         return chunk
 
     def default_value(self):
@@ -957,6 +966,7 @@ class InstanceOfProperty(TypingProperty):
 
     @property
     def classes(self):
+        """ Compute all possible classes for this annotation. Return base class. """
         return [full_classname(object_=self.args[0], compute_for="class")]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
