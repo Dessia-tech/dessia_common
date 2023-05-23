@@ -77,22 +77,12 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _ordered_attributes: Documentation not available yet.
-
-    :cvar List[str] _titled_attributes: Documentation not available yet.
-
-    :cvar List[str] _init_variables: Documentation not available yet.
-
     :cvar List[str] _export_formats:
         List of all available export formats. Class must define a export_[format] for each format in _export_formats
 
     :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
-    :cvar List[str] _whitelist_attributes: Documentation not available yet.
-    :cvar List[str] _whitelist_attributes: List[str]
-
-    :ivar str name: Name of object.
-    :ivar Any kwargs: Additional user metadata
+    :param name: Name of object.
     """
 
     _non_editable_attributes = []
@@ -918,6 +908,7 @@ class DessiaFilter(DessiaObject):
         * greater: >, gt
         * lower than: <=, lte, le
         * lower: <, lt
+        * lower: <, lt
         * equal: ==, eq
         * different: !=, ne
     """
@@ -1201,25 +1192,6 @@ def stringify_dict_keys(obj):
 def getdeepattr(obj, attr):
     """ Get deep attribute of object. """
     return reduce(getattr, [obj] + attr.split('.'))
-
-
-def enhanced_deep_attr(obj, sequence):
-    """
-    Deprecated. Use get_in_from_path from dessia_common.breakdown.py instead.
-
-    Get deep attribute where Objects, Dicts and Lists can be found in recursion.
-
-    :param obj: Parent object in which recursively find attribute represented by sequence
-    :param sequence: List of strings and integers that represents path to deep attribute.
-
-    :return: Value of deep attribute
-    """
-    warnings.warn("enhanced_deep_attr is deprecated. Use get_in_from_path from dessia_common.breakdown.py instead")
-    if isinstance(sequence, str):
-        path = f"#/{sequence}"
-    else:
-        path = f"#/{'/'.join(sequence)}"
-    return get_in_object_from_path(object_=obj, path=path)
 
 
 def enhanced_get_attr(obj, attr):

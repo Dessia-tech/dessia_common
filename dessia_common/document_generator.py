@@ -163,7 +163,7 @@ class Section:
 
 
 class DocxWriter:
-    """ write a docx file. """
+    """ Write a Document file. """
 
     def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = "document.docx",
                  headings: List[Heading] = None, table: List[Table] = None):
