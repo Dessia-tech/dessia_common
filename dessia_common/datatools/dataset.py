@@ -599,7 +599,7 @@ class Dataset(DessiaObject):
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
-        More informations: https://en.wikipedia.org/wiki/Singular_value_decomposition
+        More information: https://en.wikipedia.org/wiki/Singular_value_decomposition
 
         :return:
             **normalized_singular_values**: list of normalized singular values

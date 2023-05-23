@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 - Blocks : display blocks are now more configurable (custom selector and type)
 - DessiaObject: add type to load_from_file method
-- document generator: add new class Table
+- Document generator: add new class Table
 - Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
 - Schemas refactor: add more Error Checks
@@ -25,19 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  
 - Blocks : add the possibility to have TypedValue in SetModelAttribute
-- files: add functions to init StringFile and BinaryFile from local path
-- document generator: add new module to write in docx file
 - DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
+- Document generator: add new module to write in docx file
 - Export: export all 3d formats in zip file
+- Files: add functions to init StringFile and BinaryFile from local path
 - MarkdownWriter: add some functions (table_of_contents, header)
 
 
 ### Fixed
 
+- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
+- Exports : Add trailing line at the end of JSON export
 - Schemas refactor : allow incomplete schemas
 - Schemas refactor : old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
-- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 
 
 ### Refactored

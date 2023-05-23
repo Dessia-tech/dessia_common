@@ -5,6 +5,7 @@ bool
 builtins
 classmethod
 classname
+clist
 cls
 CMA
 config
@@ -27,6 +28,7 @@ eq
 filepath
 Frobenius
 frontend
+hlist
 ge
 gt
 gte
@@ -76,3 +78,4 @@ uuids
 visjs
 volmdlr
 XLS
+xlsx
