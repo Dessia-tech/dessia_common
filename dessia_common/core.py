@@ -519,7 +519,7 @@ class DessiaObject(SerializableObject):
         writer.save_to_stream(stream)
 
     def to_markdown_docx(self):
-        """ Generates a Word document from the object attributes, using a markdown-like syntax. """
+        """ Generates a word document from the object attributes, using a markdown-like syntax. """
         docx_writer = DocxWriter.from_markdown(markdown_text=self.to_markdown())
         return docx_writer
 
