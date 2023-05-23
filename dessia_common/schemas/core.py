@@ -27,6 +27,14 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 _fullargsspec_cache = {}
 
 
+class BackendReference:
+    def __init__(self, object_id: str):
+        self.object_id = object_id
+
+    def to_dict(self, use_pointers: bool = False):
+        return {"object_id": self.object_id}
+
+
 class UntypedArgument(FailedCheck):
     """ Used when an argument is not typed in function or class definition. """
 
@@ -116,6 +124,10 @@ class Schema:
     def chunks(self):
         """ Concatenate schema chunks into a List. """
         return [self.chunk(a) for a in self.attributes]
+
+    @property
+    def standalone_properties(self):
+        return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
 
     def to_dict(self):
         """ Write the whole schema. """
@@ -318,6 +330,10 @@ class Property:
     def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
         return self.definition_default
+
+    def inject_reference(self, object_id):
+        if self.standalone_in_db:
+            self.definition_default = BackendReference(object_id)
 
     def check_list(self) -> CheckList:
         """
@@ -939,10 +955,16 @@ class InstanceOfProperty(TypingProperty):
         """ Return True if base class is standalone. """
         return self.args[0]._standalone_in_db
 
+    @property
+    def classes(self):
+        return [full_classname(object_=self.args[0], compute_for="class")]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': self.standalone_in_db})
+        chunk.update({"type": "object", "instance_of": self.classes[0],
+                      "classes": self.classes,
+                      "standalone_in_db": self.standalone_in_db})
         return chunk
 
     def default_value(self) -> BaseClass:
