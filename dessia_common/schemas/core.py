@@ -297,6 +297,7 @@ class Property:
 
     @property
     def standalone_in_db(self) -> bool:
+        """ Properties cannot be in database by default. """
         return False
 
     @classmethod
@@ -604,6 +605,7 @@ class CustomClass(Property):
 
     @property
     def standalone_in_db(self) -> bool:
+        """ Whether the class is standalone in db. """
         return self.annotation._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -648,6 +650,7 @@ class UnionProperty(TypingProperty):
 
     @property
     def standalone_in_db(self) -> Optional[bool]:
+        """ True if all subclasses are standalone, False if None of them are, None else. """
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
             return True
@@ -933,6 +936,7 @@ class InstanceOfProperty(TypingProperty):
 
     @property
     def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
         return self.args[0]._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -971,6 +975,7 @@ class SubclassProperty(TypingProperty):
 
     @property
     def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
         return self.args[0]._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
