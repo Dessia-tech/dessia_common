@@ -3,7 +3,6 @@
 """ Serialization Tools. """
 
 import uuid
-import sys
 import warnings
 import inspect
 import collections
@@ -12,7 +11,7 @@ from ast import literal_eval
 from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
 from numpy import int64, float64
 import networkx as nx
-from dessia_common import REF_MARKER
+from dessia_common import REF_MARKER, OLD_REF_MARKER
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
@@ -35,19 +34,7 @@ class SerializableObject(CoreDessiaObject):
 
     def base_dict(self):
         """ A base dict for to_dict: set up a dict with object class and version. """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
         dict_ = {'object_class': self.full_classname}
-        if package_version:
-            dict_['package_version'] = package_version
         return dict_
 
     def _serializable_dict(self):
@@ -275,7 +262,7 @@ def add_references(dict_, memo, id_memo):
 
 
 def serialize_sequence_with_pointers(seq, memo, path, id_method, id_memo):
-    """ Serialize a sequence (list or tuple) using jsonpointers. """
+    """ Serialize a sequence (list or tuple) using json-pointers. """
     serialized_sequence = []
     for ival, value in enumerate(seq):
         value_path = f'{path}/{ival}'
@@ -324,14 +311,15 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
 
-    if REF_MARKER in dict_:
-        try:
-            return pointers_memo[dict_[REF_MARKER]]
-        except KeyError as err:
-            print('keys in memo:')
-            for key in sorted(pointers_memo.keys()):
-                print(f'\t{key}')
-            raise RuntimeError(f"Pointer {dict_[REF_MARKER]} not in memo, at path {path}") from err
+    for marker in [REF_MARKER, OLD_REF_MARKER]:  # Retro-compatibility started on v0.13. When to remove?
+        if marker in dict_:
+            try:
+                return pointers_memo[dict_[marker]]
+            except KeyError as err:
+                print('keys in memo:')
+                for key in sorted(pointers_memo.keys()):
+                    print(f'\t{key}')
+                raise RuntimeError(f"Pointer {dict_[marker]} not in memo, at path {path}") from err
 
     if class_ is None and 'object_class' in dict_:
         class_ = get_python_class_from_class_name(dict_['object_class'])
@@ -536,8 +524,11 @@ def find_references_sequence(seq, path):
 def find_references_dict(dict_, path):
     """ Find dc refs recursively in dict. """
     if REF_MARKER in dict_:
-
         return [(path, dict_[REF_MARKER])]
+
+    # Retro-compatibility. Remove at some point.
+    if OLD_REF_MARKER in dict_:
+        return [(path, dict_[OLD_REF_MARKER])]
 
     references = []
     for key, value in dict_.items():
@@ -553,7 +544,7 @@ def pointer_graph(value):
     Create a graph of subattributes of an object.
 
     Edges representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub attribute to an attribute
      * the pointer link between the 2 elements
     """
     nodes = set()
@@ -731,6 +722,10 @@ def pointer_graph_elements_dict(dict_, path='#'):
     if REF_MARKER in dict_:
         return [path, dict_[REF_MARKER]], [(path, dict_[REF_MARKER], True)]
 
+    # Retro compatibility. To be remove in the future
+    if OLD_REF_MARKER in dict_:
+        return [path, dict_[OLD_REF_MARKER]], [(path, dict_[OLD_REF_MARKER], True)]
+
     edges = []
     nodes = []
     for key, value in dict_.items():
@@ -752,7 +747,7 @@ def pointers_analysis(obj):
     Analyse on object to output stats on pointer use in the object.
 
     Maybe useless now that we use uuids.
-    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
+    :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
         dict_ = obj
