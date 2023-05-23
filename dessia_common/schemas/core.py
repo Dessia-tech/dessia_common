@@ -29,6 +29,7 @@ _fullargsspec_cache = {}
 
 class BackendReference:
     """ Enable Backend reference injection. """
+
     def __init__(self, object_id: str):
         self.object_id = object_id
 
