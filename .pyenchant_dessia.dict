@@ -19,11 +19,8 @@ deserialization
 deserialize
 dessia
 DessiaObject
-Dicts
 dict
-dicts
 docstring
-docx
 Dessia's
 DessiaFilter
 eps
@@ -36,12 +33,10 @@ ge
 gt
 gte
 init
-inits
 itertools
 json
 JSON
 jsonschema
-jsonschemas
 kwargs
 le
 len
