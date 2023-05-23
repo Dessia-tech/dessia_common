@@ -166,7 +166,7 @@ class DocxWriter:
     """ Write a Document file. """
 
     def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = "document.docx",
-                 headings: List[Heading] = None, table: List[Table] = None):
+                 headings: List[Heading] = None, tables: List[Table] = None):
         self.filename = filename
         if headings is None:
             headings = []
@@ -175,7 +175,7 @@ class DocxWriter:
         if paragraphs is None:
             paragraphs = []
         self.paragraphs = paragraphs
-        self.table = table
+        self.tables = tables
         self.document = docx.Document()
 
         if self.section:
@@ -213,14 +213,14 @@ class DocxWriter:
         for _ in range(num_page_breaks):
             self.document.add_page_break()
 
-    def add_table(self, add_all_table: bool = False, table_index: int = 0) -> 'DocxWriter':
-        """ Add table to the document. """
-        if add_all_table:
-            for table in self.table:
+    def add_table(self, add_all_tables: bool = False, table_index: int = 0) -> 'DocxWriter':
+        """ Add tables to the document. """
+        if add_all_tables:
+            for table in self.tables:
                 table.add_to_document(self.document)
                 self.document.add_paragraph()
         else:
-            self.table[table_index].add_to_document(self.document)
+            self.tables[table_index].add_to_document(self.document)
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
@@ -297,7 +297,7 @@ class DocxWriter:
                 else:
                     docx_writer.add_paragraphs(add_heading=False)
             if isinstance(item, Table):
-                docx_writer.table = [item]
+                docx_writer.tables = [item]
                 docx_writer.add_table()
         return docx_writer
 
