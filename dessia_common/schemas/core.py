@@ -647,14 +647,13 @@ class UnionProperty(TypingProperty):
         return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
 
     @property
-    def standalone_in_db(self) -> bool:
+    def standalone_in_db(self) -> Optional[bool]:
         standalone_args = [a._standalone_in_db for a in self.args]
         if all(standalone_args):
             return True
-        elif not any(standalone_args):
+        if not any(standalone_args):
             return False
-        else:
-            return None
+        return None
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
