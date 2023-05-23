@@ -361,6 +361,7 @@ class DessiaObject(SerializableObject):
             dict_ = self.to_dict()
 
         json.dump(dict_, stream, indent=indent)
+        stream.write('\n')
 
     @classmethod
     def load_from_stream(cls, stream: dcf.JsonFile):
