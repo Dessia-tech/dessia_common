@@ -1,0 +1,62 @@
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      tags: true
+
+pipeline:
+  check-code-complexity:
+    image: dessia/python-ci:3.9
+    commands:
+      - pip install pydocstyle==6.3.0 pylint==2.16.1 pyenchant==3.2.2
+      - python code_pylint.py
+      - python code_pydocstyle.py
+
+  check-pep8-formatting:
+    image: python:3.8
+    commands:
+      - pip3 install -U pip autopep8
+      - bash code_pep8.sh
+
+  check-changelog-update:
+    image: python:3.8
+    when:
+      event: pull_request
+      branch:
+        - master
+        - dev
+    commands:
+      - bash code_changelog.sh
+
+
+  install-coverage-doc:
+    image: python:3.8
+    commands:
+      - python setup.py install
+      - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
+      - pip install plot_data --no-cache-dir
+      - pip show coverage
+      - pip show plot_data
+      - cd doc
+      - make html
+      - cd ../scripts
+      - coverage run --source dessia_common ci_scripts.py
+      - cd ../tests
+      - coverage run --source dessia_common -m unittest discover -v
+      - cd ../tutorials
+      - coverage run --source dessia_common ci_tutorials.py
+      - cd ..
+      - coverage combine scripts/.coverage tests/.coverage tutorials/.coverage
+      - coverage json
+      - coverage report
+      - coverage html
+      - python coverage.py
+
+  generate-sdist:
+    image: python:3.8
+    when:
+      branch: master
+    commands:
+      - git fetch --tags
+      - python setup.py sdist
+

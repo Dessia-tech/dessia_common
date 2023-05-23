@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
 - Typings : add AttributeType and ClassAttributeType
-
+- Woodpecker CI file
 
 ### Changed
  
