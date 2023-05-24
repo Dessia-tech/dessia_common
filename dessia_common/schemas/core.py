@@ -209,6 +209,7 @@ class ClassSchema(Schema):
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
     def to_dict(self):
+        """ Write the whole schema. """
         schema = super().to_dict()
         classname = full_classname(object_=self.class_, compute_for="class")
         schema.update({"classes": [classname], "standalone_in_db": self.standalone_in_db})
