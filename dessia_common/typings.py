@@ -65,13 +65,13 @@ class FunctionType(Generic[T]):
 
     def to_dict(self):
         """ Write Function Type as a dictionary. """
-        method_type_classname = full_classname(object_=self.__class__, compute_for="class")
-        return {"name": self.name, "object_class": method_type_classname}
+        function_type_modulename = full_classname(object_=self.__class__, compute_for="function")
+        return {"name": self.name, "object_module": function_type_modulename}
 
     @classmethod
     def dict_to_object(cls, dict_) -> 'FunctionType':
         """ Deserialize dictionary as a Function Type. """
-        return
+        return FunctionType(module=dict_["object_module"], name=dict_["name"])
 
 
 class AttributeType(Generic[T]):
