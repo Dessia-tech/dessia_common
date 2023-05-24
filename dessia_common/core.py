@@ -195,7 +195,7 @@ class DessiaObject(SerializableObject):
 
     @property
     def _method_jsonschemas(self):
-        """ Generates dynamic 'jsonschemas' for methods of class. """
+        """ Generates dynamic schemas for methods of class. """
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
@@ -987,20 +987,17 @@ class FiltersList(DessiaObject):
         return cls(filters=filters, logical_operator=logical_operator, name=name)
 
     @staticmethod
-    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and"):
+    def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of `n` booleans indexes with the logical operator into a simple boolean index.
+        Combine a list of boolean indices with the logical operator into a simple boolean index.
 
-        :param booleans_lists: List of `n` booleans indexes
-        :type booleans_lists: List[List[bool]]
+        :param booleans_lists: List of boolean indices
 
         :param logical_operator: Logical operator to combine filters (`'or'`, `'and'` or `'xor'`)
-        :type logical_operator: `str`, `optional`, defaults to 'and'
 
         :raises NotImplementedError: If logical_operator is not one of `'and'`, `'or'`, `'xor'`, raises an error
 
         :return: Boolean indices of the filtered data
-        :rtype: List[bool]
 
         :Examples:
         >>> from dessia_common.core import FiltersList

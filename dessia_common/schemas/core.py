@@ -809,7 +809,7 @@ class HeterogeneousSequence(TypingProperty):
 
     def ellipsis_has_exactly_two_args(self) -> PassedCheck:
         """
-        Tuple can be ellipsed (Tuple[T, ...]), meaning that it contains any number of element.
+        Tuple can use Ellipsis (Tuple[T, ...]), meaning that it contains any number of element.
 
         In this case it MUST have exactly two arguments.
         """
