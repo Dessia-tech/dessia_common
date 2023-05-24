@@ -18,6 +18,8 @@ scripts = [
     "markdowns.py",
     "checks.py",
     "unit_tests.py",
+    "docx_writer.py",
+    "markdown_to_docx.py",
 
     # Workflows
     "workflow/blocks.py",

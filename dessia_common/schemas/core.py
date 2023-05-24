@@ -12,7 +12,7 @@ from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass
+from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T
@@ -61,7 +61,7 @@ class Schema:
 
     It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
-    This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
@@ -386,7 +386,7 @@ class TypingProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Split Typing and Args and delegate deserialization to specific classes. """
+        """ Split Typing and Arguments and delegate deserialization to specific classes. """
         typename = cls.type_from_serialized(serialized)
         schema_class = SERIALIZED_TO_SCHEMA_CLASS[typename]
         return schema_class.annotation_from_serialized(serialized)
@@ -413,7 +413,7 @@ class TypingProperty(Property):
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
-        """ Get Typing and Args as strings. """
+        """ Get Typing and Arguments as strings. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).groups()
 
     def has_one_arg(self) -> PassedCheck:
@@ -423,7 +423,7 @@ class TypingProperty(Property):
             msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
                   f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
-        return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
+        return PassedCheck(f"{self.check_prefix}has exactly one argument in its definition.")
 
 
 class ProxyProperty(TypingProperty):
@@ -440,7 +440,7 @@ class ProxyProperty(TypingProperty):
 
     @property
     def schema(self):
-        """ Return a reference to its only arg. """
+        """ Return a reference to its only argument. """
         return get_schema(annotation=self.annotation, attribute=self.attribute,
                           definition_default=self.definition_default)
 
@@ -483,8 +483,8 @@ class AnnotatedProperty(ProxyProperty):
     """
     Proxy Schema class for annotated type hints.
 
-    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges, or probably enums,
-    precision,...
+    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges,
+    or probably enumerations, precision,...
 
     This could enable quite effective type checking on frontend form.
 
@@ -533,7 +533,7 @@ class BuiltinProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Get real Type from types dictionnary. """
+        """ Get real Type from types dictionary. """
         return TYPES_FROM_STRING[serialized]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
@@ -696,7 +696,7 @@ class UnionProperty(TypingProperty):
         Check validity of UnionProperty Type Hint.
 
         Checks performed :
-        - Subobject are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
+        - Sub-objects are all standalone or none of them are. TODO : What happen if arguments are not DessiaObjects ?
         """
         issues = super().check_list()
         issues += CheckList([self.classes_are_standalone_consistent()])
@@ -794,7 +794,7 @@ class HeterogeneousSequence(TypingProperty):
         In this case it MUST have exactly two arguments.
         """
         if self.additional_items and len(self.args) != 2:
-            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
@@ -934,7 +934,7 @@ class InstanceOfProperty(TypingProperty):
     """
     Schema class for InstanceOf type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Instances of these classes validate against this type.
     """
 
@@ -976,7 +976,7 @@ class SubclassProperty(TypingProperty):
     """
     Schema class for Subclass type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Classes validate against this type.
     """
 
@@ -1066,6 +1066,65 @@ class MethodTypeProperty(TypingProperty):
         return CheckList([])
 
 
+class AttributeTypeProperty(TypingProperty):
+    """
+    Schema class for AttributeType and ClassAttributeType type hints.
+
+    A specifically instantiated AttributeType validated against this type.
+    """
+
+    def __init__(self, annotation: Type[AttributeType], attribute: str, definition_default: AttributeType = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+        self.class_ = self.args[0]
+        self.class_schema = get_schema(annotation=self.class_, attribute=attribute,
+                                       definition_default=definition_default)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Attribute annotation. Support Class and Instance attributes. """
+        type_ = TypingProperty.type_from_serialized(serialized)
+        if type_ == "AttributeType":
+            return AttributeType[TypingProperty._args_from_serialized(serialized)]
+        return ClassAttributeType[TypingProperty._args_from_serialized(serialized)]
+
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write AttributeType as a Dict. """
+        chunk = super().to_dict(title=title, editable=editable, description=description)
+        is_class_attribute = self.origin is ClassAttributeType
+        chunk.update({
+            'type': 'object', 'is_attribute': True, 'classattribute_': is_class_attribute,
+            'properties': {
+                'class_': self.class_schema.to_dict(title=title, editable=editable, description=description),
+                'name': {
+                    'type': 'string'
+                }
+            }
+        })
+        return chunk
+    
+    def default_value(self):
+        """ Sets AttributeType object_class and argument class_ if it is different than Type. """
+        if self.definition_default:
+            return self.definition_default.to_dict()
+        
+        if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
+            classname = full_classname(object_=self.class_, compute_for="class")
+        else:
+            classname = None
+        return {"object_class": full_classname(object_=self.origin, compute_for="class"),
+                "class_": classname, "name": None}
+
+    def check_list(self) -> CheckList:
+        """
+        Check validity of MethodType Type Hint.
+
+        Checks performed :
+        - Class has method TODO
+        """
+        return CheckList([])
+
+
 Class = TypeVar("Class", bound=type)
 
 
@@ -1081,7 +1140,7 @@ class ClassProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Deserialize Type annotation. Support undefined and defined arg. """
+        """ Deserialize Type annotation. Support undefined and defined argument. """
         args = TypingProperty._args_from_serialized(serialized)
         if args:
             return Type[args]
@@ -1201,16 +1260,19 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: Opt
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
-    tuple: HeterogeneousSequence, list: HomogeneousSequence, collections.abc.Iterator: HomogeneousSequence,
-    Union: UnionProperty, dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, type: ClassProperty
+    tuple: HeterogeneousSequence, list: HomogeneousSequence,
+    collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
+    dict: DynamicDict, InstanceOf: InstanceOfProperty,
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
+    type: ClassProperty, AttributeType: AttributeTypeProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
     "int": BuiltinProperty, "float": BuiltinProperty, "bool": BuiltinProperty, "str": BuiltinProperty,
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
-    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty
+    "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty,
+    "AttributeType": AttributeTypeProperty
 }
 
 
@@ -1354,7 +1416,7 @@ def parse_class_docstring(class_) -> ParsedDocstring:
 
 
 def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
-    """ Parse user-defined docstring of given class. Refer to docs to see how docstrings should be built. """
+    """ Parse user-defined docstring of given class. Refer to docs to see how docstring should be built. """
     if docstring:
         no_return_docstring = docstring.split(':return:')[0]
         splitted_docstring = no_return_docstring.split(':param ')

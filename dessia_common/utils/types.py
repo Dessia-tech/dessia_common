@@ -78,7 +78,7 @@ def is_tuple(obj) -> bool:
 
 
 def is_builtin(type_):
-    """ Return True if type_ is a simple python builtin, ie. int, float, bool or str. """
+    """ Return True if type_ is a simple python builtin (int, float, bool or str). """
     return type_ in TYPING_EQUIVALENCES
 
 
@@ -346,7 +346,7 @@ def heal_type(type_: Type):
     """
     Inspect type and returns its parameters.
 
-    For now, only checks wether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
+    For now, only checks whether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
     considered.
 
     Returns the cleaned type, origin and arguments.
@@ -363,7 +363,7 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
-    """ Check for specific cases of typematches and return a Boolean. """
+    """ Check for specific cases of type matches and return a Boolean. """
     if type_ is int and match_against is float:
         return True
     # Not refactoring this as a one-liner for now, as more cases should be added in the future.
