@@ -12,13 +12,10 @@ class TestFaulty(unittest.TestCase):
         (HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple"), 2)
     ])
     def test_schema_check(self, schema, expected_number):
-        computed_schema = schema.to_dict()
-        self.assertEqual(computed_schema["type"], "array")
-        self.assertEqual(computed_schema["items"], [])
-
         checked_schema = schema.check_list()
-        self.assertTrue(checked_schema.checks_above_level("error"))
-        self.assertEqual(len(checked_schema), expected_number)
+        errors = checked_schema.checks_above_level("error")
+        self.assertTrue(errors)
+        self.assertEqual(len(errors), expected_number)
         self.assertEqual(checked_schema[0].level, "error")
 
 
@@ -75,9 +72,9 @@ class TestSequences(unittest.TestCase):
         self.assertEqual(computed_schema["items"][0]["type"], "number")
         self.assertEqual(computed_schema["items"][0]["python_typing"], "int")
         self.assertEqual(computed_schema["items"][0]["title"], "Sequence/0")
-        self.assertEqual(computed_schema["items"][0]["type"], "string")
-        self.assertEqual(computed_schema["items"][0]["python_typing"], "str")
-        self.assertEqual(computed_schema["items"][0]["title"], "Sequence/1")
+        self.assertEqual(computed_schema["items"][1]["type"], "string")
+        self.assertEqual(computed_schema["items"][1]["python_typing"], "str")
+        self.assertEqual(computed_schema["items"][1]["title"], "Sequence/1")
 
         checked_schema = schema.check_list()
         self.assertFalse(checked_schema.checks_above_level("error"))

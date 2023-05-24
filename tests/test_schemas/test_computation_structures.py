@@ -11,8 +11,8 @@ class TestStructures(unittest.TestCase):
     @parameterized.expand([
         (ClassProperty(annotation=Type, attribute="custom_class"), 'Type'),
         (
-                ClassProperty(annotation=Type[StandaloneObject], attribute="custom_class"),
-                'Type[dessia_common.forms.StandaloneObject]'
+            ClassProperty(annotation=Type[StandaloneObject], attribute="custom_class"),
+            'Type[dessia_common.forms.StandaloneObject]'
         )
     ])
     def test_classes(self, schema, expected_typing):
@@ -38,7 +38,6 @@ class TestStructures(unittest.TestCase):
         self.assertEqual(computed_schema["is_method"], True)
         self.assertEqual(computed_schema["classmethod_"], expected_classmethod)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["properties"], {'name': {'type': 'string'}})
         self.assertEqual(computed_schema["properties"]["type"], "object")
         self.assertEqual(computed_schema["properties"]["python_typing"], expected_class)
 
@@ -58,7 +57,6 @@ class TestStructures(unittest.TestCase):
         self.assertEqual(computed_schema["is_attribute"], True)
         self.assertEqual(computed_schema["classattribute_"], expected_classattr)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["properties"], {'name': {'type': 'string'}})
         self.assertEqual(computed_schema["properties"]["type"], "object")
         self.assertEqual(computed_schema["properties"]["python_typing"], expected_class)
 

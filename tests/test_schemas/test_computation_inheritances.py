@@ -29,9 +29,9 @@ class TestInheritance(unittest.TestCase):
         ),
         (
             UnionProperty(annotation=Union[StandaloneObject, Generator], attribute="union"),
-            "Union[dessia_common.forms.Generator, dessia_common.forms.StandaloneObject]",
+            "Union[dessia_common.forms.StandaloneObject, dessia_common.forms.Generator]",
             True,
-            ["dessia_common.forms.Generator", "dessia_common.forms.StandaloneObject"]
+            ["dessia_common.forms.StandaloneObject", "dessia_common.forms.Generator"]
         )
     ])
     def test_unions(self, schema, expected_typing, expected_standalone, expected_classes):

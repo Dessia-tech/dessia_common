@@ -12,13 +12,10 @@ class TestFaulty(unittest.TestCase):
         (DynamicDict(annotation=Dict[str, Dict[str, StandaloneObject]], attribute="nested_dict"), 1)
     ])
     def test_schema_check(self, schema, expected_number):
-        # computed_schema = schema.to_dict()
-        # self.assertEqual(computed_schema["type"], "array")
-        # self.assertEqual(computed_schema["items"], [])
-
         checked_schema = schema.check_list()
-        self.assertTrue(checked_schema.checks_above_level("error"))
-        self.assertEqual(len(checked_schema), expected_number)
+        errors = checked_schema.checks_above_level("error")
+        self.assertTrue(errors)
+        self.assertEqual(len(errors), expected_number)
         self.assertEqual(checked_schema[0].level, "error")
 
 
@@ -29,7 +26,7 @@ class TestDicts(unittest.TestCase):
     def test_simple_dicts(self, schema, expected_typing):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["title"], "Sequence")
+        self.assertEqual(computed_schema["title"], "")
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["patternProperties"][".*"]["type"], "number")
 

@@ -307,7 +307,6 @@ class Property:
         self.annotation = annotation
         self.attribute = attribute
         self.definition_default = definition_default
-        self.standalone_in_db = None
 
     @property
     def schema(self):
