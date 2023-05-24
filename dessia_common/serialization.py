@@ -665,7 +665,7 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyses given dict.
+    Analyze given dict.
 
      Useful in order to:
     - find JSON pointers

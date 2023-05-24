@@ -153,14 +153,14 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 
 def deserialization_order(dict_):
-    """ Analyse a dictionary representing an object and give a deserialization order. """
+    """ Analyze a dictionary representing an object and give a deserialization order. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialization_order(dict_)
 
 
 def dereference_jsonpointers(dict_):
     """
-    Analyse the given dictionary.
+    Analyze the given dictionary.
 
     It searches for:
     - find JSON pointers

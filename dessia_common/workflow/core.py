@@ -1163,7 +1163,7 @@ class Workflow(Block):
 
         return list(nodes_by_column.values())
 
-    def layout(self) -> List[nx.GraphLayout]:
+    def layout(self):
         """
         Stores a workflow graph layout.
 

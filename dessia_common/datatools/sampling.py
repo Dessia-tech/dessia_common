@@ -58,8 +58,8 @@ class ClassSampler(DessiaObject):
         """
         Generate all `DessiaObject` with a Full Factorial sampling and store them in a `Dataset`.
 
-        A number to discretize each dimension of the problem must be specified in used `BoundedAttributeValue` and they
-        are the only ones to be used for sampling data.
+        A number to make each dimension of the problem discrete must be specified in used `BoundedAttributeValue`
+        and they are the only ones to be used for sampling data.
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
