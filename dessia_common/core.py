@@ -352,7 +352,7 @@ class DessiaObject(SerializableObject):
         return self.__class__(**dict_)
 
     def __deepcopy__(self, memo=None):
-        """ Generic deep copy use inits of objects. """
+        """ Generic deep copy use init functions of objects. """
         class_name = self.full_classname
         if class_name in _fullargsspec_cache:
             class_argspec = _fullargsspec_cache[class_name]
@@ -754,7 +754,7 @@ class Parameter(DessiaObject):
         return normalized_value
 
     def original_value(self, normalized_value):
-        """ Unnormalize value to its original value. """
+        """ Revert normalized value to its original value. """
         value = normalized_value * (self.upper_bound - self.lower_bound) + self.lower_bound
         return value
 
@@ -1086,39 +1086,6 @@ def stringify_dict_keys(obj):
     else:
         return obj
     return new_obj
-
-
-def getdeepattr(obj, attr):
-    """ Get deep attribute of object. """
-    return reduce(getattr, [obj] + attr.split('.'))
-
-
-def enhanced_get_attr(obj, attr):
-    """
-    Safely get attribute in obj. Obj can be of Object, Dict, or List type.
-
-    :param obj: Parent object in which find given attribute
-    :param attr: String or integer that represents name or index of attribute
-    :return: Value of attribute
-    """
-    try:
-        return getattr(obj, attr)
-    except (TypeError, AttributeError):
-        classname = obj.__class__.__name__
-        track = tb.format_exc()
-        try:
-            return obj[attr]
-        except KeyError:
-            try:
-                attr = literal_eval(attr)
-                return obj[attr]
-            except KeyError:
-                track += tb.format_exc()
-                msg = f"'{classname}' object has no attribute '{attr}'."
-        except TypeError:
-            track += tb.format_exc()
-            msg = f"Object of type '{classname}' is not sub scriptable. Failed to deeply get '{attr}' from it"
-    raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 
 def concatenate_attributes(prefix, suffix, type_: str = 'str'):

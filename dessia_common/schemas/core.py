@@ -130,7 +130,7 @@ class Schema:
 
     @property
     def standalone_properties(self):
-        """ Return all schema's standalone properties. """
+        """ Return all properties that are standalone. """
         return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
 
     def to_dict(self):

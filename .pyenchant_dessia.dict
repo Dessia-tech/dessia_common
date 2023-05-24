@@ -2,6 +2,7 @@ argspecs
 backend
 BinaryFile
 bool
+boolarg
 builtins
 classmethod
 classname
@@ -12,6 +13,7 @@ config
 csv
 cvar
 dataset
+datatools
 dbscan
 dectree
 dendrogram
@@ -20,19 +22,23 @@ deserialize
 dessia
 DessiaObject
 dict
+distarg
 docstring
 Dessia's
 DessiaFilter
 eps
 eq
 filepath
+floatarg
 Frobenius
 frontend
 hlist
 ge
+getsizeof
 gt
 gte
 init
+intarg
 itertools
 json
 JSON
@@ -70,6 +76,7 @@ submodule
 subobjects
 subscriptable
 SVD
+sys
 tol
 traceback
 typings

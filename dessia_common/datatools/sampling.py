@@ -79,9 +79,7 @@ class ClassSampler(DessiaObject):
 
         Documentation LHS: https://www.statology.org/latin-hypercube-sampling/
 
-        :param samples:
-            Targert number of `DessiaObject` in the DOE.
-        :type samples: `int`
+        :param samples: Target number of `DessiaObject` in the DOE.
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`
@@ -104,9 +102,7 @@ class ClassSampler(DessiaObject):
         samples. Each dimension of each sample would have a random uniform value. Redundancies are allowed with this
         sampling method.
 
-        :param samples:
-            Targert number of `DessiaObject` in the DOE.
-        :type samples: `int`
+        :param samples: Target number of `DessiaObject` in the DOE.
 
         :return: a `Dataset` containing all generated samples of the sampled_class
         :rtype: `Dataset`

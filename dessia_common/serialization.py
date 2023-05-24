@@ -668,9 +668,9 @@ def dereference_jsonpointers(dict_):  # , global_dict):
     Analyses given dict.
 
      Useful in order to:
-    - find jsonpointers
+    - find JSON pointers
     - deserialize them in the right order to respect pointers graph
-    :returns: a dict with key the path of the item and the value is the python object
+    :returns: a dictionary with key the path of the item and the value is the python object
     """
     order = deserialization_order(dict_)
     pointers_memo = {}
