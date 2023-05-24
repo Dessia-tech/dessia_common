@@ -35,3 +35,7 @@ class TestDicts(unittest.TestCase):
 
         checked_schema = schema.check_list()
         self.assertFalse(checked_schema.checks_above_level("error"))
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

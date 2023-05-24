@@ -40,3 +40,7 @@ class TestInheritance(unittest.TestCase):
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["classes"], expected_classes)
         self.assertEqual(computed_schema["standalone_in_db"], expected_standalone)
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

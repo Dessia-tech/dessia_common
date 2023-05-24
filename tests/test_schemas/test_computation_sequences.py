@@ -85,3 +85,7 @@ class TestSequences(unittest.TestCase):
         # TODO Should object be allowed here ?
         # more_arg_tuple = schema_chunk(annotation=Tuple[int, str, StandaloneObject], title="More Arg Tuple",
         #                               editable=True, description="Testing Tuple with several args")
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

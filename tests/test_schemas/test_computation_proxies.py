@@ -13,3 +13,7 @@ class TestFaulty(unittest.TestCase):
         self.assertEqual(schema.args, (int,))
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["python_typing"], "List[int]")
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)
