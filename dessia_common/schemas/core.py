@@ -27,13 +27,15 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 _fullargsspec_cache = {}
 
 
-class BackendReference(CoreDessiaObject):
+class BackendReference:
+    """ Enable Backend reference injection. """
+
     def __init__(self, object_id: str):
         self.object_id = object_id
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method: bool = True, id_memo=None):
-        """ Return reference as backend should expect it. """
-        return self.object_id
+    def to_dict(self, use_pointers: bool = False):
+        """ Is used for default value when computing schema to dict with objects default values. """
+        return {"object_id": self.object_id}
 
 
 class UntypedArgument(FailedCheck):
@@ -128,7 +130,7 @@ class Schema:
 
     @property
     def standalone_properties(self):
-        """ Return all properties that are standalone in database. """
+        """ Return all schema's standalone properties. """
         return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
 
     def to_dict(self):
@@ -317,6 +319,11 @@ class Property:
         """ Stringified annotation. """
         return str(self.annotation)
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Properties cannot be in database by default. """
+        return False
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Simple get class from its name. """
@@ -335,6 +342,11 @@ class Property:
     def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
         return self.definition_default
+
+    def inject_reference(self, object_id):
+        """ Exposed to backend in order to inject mongo reference in place of object default value. """
+        if self.standalone_in_db:
+            self.definition_default = BackendReference(object_id)
 
     def check_list(self) -> CheckList:
         """
@@ -627,6 +639,11 @@ class CustomClass(Property):
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for='class')
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Whether the class is standalone in db. """
+        return self.annotation._standalone_in_db
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
@@ -662,29 +679,35 @@ class UnionProperty(TypingProperty):
     def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if all(standalone_args):
-            self.standalone_in_db = True
-        elif not any(standalone_args):
-            self.standalone_in_db = False
-        else:
-            self.standalone_in_db = None
-
     @property
     def serialized(self) -> str:
         """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
+    @property
+    def standalone_in_db(self) -> Optional[bool]:
+        """ True if all subclasses are standalone, False if None of them are, None else. """
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            return True
+        if not any(standalone_args):
+            return False
+        return None
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Union annotation. """
         return Union[TypingProperty._args_from_serialized(serialized)]
 
+    @property
+    def classes(self):
+        """ Compute all possible classes for this annotation. Every class specified in Union annotation. """
+        return self.args
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        classes = [full_classname(object_=a, compute_for="class") for a in self.args]
-        chunk.update({'type': 'object', 'classes': classes, 'standalone_in_db': self.standalone_in_db})
+        chunk.update({'type': 'object', 'classes': self.classes, 'standalone_in_db': self.standalone_in_db})
         return chunk
 
     def default_value(self):
@@ -954,11 +977,22 @@ class InstanceOfProperty(TypingProperty):
         """ Get Schema of base class. """
         return ClassSchema(self.args[0])
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
+        return self.args[0]._standalone_in_db
+
+    @property
+    def classes(self):
+        """ Compute all possible classes for this annotation. Return base class. """
+        return [full_classname(object_=self.args[0], compute_for="class")]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        classname = full_classname(object_=self.args[0], compute_for="class")
-        chunk.update({'type': 'object', 'instance_of': classname, 'standalone_in_db': self.standalone_in_db})
+        chunk.update({"type": "object", "instance_of": self.classes[0],
+                      "classes": self.classes,
+                      "standalone_in_db": self.standalone_in_db})
         return chunk
 
     def default_value(self) -> BaseClass:
@@ -990,6 +1024,11 @@ class SubclassProperty(TypingProperty):
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Subclass annotation. """
         return Subclass[TypingProperty._args_from_serialized(serialized)]
+
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
+        return self.args[0]._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a Dict. """

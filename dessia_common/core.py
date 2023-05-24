@@ -25,8 +25,6 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
-    set_default_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
@@ -38,7 +36,6 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-
 
 
 def __getattr__(name):
@@ -203,41 +200,7 @@ class DessiaObject(SerializableObject):
     def _method_jsonschemas(self):
         """ Generates dynamic 'jsonschemas' for methods of class. """
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        jsonschemas = {}
-        class_ = self.__class__
-
-        # TOCHECK Backward compatibility. Will need to be changed
-        if hasattr(class_, '_dessia_methods'):
-            allowed_methods = class_._dessia_methods
-        else:
-            allowed_methods = class_._allowed_methods
-
-        valid_method_names = [m for m in dir(class_) if not m.startswith('_') and m in allowed_methods]
-
-        for method_name in valid_method_names:
-            method = getattr(class_, method_name)
-
-            if not isinstance(method, property):
-                required_args, default_args = dcs.inspect_arguments(method=method, merge=False)
-                annotations = get_type_hints(method)
-                if annotations:
-                    jsonschemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
-                    jsonschemas[method_name]['required'] = []
-                    jsonschemas[method_name]['is_method'] = True
-                    for i, annotation in enumerate(annotations.items()):
-                        # TODO: CHECK Not actually ordered
-                        argname = annotation[0]
-                        if argname not in dcs.RESERVED_ARGNAMES:
-                            if argname in required_args:
-                                jsonschemas[method_name]['required'].append(str(i))
-                            jsonschema_element = jsonschema_from_annotation(annotation, {}, i)[argname]
-
-                            jsonschemas[method_name]['properties'][str(i)] = jsonschema_element
-                            if argname in default_args:
-                                default = set_default_value(jsonschemas[method_name]['properties'], str(i),
-                                                            default_args[argname])
-                                jsonschemas[method_name]['properties'].update(default)
-        return jsonschemas
+        return self.method_schemas
 
     def method_dict(self, method_name=None, method_jsonschema=None):
         """ Return a jsonschema of a method arguments. """
