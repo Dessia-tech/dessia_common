@@ -31,7 +31,7 @@ class BoundedAttributeValue(DessiaObject):
     :param attribute_name: Name of attribute to bound.
     :param min_value: Minimum value for this attribute.
     :param max_value: Maximum value for this attribute.
-    :param number: Number of values to generate between those bounds.
+    :param number: Number of values to generate betwwen those bounds.
         Only used for sampling. ClassSampler.full_fact method.
     :param name: Name of BoundedAttributeValue.
     """
@@ -91,7 +91,7 @@ class DrivenModelOptimizer(Optimizer):
 
 
 class InstantiatingModelOptimizer(Optimizer):
-    """ Abstract class, to be inherited by a real class. Instantiate a new model at each point request. """
+    """ Abstract class, to be subclassed by real class. Instantiate a new model at each point request. """
 
     def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
                  name: str = ''):
@@ -106,7 +106,7 @@ class InstantiatingModelOptimizer(Optimizer):
         raise NotImplementedError('the method instantiate_model must be overloaded by subclassing class')
 
     def dimensionless_vector_to_vector(self, dl_vector):
-        """ Returns the vector from the dimensionless one. """
+        """ Returns the vector from the adimensioned one. """
         return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
 
     def vector_to_attributes_values(self, vector: List[float]):

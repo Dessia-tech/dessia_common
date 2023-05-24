@@ -1,5 +1,5 @@
 from dessia_common.forms import Optimizer, StandaloneObject
-from dessia_common.typings import MethodType, AttributeType
+from dessia_common.typings import MethodType
 from dessia_common.workflow.core import Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute
 from dessia_common.serialization import serialize

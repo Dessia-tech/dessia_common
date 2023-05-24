@@ -260,9 +260,8 @@ class MarkdownWriter:
         self.table_limit = table_limit
 
     @staticmethod
-    def object_titles():
-        """ Return a list of strings representing the titles for the object matrix. """
-        return ['Attribute', 'Type', 'Value']
+    def _object_titles():
+        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
 
     @staticmethod
     def _sequence_to_str(value: Sequence):
@@ -306,8 +305,7 @@ class MarkdownWriter:
     def _string_in_table(self, string: str = ''):
         return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
 
-    def object_matrix(self, object_):
-        """ Return a matrix representing the object passed as argument. """
+    def _object_matrix(self, object_):
         matrix = []
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
@@ -368,29 +366,9 @@ class MarkdownWriter:
 
     def object_table(self, object_) -> str:
         """Print object_'s attributes in table."""
-        return self.matrix_table(self.object_matrix(object_),
-                                 self.object_titles())
+        return self.matrix_table(self._object_matrix(object_),
+                                 self._object_titles())
 
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
         return self._sequence_to_str(elements)
-
-    @staticmethod
-    def write_to_file(filename: str, content: str) -> None:
-        """ Writes the given content to the specified file. """
-        with open(filename, 'w', encoding='utf-8') as file:
-            file.write(content)
-
-    @staticmethod
-    def table_of_contents(headings: List[str]) -> str:
-        """ Generates a table of contents based on the given list of headings. """
-        table_of_contents = '## Table of Contents\n\n'
-        for heading in headings:
-            table_of_contents += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
-        return table_of_contents
-
-    @staticmethod
-    def header(title: str, level: int = 1) -> str:
-        """ Generates a markdown header with the specified title and level. """
-        header_level = "#" * level
-        return f"{header_level} {title}\n\n"

@@ -14,6 +14,7 @@ attribute_selection = ModelAttribute(attribute_name='models', name='Attribute Se
 # Sub-Workflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
+
 generate_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_type=generate_method, name='Optimization')
 

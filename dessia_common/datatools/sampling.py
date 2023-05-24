@@ -12,7 +12,7 @@ from dessia_common.optimization import FixedAttributeValue, BoundedAttributeValu
 
 class ClassSampler(DessiaObject):
     """
-    Base object to build a DOE from a class and chosen limits for all specified sampled_class attributes.
+    Base object to build a DOE from a class and choosen limits for all specified sampled_class attributes.
 
     :param sampled_class: Class type to sample
     :type sampled_class: `type`

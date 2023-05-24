@@ -1,9 +1,9 @@
 from dessia_common.schemas.core import BuiltinProperty, MeasureProperty,  ClassProperty, MethodTypeProperty,\
-    HeterogeneousSequence, HomogeneousSequence, DynamicDict, OptionalProperty, AttributeTypeProperty
+    HeterogeneousSequence, HomogeneousSequence, DynamicDict, OptionalProperty
 from typing import List, Tuple, Dict, Type, Optional
 from dessia_common.forms import StandaloneObject
 from dessia_common.measures import Distance
-from dessia_common.typings import MethodType, AttributeType
+from dessia_common.typings import MethodType
 
 
 # Builtins
@@ -63,28 +63,6 @@ assert computed_schema == {'type': 'object', 'is_method': True, 'title': 'Some m
                                    'title': 'Some method',
                                    'editable': True,
                                    'description': 'to_dict',
-                                   'python_typing': 'dessia_common.forms.StandaloneObject',
-                                   'type': 'object',
-                                   'standalone_in_db': True,
-                                   'classes': ['dessia_common.forms.StandaloneObject']
-                               }
-                           }}
-
-# Attribute
-attribute_type = AttributeType(class_=StandaloneObject, name="to_dict")
-schema = AttributeTypeProperty(annotation=AttributeType[StandaloneObject], attribute="attribute")
-computed_schema = schema.to_dict(title="Some method", editable=True, description="to_dict")
-
-assert schema.serialized == "AttributeType[dessia_common.forms.StandaloneObject]"
-assert computed_schema == {'type': 'object', 'is_attribute': True, 'title': 'Some method', 'editable': True,
-                           'description': "to_dict", "classattribute_": False,
-                           'python_typing': "AttributeType[dessia_common.forms.StandaloneObject]",
-                           'properties': {
-                               'name': {'type': 'string'},
-                               'class_': {
-                                   'title': 'Some method',
-                                   'editable': True,
-                                   'description': "to_dict",
                                    'python_typing': 'dessia_common.forms.StandaloneObject',
                                    'type': 'object',
                                    'standalone_in_db': True,
