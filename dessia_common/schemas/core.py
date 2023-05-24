@@ -192,7 +192,6 @@ class ClassSchema(Schema):
 
     def __init__(self, class_: Type[CoreDessiaObject]):
         self.class_ = class_
-        self.standalone_in_db = class_._standalone_in_db
         self.python_typing = full_classname(class_, compute_for="class")
         annotations = get_type_hints(class_.__init__)
 
@@ -207,6 +206,11 @@ class ClassSchema(Schema):
         """ Attributes that are not in RESERVED_ARGNAMES nor defined as non editable by user. """
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
+
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if class is standalone. """
+        return self.class_._standalone_in_db
 
     def to_dict(self):
         """ Write the whole schema. """
@@ -622,8 +626,6 @@ class CustomClass(Property):
                  definition_default: CoreDessiaObject = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.standalone_in_db = self.annotation._standalone_in_db
-
     @property
     def schema(self):
         """ Return a reference to the schema of the annotation. """
@@ -960,8 +962,6 @@ class InstanceOfProperty(TypingProperty):
                  definition_default: BaseClass = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        self.standalone_in_db = self.args[0]._standalone_in_db
-
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize InstanceOf annotation. """
@@ -1012,8 +1012,6 @@ class SubclassProperty(TypingProperty):
     def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: str,
                  definition_default: Type[BaseClass] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
-
-        self.standalone_in_db = self.args[0]._standalone_in_db
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
