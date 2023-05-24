@@ -10,7 +10,6 @@ import random
 import itertools
 import zipfile
 
-from functools import reduce
 from copy import deepcopy, copy
 import inspect
 import json
@@ -19,9 +18,7 @@ from typing import List, Tuple
 import traceback as tb
 
 from importlib import import_module
-from ast import literal_eval
 
-import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value

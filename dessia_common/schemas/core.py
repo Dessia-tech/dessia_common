@@ -699,7 +699,7 @@ class UnionProperty(TypingProperty):
     @property
     def classes(self):
         """ Compute all possible classes for this annotation. Every class specified in Union annotation. """
-        return [full_classname(obj=a, compute_for="class") for a in self.args]
+        return [full_classname(object_=a, compute_for="class") for a in self.args]
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a Dict. """
