@@ -1304,7 +1304,7 @@ SERIALIZED_TO_SCHEMA_CLASS = {
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
     "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty,
-    "AttributeType": AttributeTypeProperty
+    "AttributeType": AttributeTypeProperty, "ClassAttributeType": AttributeTypeProperty
 }
 
 

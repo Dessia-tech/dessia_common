@@ -12,12 +12,12 @@ class TestBuiltins(unittest.TestCase):
         (BuiltinProperty(annotation=str, attribute="string"), False, "string", "str"),
         (BuiltinProperty(annotation=bool, attribute="boolean"), False, "boolean", "bool"),
     ])
-    def test_computation(self, schema, expected_editable, expected_type, expected_typing):
-        computed_schema = schema.to_dict(title="Title", editable=False, description="Desc")
+    def test_computation(self, schema, editable, expected_type, expected_typing):
+        computed_schema = schema.to_dict(title="Title", editable=editable, description="Desc")
         self.assertEqual(computed_schema["type"], expected_type)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["title"], "Title")
-        self.assertEqual(computed_schema["editable"], expected_editable)
+        self.assertEqual(computed_schema["editable"], editable)
         self.assertEqual(computed_schema["description"], "Desc")
 
     @parameterized.expand([

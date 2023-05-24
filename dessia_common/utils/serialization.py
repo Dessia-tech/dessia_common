@@ -139,7 +139,7 @@ def pointer_graph(value):
     Create a graph of sub attributes of an object.
 
     For this function, edge representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub-attribute to an attribute
      * the pointer link between the 2 elements
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
@@ -192,7 +192,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object.
+    Analyze object to output stats on pointer use in it.
 
     :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """

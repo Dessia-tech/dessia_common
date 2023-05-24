@@ -744,7 +744,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object.
+    Analyze object to output stats on pointer use in it.
 
     Maybe useless now that we use uuids.
     :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class

@@ -1153,7 +1153,7 @@ class Workflow(Block):
         """
         Store nodes of a workflow into a list of nodes indexes.
 
-        :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
+        :returns: A list of Column Layout where a Column Layout is a list of node_indices
         """
         column_by_node = get_column_by_node(graph)
         nodes_by_column = {}
@@ -1163,11 +1163,12 @@ class Workflow(Block):
 
         return list(nodes_by_column.values())
 
-    def layout(self):
+    def layout(self) -> List[nx.GraphLayout]:
         """
         Stores a workflow graph layout.
 
-        :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
+        :returns: A list of Graph Layouts where a GraphLayout is a list of Column Layout
+                and Column Layout a list node_indices.
         """
         digraph = self.layout_graph
         graph = digraph.to_undirected()
@@ -1226,7 +1227,7 @@ class Workflow(Block):
         return WorkflowState(self, input_values=input_values, name=name)
 
     def jointjs_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """ Deprecated workflow layout. Used only in jointjs_data method. """
+        """ Deprecated workflow layout. Used only in local plot method. """
         coordinates = {}
         elements_by_distance = {}
         if self.output:
@@ -1262,7 +1263,7 @@ class Workflow(Block):
         return coordinates
 
     def jointjs_data(self):
-        """ Compute the data needed for jointjs plotting. """
+        """ Compute the data needed for local plotting. """
         coordinates = self.jointjs_layout()
         blocks = []
         for block in self.blocks:
@@ -1875,7 +1876,7 @@ class WorkflowState(DessiaObject):
         """
         Returns a list of all blocks that can be activated.
 
-        Activable blocks are blocks that have all inputs ready for evaluation.
+        Blocks that can be activated are blocks that have all inputs ready for evaluation.
         """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
