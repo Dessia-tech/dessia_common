@@ -27,13 +27,13 @@ TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bo
 _fullargsspec_cache = {}
 
 
-class BackendReference:
+class BackendReference(CoreDessiaObject):
     """ Enable Backend reference injection. """
 
     def __init__(self, object_id: str):
         self.object_id = object_id
 
-    def to_dict(self, use_pointers: bool = False):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method: bool = True, id_memo=None):
         """ Is used for default value when computing schema to dict with objects default values. """
         return {"object_id": self.object_id}
 
@@ -342,7 +342,7 @@ class Property:
         """ Generic default. Yield user default if defined, else None. """
         return self.definition_default
 
-    def inject_reference(self, object_id):
+    def inject_reference(self, object_id: str):
         """ Exposed to backend in order to inject mongo reference in place of object default value. """
         if self.standalone_in_db:
             self.definition_default = BackendReference(object_id)
@@ -354,11 +354,6 @@ class Property:
         Checks performed : None. TODO ?
         """
         return CheckList([])
-
-    def inject_reference(self, object_id: str):
-        """ Allow backend to inject references for standalone default values. """
-        if self.standalone_in_db:
-            self.definition_default = BackendReference(object_id)
 
 
 class TypingProperty(Property):
