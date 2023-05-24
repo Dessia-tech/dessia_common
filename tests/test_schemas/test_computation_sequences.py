@@ -8,15 +8,15 @@ from parameterized import parameterized
 
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (HomogeneousSequence(annotation=List, attribute="bare_list"), 2),
-        (HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple"), 2)
+        (HomogeneousSequence(annotation=List, attribute="bare_list"), 1),
+        (HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple"), 1)
     ])
     def test_schema_check(self, schema, expected_number):
         checked_schema = schema.check_list()
         errors = checked_schema.checks_above_level("error")
         self.assertTrue(errors)
         self.assertEqual(len(errors), expected_number)
-        self.assertEqual(checked_schema[0].level, "error")
+        self.assertEqual(errors[0].level, "error")
 
 
 class TestSequences(unittest.TestCase):

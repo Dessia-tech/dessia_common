@@ -16,7 +16,7 @@ class TestFaulty(unittest.TestCase):
         errors = checked_schema.checks_above_level("error")
         self.assertTrue(errors)
         self.assertEqual(len(errors), expected_number)
-        self.assertEqual(checked_schema[0].level, "error")
+        self.assertEqual(errors[0].level, "error")
 
 
 class TestDicts(unittest.TestCase):

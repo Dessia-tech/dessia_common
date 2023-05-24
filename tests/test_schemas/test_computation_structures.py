@@ -38,8 +38,8 @@ class TestStructures(unittest.TestCase):
         self.assertEqual(computed_schema["is_method"], True)
         self.assertEqual(computed_schema["classmethod_"], expected_classmethod)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["properties"]["type"], "object")
-        self.assertEqual(computed_schema["properties"]["python_typing"], expected_class)
+        self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
+        self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
 
     @parameterized.expand([
         (
@@ -57,8 +57,8 @@ class TestStructures(unittest.TestCase):
         self.assertEqual(computed_schema["is_attribute"], True)
         self.assertEqual(computed_schema["classattribute_"], expected_classattr)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["properties"]["type"], "object")
-        self.assertEqual(computed_schema["properties"]["python_typing"], expected_class)
+        self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
+        self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
 
 
 if __name__ == '__main__':
