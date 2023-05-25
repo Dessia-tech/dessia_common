@@ -15,7 +15,7 @@ from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
-from dessia_common.schemas.interfaces import Annotations, T
+from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
@@ -203,7 +203,7 @@ class ClassSchema(Schema):
 
     @property
     def editable_attributes(self):
-        """ Attributes that are not in RESERVED_ARGNAMES nor defined as non editable by user. """
+        """ Attributes that are not in RESERVED_ARGNAMES nor defined as non-editable by user. """
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
 
@@ -338,7 +338,7 @@ class Property:
         """ Shortcut for Check message prefixes. """
         return f"Attribute '{self.attribute}' : "
 
-    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = "") -> PropertySchema:
         """ Write base schema as a Dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': self.serialized, "type": None}
@@ -416,7 +416,7 @@ class TypingProperty(Property):
         return ""
 
     @classmethod
-    def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T]]:
+    def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T], ...]:
         """ Deserialize arguments. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
@@ -480,8 +480,9 @@ class OptionalProperty(ProxyProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a Dict. """
         default_value = self.schema.default_value()
-        chunk = self.schema.to_dict(title=title, editable=editable, description=description)
-        chunk["default_value"] = default_value
+
+        base_chunk = self.schema.to_dict(title=title, editable=editable, description=description)
+        chunk = {**base_chunk, "default_value": default_value}
         return chunk
 
     @classmethod
