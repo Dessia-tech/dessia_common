@@ -3,7 +3,7 @@ from dessia_common.utils.types import is_jsonable
 import unittest
 from parameterized import parameterized
 
-WORKFLOW_KEYS = {'object_class', 'package_version', 'name', 'inputs', 'outputs', 'position',
+WORKFLOW_KEYS = {'object_class', 'name', 'inputs', 'outputs', 'position',
                  'blocks', 'pipes', 'output', 'nonblock_variables', 'package_mix',
                  'description', 'documentation', 'imposed_variable_values'}
 

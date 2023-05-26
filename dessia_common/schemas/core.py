@@ -359,7 +359,7 @@ class TypingProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Split Typing and Args and delegate deserialization to specific classes. """
+        """ Split Typing and Arguments and delegate deserialization to specific classes. """
         typename = cls.type_from_serialized(serialized)
         schema_class = SERIALIZED_TO_SCHEMA_CLASS[typename]
         return schema_class.annotation_from_serialized(serialized)
@@ -386,7 +386,7 @@ class TypingProperty(Property):
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
-        """ Get Typing and Args as strings. """
+        """ Get Typing and Arguments as strings. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).groups()
 
     def has_one_arg(self) -> PassedCheck:
@@ -396,7 +396,7 @@ class TypingProperty(Property):
             msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
                   f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
-        return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
+        return PassedCheck(f"{self.check_prefix}has exactly one argument in its definition.")
 
 
 class ProxyProperty(TypingProperty):
@@ -413,7 +413,7 @@ class ProxyProperty(TypingProperty):
 
     @property
     def schema(self):
-        """ Return a reference to its only arg. """
+        """ Return a reference to its only argument. """
         return get_schema(annotation=self.annotation, attribute=self.attribute,
                           definition_default=self.definition_default)
 
@@ -456,8 +456,8 @@ class AnnotatedProperty(ProxyProperty):
     """
     Proxy Schema class for annotated type hints.
 
-    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges, or probably enums,
-    precision,...
+    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges,
+    or probably enumerations, precision,...
 
     This could enable quite effective type checking on frontend form.
 
@@ -905,7 +905,7 @@ class InstanceOfProperty(TypingProperty):
     """
     Schema class for InstanceOf type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Instances of these classes validate against this type.
     """
 
@@ -1107,7 +1107,7 @@ class ClassProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Deserialize Type annotation. Support undefined and defined arg. """
+        """ Deserialize Type annotation. Support undefined and defined argument. """
         args = TypingProperty._args_from_serialized(serialized)
         if args:
             return Type[args]
@@ -1383,7 +1383,7 @@ def parse_class_docstring(class_) -> ParsedDocstring:
 
 
 def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
-    """ Parse user-defined docstring of given class. Refer to docs to see how docstrings should be built. """
+    """ Parse user-defined docstring of given class. Refer to docs to see how docstring should be built. """
     if docstring:
         no_return_docstring = docstring.split(':return:')[0]
         splitted_docstring = no_return_docstring.split(':param ')

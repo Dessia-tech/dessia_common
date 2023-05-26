@@ -5,7 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## 0.14.0
 
 ### Added
@@ -13,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 - Blocks : display blocks are now more configurable (custom selector and type)
 - DessiaObject: add type to load_from_file method
+- Document generator: add new class Table
 - Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
 - Schemas refactor: add more Error Checks
@@ -24,19 +24,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
  
 - Blocks : add the possibility to have TypedValue in SetModelAttribute
-- files: add functions to init StringFile and BinaryFile from local path
-- document generator: add new module to write in docx file
 - DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
+- Document generator: add new module to write in docx file
 - Export: export all 3d formats in zip file
+- Files: add functions to init StringFile and BinaryFile from local path
 - MarkdownWriter: add some functions (table_of_contents, header)
 
 
 ### Fixed
 
+- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
+- Exports : Add trailing line at the end of JSON export
 - Schemas refactor : allow incomplete schemas
 - Schemas refactor : old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
-- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 
 
 ### Refactored
@@ -63,6 +64,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Perf
 
 - use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
+
+
+## 0.13.3
+
+### Changed
+
+- package_version is removed from serialization
+- License changed from GPL to Lesser GPL 
+
+### Fix
+- Workflow name correction: correct the name if it contains an apostrophe.
 
 
 ## 0.13.2
