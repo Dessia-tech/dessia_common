@@ -369,7 +369,7 @@ class WorkflowBlock(Block):
     Wrapper around workflow to put it in a block of another workflow.
 
     Even if a workflow is a block, it can't be used directly as it has a different behavior
-    than a Block in eq and hash which is problematic to handle in dicts for example.
+    than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
     :param name: Name of the block.
@@ -475,7 +475,7 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def evaluate(self, values, **kwargs):
-        """ Loop on input list and run subworkflow on each. """
+        """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:
