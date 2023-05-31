@@ -193,14 +193,14 @@ class Dataset(DessiaObject):
         string = ""
         string += self._print_titles(attr_space)
         string += "\n" + "-" * len(string)
-        string += self._print_objects_slice(slice(0, 5), attr_space)
+        string += self._print_objects_slice(slice(0, 5, 1), attr_space)
 
         if len(self) > 10:
             undispl_len = len(self) - 10
             string += (f"\n+ {undispl_len} undisplayed object" + "s" * (min([undispl_len, 2]) - 1) + "...")
 
         if len(self) > 5:
-            string += self._print_objects_slice(slice(-5, len(self)), attr_space)
+            string += self._print_objects_slice(slice(len(self) - 5, len(self), 1), attr_space)
         return prefix + "\n" + string + "\n"
 
     def _printed_attributes(self):
@@ -210,7 +210,7 @@ class Dataset(DessiaObject):
 
     def _print_objects_slice(self, key: slice, attr_space: List[int]):
         string = ""
-        for index in range(len(self[key])):
+        for index in range(key.start, key.stop, key.step):
             string += "\n"
             string += self._print_object(index, attr_space)
         return string
