@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
-from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidean_distance, minkowski_distance,\
+from dessia_common.datatools.math import covariance, manhattan_distance, euclidean_distance, minkowski_distance,\
     inf_norm, mahalanobis_distance
 from dessia_common.datatools.dataset import Dataset
 

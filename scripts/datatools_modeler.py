@@ -114,8 +114,8 @@ assert(all(string in modeled_dataset.__str__() for string in ["0.141", "90.0", "
 #     plt.figure()
 #     plt.plot(out_test, pred_test, color='r', linestyle='None', marker='x')
 #     plt.plot(out_train, pred_train, color='b', linestyle='None', marker='x')
-#     points = [helpers.minimums(cv.model_validations[0].data._concatenate_outputs())[idx],
-#               helpers.maximums(cv.model_validations[0].data._concatenate_outputs())[idx]]
+#     points = [minimums(cv.model_validations[0].data._concatenate_outputs())[idx],
+#               maximums(cv.model_validations[0].data._concatenate_outputs())[idx]]
 #     plt.plot(points,points, color = 'k')
 
 # ======================================================================================================================

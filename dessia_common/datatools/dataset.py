@@ -1,5 +1,5 @@
 """ Library for building Dataset. """
-from typing import List, Dict, Any
+from typing import List, Tuple, Dict, Any
 from copy import copy
 import itertools
 
@@ -13,15 +13,11 @@ try:
     from plot_data.colors import BLUE, GREY
 except ImportError:
     pass
-from dessia_common.utils import helpers
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
-from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+from dessia_common.datatools.math import mean, std, variance, covariance_matrix, Vector, Matrix, maximums, minimums
 from dessia_common.datatools import learning_models as models
-
-Vector = List[float]
-Matrix = List[Vector]
 
 class Dataset(DessiaObject):
     """
@@ -395,10 +391,11 @@ class Dataset(DessiaObject):
         """ Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names. """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
-        """ Generate train and test Datasets from current Dataset. """
-        ind_train, ind_test = models.get_split_indexes(len(self), ratio=ratio, shuffled=shuffled)
-        return Dataset(self[ind_train], name=self.name + '_train'), Dataset(self[ind_test], name=self.name + '_test')
+    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> Tuple[Matrix, Matrix]:
+        """ Generate train and test Datasets from current Dataset."""
+        index_train, index_test = models.get_split_indexes(len_matrix=len(self), ratio=ratio, shuffled=shuffled)
+        return (Dataset(self[index_train], name=self.name + '_train'),
+                Dataset(self[index_test], name=self.name + '_test'))
 
     def sort(self, key: Any, ascend: bool = True):  # TODO : Replace numpy with faster algorithms
         """
@@ -450,12 +447,12 @@ class Dataset(DessiaObject):
     @property
     def maximums(self):
         """ Compute maximum values and store it in a list of length `n_features`. """
-        return helpers.maximums(self.matrix)
+        return maximums(self.matrix)
 
     @property
     def minimums(self):
         """ Compute minimum values and store it in a list of length `n_features`. """
-        return helpers.minimums(self.matrix)
+        return minimums(self.matrix)
 
     def mean(self):
         """
