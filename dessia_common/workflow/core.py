@@ -272,7 +272,7 @@ class Block(DessiaObject):
         return data
 
     def _docstring(self):
-        """ Base function for submodel docstring computing. """
+        """ Base function for sub model docstring computing. """
         block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
         return block_docstring
 
@@ -296,7 +296,7 @@ class Block(DessiaObject):
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
-        return f"name='{self.name}', position={self.position}"
+        return f"name=\"{self.name}\", position={self.position}"
 
     def evaluate(self, values, **kwargs):
         """ Not implemented for abstract block class 'evaluate' method. """
@@ -411,7 +411,7 @@ class Workflow(Block):
 
     @property
     def nodes(self):
-        """ Return the list of blocks and nonblock_variables (nodes) of the Workflow. """
+        """ Return the list of blocks and non_block_variables (nodes) of the Workflow. """
         return self.blocks + self.nonblock_variables
 
     @cached_property
@@ -1453,7 +1453,7 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name='{self.name}')\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
 
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
@@ -1919,7 +1919,7 @@ class WorkflowState(DessiaObject):
 
     def _activable_blocks(self):
         """
-        Returns a list of all activable blocks.
+        Returns a list of all blocks that can be activated.
 
         Activable blocks are blocks that have all inputs ready for evaluation.
         """
@@ -1995,7 +1995,7 @@ class WorkflowState(DessiaObject):
         return export_formats
 
     def export_format_from_selector(self, selector: str):
-        """ Get WorflowState format from given selector. """
+        """ Get Workflow State format from given selector. """
         for export_format in self.workflow.blocks_export_formats:
             if export_format["selector"] == selector:
                 return export_format
@@ -2082,7 +2082,7 @@ class WorkflowRun(WorkflowState):
         """
         Compute WorkflowRun display settings.
 
-        Concatenate WorkflowState display_settings and Workflow ones.
+        Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
         doc_setting = workflow_settings[0]

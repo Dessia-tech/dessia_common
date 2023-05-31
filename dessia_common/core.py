@@ -8,6 +8,7 @@ import operator
 import math
 import random
 import itertools
+import zipfile
 
 from functools import reduce
 from copy import deepcopy, copy
@@ -24,7 +25,7 @@ import dessia_common.errors
 from dessia_common.utils.diff import data_eq, diff, choose_hash
 from dessia_common.utils.types import is_sequence, is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
-from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER,\
+from dessia_common.utils.jsonschema import default_dict, jsonschema_from_annotation, JSONSCHEMA_HEADER, \
     set_default_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -36,6 +37,8 @@ from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
+from dessia_common.document_generator import DocxWriter
+
 
 
 def __getattr__(name):
@@ -74,22 +77,12 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _ordered_attributes: Documentation not available yet.
-
-    :cvar List[str] _titled_attributes: Documentation not available yet.
-
-    :cvar List[str] _init_variables: Documentation not available yet.
-
     :cvar List[str] _export_formats:
         List of all available export formats. Class must define a export_[format] for each format in _export_formats
 
     :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
-    :cvar List[str] _whitelist_attributes: Documentation not available yet.
-    :cvar List[str] _whitelist_attributes: List[str]
-
-    :ivar str name: Name of object.
-    :ivar Any kwargs: Additional user metadata
+    :param name: Name of object.
     """
 
     _non_editable_attributes = []
@@ -296,7 +289,7 @@ class DessiaObject(SerializableObject):
                     jsonschemas[method_name]['required'] = []
                     jsonschemas[method_name]['is_method'] = True
                     for i, annotation in enumerate(annotations.items()):
-                        # TOCHECK Not actually ordered
+                        # TODO: CHECK Not actually ordered
                         argname = annotation[0]
                         if argname not in dcs.RESERVED_ARGNAMES:
                             if argname in required_args:
@@ -368,9 +361,32 @@ class DessiaObject(SerializableObject):
             dict_ = self.to_dict()
 
         json.dump(dict_, stream, indent=indent)
+        stream.write('\n')
 
     @classmethod
     def load_from_stream(cls, stream: dcf.JsonFile):
+        """
+        Generate object from stream using utf-8 encoding.
+
+        Should be consistent with save_to_stream method.
+        """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json_stream` method instead.", DeprecationWarning)
+        return cls.from_json_stream(stream=stream)
+
+    @classmethod
+    def load_from_file(cls, filepath: str):
+        """
+        Load object from a JSON file.
+
+        :param filepath: either a string representing the filepath or a stream
+        """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `from_json` method instead.", DeprecationWarning)
+        return cls.from_json(filepath=filepath)
+
+    @classmethod
+    def from_json_stream(cls, stream: dcf.JsonFile):
         """
         Generate object from stream using utf-8 encoding.
 
@@ -380,7 +396,7 @@ class DessiaObject(SerializableObject):
         return cls.dict_to_object(dict_)
 
     @classmethod
-    def load_from_file(cls, filepath: str):
+    def from_json(cls, filepath: str):
         """
         Load object from a JSON file.
 
@@ -605,10 +621,64 @@ class DessiaObject(SerializableObject):
         writer = XLSXWriter(self)
         writer.save_to_stream(stream)
 
+    def to_markdown_docx(self):
+        """ Generates a word document from the object attributes, using a markdown-like syntax. """
+        docx_writer = DocxWriter.from_markdown(markdown_text=self.to_markdown())
+        return docx_writer
+
+    def to_docx_stream(self, stream: dcf.BinaryFile):
+        """ Saves the document to a binary stream. """
+        document = self.to_markdown_docx()
+        document.save_to_stream(stream=stream)
+
+    def to_docx(self, filepath: str):
+        """ Saves the document to a file. """
+        if not filepath.endswith('.docx'):
+            filepath += '.docx'
+            print(f'Changing name to {filepath}')
+        self.to_docx_stream(filepath)
+        
+    def zip_settings(self):
+        """
+        Returns a list of streams containing different representations of the object.
+
+        Excel file stream generated by calling 'to_xlsx_stream' method.
+        JSON file stream generated by calling 'save_to_stream' method.
+        """
+        excel_stream = dcf.BinaryFile("excel_export.xlsx")
+        self.to_xlsx_stream(excel_stream)
+
+        json_stream = dcf.JsonFile("json_export.json")
+        self.save_to_stream(json_stream)
+
+        return [excel_stream, json_stream]
+
+    def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
+        """ Generates a zipped archive of the streams returned by 'zip_settings' method. """
+        streams = self.zip_settings()
+        archive_name = 'export_zip'
+        archive.filename = archive_name
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as zip_archive:
+            for value in streams:
+                archive = dcf.generate_archive(zip_archive=zip_archive, value=value)
+        return [archive]
+
+    def to_zip(self, filepath: str):
+        """ Saves the zipped archive generated by 'to_zip_stream' method to a file. """
+        if not filepath.endswith('.zip'):
+            filepath += '.zip'
+            print(f'Changing name to {filepath}')
+        archive = dcf.BinaryFile()
+        self.to_zip_stream(archive)
+        with open(filepath, 'wb') as file:
+            file.write(archive.getbuffer())
+
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
-                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
+                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
+                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
+                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -631,11 +701,7 @@ class DessiaObject(SerializableObject):
         """ Get all values of specified attributes into a list of values (vector). """
         vectored_objects = []
         for feature in self.vector_features():
-            vectored_objects.append(getattr(self, feature.lower()))
-            if not hasattr(self, feature.lower()):
-                raise NotImplementedError(f"{feature} is not an attribute for {self.__class__.__name__} objects. " +
-                                          f"<to_vector> method must be customized in {self.__class__.__name__} to " +
-                                          "handle computed values that are not class or instance attributes.")
+            vectored_objects.append(get_in_object_from_path(self, feature.lower()))
         return vectored_objects
 
     @classmethod
@@ -719,6 +785,26 @@ class PhysicalObject(DessiaObject):
         :type debug: bool, optional
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
+
+    def zip_settings(self):
+        """
+        Returns a list of streams containing different representations of the object.
+
+        Excel file stream generated by calling 'to_xlsx_stream' method.
+        JSON file stream generated by calling 'save_to_stream' method.
+        STEP file stream generated by calling 'to_step_stream' method.
+        HTML file stream generated by calling 'to_html_stream' method.
+        STL file stream generated by calling 'to_stl_stream' method.
+        """
+        streams = DessiaObject.zip_settings(self)
+        step_stream = dcf.StringFile("step_export.stp")
+        self.to_step_stream(step_stream)
+        html_stream = self.to_html_stream(dcf.StringFile(filename="html_export.html"))
+        stl_stream = dcf.BinaryFile("stl_export.stl")
+        self.to_stl_stream(stl_stream)
+
+        streams.extend([step_stream, html_stream, stl_stream])
+        return streams
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
@@ -822,6 +908,7 @@ class DessiaFilter(DessiaObject):
         * greater than: >=, gte, ge
         * greater: >, gt
         * lower than: <=, lte, le
+        * lower: <, lt
         * lower: <, lt
         * equal: ==, eq
         * different: !=, ne
@@ -1108,25 +1195,6 @@ def getdeepattr(obj, attr):
     return reduce(getattr, [obj] + attr.split('.'))
 
 
-def enhanced_deep_attr(obj, sequence):
-    """
-    Deprecated. Use get_in_from_path from dessia_common.breakdown.py instead.
-
-    Get deep attribute where Objects, Dicts and Lists can be found in recursion.
-
-    :param obj: Parent object in which recursively find attribute represented by sequence
-    :param sequence: List of strings and integers that represents path to deep attribute.
-
-    :return: Value of deep attribute
-    """
-    warnings.warn("enhanced_deep_attr is deprecated. Use get_in_from_path from dessia_common.breakdown.py instead")
-    if isinstance(sequence, str):
-        path = f"#/{sequence}"
-    else:
-        path = f"#/{'/'.join(sequence)}"
-    return get_in_object_from_path(object_=obj, path=path)
-
-
 def enhanced_get_attr(obj, attr):
     """
     Safely get attribute in obj. Obj can be of Object, Dict, or List type.
@@ -1151,7 +1219,7 @@ def enhanced_get_attr(obj, attr):
                 msg = f"'{classname}' object has no attribute '{attr}'."
         except TypeError:
             track += tb.format_exc()
-            msg = f"Object of type '{classname}' is not subscriptable. Failed to deeply get '{attr}' from it"
+            msg = f"Object of type '{classname}' is not sub scriptable. Failed to deeply get '{attr}' from it"
     raise dessia_common.errors.DeepAttributeError(message=msg, traceback_=track)
 
 

@@ -8,6 +8,7 @@ builtins
 cKDTree
 classmethod
 classname
+clist
 cls
 ClusteredDataset
 CMA
@@ -30,6 +31,7 @@ DessiaObject
 dict
 dicts
 docstring
+<<<<<<< HEAD
 DOE
 filepath
 frobenius
@@ -37,6 +39,18 @@ frontend
 ge
 getitem
 gini
+=======
+Dessia's
+DessiaFilter
+eps
+eq
+filepath
+Frobenius
+frontend
+hlist
+ge
+gt
+>>>>>>> origin/dev
 gte
 init
 itertools
@@ -57,6 +71,10 @@ LinearRegression
 linf
 linspace
 lt
+le
+lhs
+lp
+lte
 Mahalanobis
 matplotlib
 Minkowski
@@ -69,6 +87,7 @@ nbv
 ndarray
 networkx
 numpy
+Openpyxl
 orjson
 Platt
 poly
@@ -87,6 +106,7 @@ sklearn
 SupportVectorClassifier
 SupportVectorMachine
 SupportVectorRegressor
+sqrt
 STL
 str
 StringFile
@@ -95,6 +115,7 @@ stringify
 Stringify
 submodule
 subobjects
+subscriptable
 SVD
 tol
 traceback
@@ -105,3 +126,4 @@ visjs
 volmdlr
 XLS
 XLSX
+xlsx

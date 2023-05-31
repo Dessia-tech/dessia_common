@@ -18,7 +18,7 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.2
+MIN_NOTE = 9.3
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
@@ -26,8 +26,7 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 164,
-    "wrong-spelling-in-comment": 13,
+    "wrong-spelling-in-docstring": 141,
     "protected-access": 70,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 10,  # Reduce by dropping vectored objects
@@ -53,7 +52,8 @@ ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-man
                                 'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
                                 'too-many-return-statements', 'import-outside-toplevel',
                                 'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
-                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable']
+                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
+                                'attribute-defined-outside-init']
 
 print("pylint version: ", __version__)
 

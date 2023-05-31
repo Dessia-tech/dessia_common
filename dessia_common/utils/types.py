@@ -78,7 +78,7 @@ def is_tuple(obj) -> bool:
 
 
 def is_builtin(type_):
-    """ Return True if type_ is a simple python builtin, ie. int, float, bool or str. """
+    """ Return True if type_ is a simple python builtin (int, float, bool or str). """
     return type_ in TYPING_EQUIVALENCES
 
 
