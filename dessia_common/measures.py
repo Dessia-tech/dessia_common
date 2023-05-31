@@ -45,7 +45,7 @@ class Angle(Measure):
 class Torque(Measure):
     """ Represent a torque in newton-meter. """
 
-    si_unit = 'N*m'
+    si_unit = 'N.m'
 
 
 class Stress(Measure):
