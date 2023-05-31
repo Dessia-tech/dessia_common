@@ -65,6 +65,10 @@ class Speed(Measure):
 
     si_unit = 'm/s'
 
+class RotationSpeed(Measure):
+    """ Represent a rotation speed in radian per second. """
+
+    si_unit = 'rad/s'
 
 class Acceleration(Measure):
     """ Represent an acceleration in meter per second square. """
@@ -94,3 +98,4 @@ class Power(Measure):
     """ Represent a power in watts. """
 
     si_unit = 'N*m/s'
+
