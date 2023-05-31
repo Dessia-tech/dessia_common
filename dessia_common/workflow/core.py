@@ -697,6 +697,7 @@ class Workflow(Block):
             schemas[method_name] = deepcopy(SCHEMA_HEADER)
             schemas[method_name].update({"required": required, "method": True, "properties": properties,
                                          "python_typing": "dessia_common.typings.MethodType",
+                                         "description": self.description,
                                          "classes": "dessia_common.workflow.core.Workflow"})
         schemas["start_run"]["required"] = []
         return schemas
