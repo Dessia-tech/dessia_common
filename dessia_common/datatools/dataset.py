@@ -96,7 +96,7 @@ class Dataset(DessiaObject):
 
     def __getitem__(self, key: Any):
         """
-        Custom getitem for Dataset.
+        Custom Dataset function to get item.
 
         In addition to work as numpy.arrays of dimension `(n,)`, allows to pick a sub-Dataset from a list of indexes.
         """
@@ -868,7 +868,7 @@ class Dataset(DessiaObject):
 
     def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
         """
-        Get successive Pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+        Get successive Pareto sheets (i.e. optimal points in a DOE for already computed costs).
 
         :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
         :type costs_attributes: List[str]

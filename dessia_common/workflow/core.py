@@ -20,13 +20,12 @@ from dessia_common.graph import get_column_by_node
 from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing
+    serialize_annotation, is_typing, SCHEMA_HEADER
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
-from dessia_common.utils.jsonschema import set_default_value, JSONSCHEMA_HEADER, jsonschema_from_annotation
 
 from dessia_common.typings import JsonSerializable
 from dessia_common.files import StringFile, BinaryFile
@@ -668,53 +667,8 @@ class Workflow(Block):
     @property
     def _method_jsonschemas(self):
         """ Compute the run jsonschema (had to be overloaded). """
-        jsonschemas = {'run': deepcopy(JSONSCHEMA_HEADER)}
-        jsonschemas['run'].update({'classes': ['dessia_common.workflow.Workflow']})
-        properties_dict = jsonschemas['run']['properties']
-        required_inputs = []
-        parsed_attributes = {}
-        for i, input_ in enumerate(self.inputs + self.detached_variables):
-            current_dict = {}
-            if isinstance(input_, TypedVariable):
-                annotation = (str(i), input_.type_)
-            else:
-                annotation = (str(i), Any)
-            if input_ in self.nonblock_variables or input_ in self.detached_variables:
-                title = input_.name
-                parsed_attributes = None
-            else:
-                input_block = self.block_from_variable(input_)
-                try:
-                    block_docstring = input_block._docstring()
-                    if input_ in block_docstring:
-                        parsed_attributes[str(i)] = block_docstring[input_]
-                except Exception:
-                    parsed_attributes[(str(i))] = FAILED_ATTRIBUTE_PARSING
-                if input_block.name:
-                    name = input_block.name + ' - ' + input_.name
-                    title = prettyname(name)
-                else:
-                    title = prettyname(input_.name)
-
-            annotation_jsonschema = jsonschema_from_annotation(annotation=annotation, title=title, order=i + 1,
-                                                               jsonschema_element=current_dict,
-                                                               parsed_attributes=parsed_attributes)
-            # Order is i+1 because of name that is at 0
-            current_dict.update(annotation_jsonschema[str(i)])
-            if not input_.has_default_value:
-                required_inputs.append(str(i))
-            else:
-                dict_ = set_default_value(jsonschema_element=current_dict, key=str(i),
-                                          default_value=input_.default_value)
-                current_dict.update(dict_)
-            if input_ not in self.imposed_variable_values:  # Removes from Optional in edits
-                properties_dict[str(i)] = current_dict[str(i)]
-
-        jsonschemas['run'].update({'required': required_inputs, 'method': True,
-                                   'python_typing': "dessia_common.typings.MethodType"})
-        jsonschemas['start_run'] = deepcopy(jsonschemas['run'])
-        jsonschemas['start_run']['required'] = []
-        return jsonschemas
+        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
+        return self.method_schemas
 
     @property
     def method_schemas(self):
@@ -740,9 +694,10 @@ class Workflow(Block):
 
         schemas = {}
         for method_name in ["run", "start_run"]:
-            schemas[method_name] = deepcopy(JSONSCHEMA_HEADER)
+            schemas[method_name] = deepcopy(SCHEMA_HEADER)
             schemas[method_name].update({"required": required, "method": True, "properties": properties,
                                          "python_typing": "dessia_common.typings.MethodType",
+                                         "description": self.description,
                                          "classes": "dessia_common.workflow.core.Workflow"})
         schemas["start_run"]["required"] = []
         return schemas
@@ -871,7 +826,7 @@ class Workflow(Block):
     def _start_run_dict(self) -> Dict:
         return {}
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
+    def method_dict(self, method_name: str = None) -> Dict:
         """ Wrapper method to get dictionaries of run and start_run methods. """
         if method_name == 'run':
             return self._run_dict()
@@ -1199,7 +1154,7 @@ class Workflow(Block):
         """
         Store nodes of a workflow into a list of nodes indexes.
 
-        :returns: list[ColumnLayout] where ColumnLayout is list[node_index]
+        :returns: A list of Column Layout where a Column Layout is a list of node_indices
         """
         column_by_node = get_column_by_node(graph)
         nodes_by_column = {}
@@ -1213,7 +1168,8 @@ class Workflow(Block):
         """
         Stores a workflow graph layout.
 
-        :returns: list[GraphLayout] where GraphLayout is list[ColumnLayout] and ColumnLayout is list[node_index]
+        :returns: A list of Graph Layouts where a GraphLayout is a list of Column Layout
+                and Column Layout a list node_indices.
         """
         digraph = self.layout_graph
         graph = digraph.to_undirected()
@@ -1272,7 +1228,7 @@ class Workflow(Block):
         return WorkflowState(self, input_values=input_values, name=name)
 
     def jointjs_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """ Deprecated workflow layout. Used only in jointjs_data method. """
+        """ Deprecated workflow layout. Used only in local plot method. """
         coordinates = {}
         elements_by_distance = {}
         if self.output:
@@ -1308,7 +1264,7 @@ class Workflow(Block):
         return coordinates
 
     def jointjs_data(self):
-        """ Compute the data needed for jointjs plotting. """
+        """ Compute the data needed for local plotting. """
         coordinates = self.jointjs_layout()
         blocks = []
         for block in self.blocks:
@@ -1921,7 +1877,7 @@ class WorkflowState(DessiaObject):
         """
         Returns a list of all blocks that can be activated.
 
-        Activable blocks are blocks that have all inputs ready for evaluation.
+        Blocks that can be activated are blocks that have all inputs ready for evaluation.
         """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
                 and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
@@ -2091,17 +2047,11 @@ class WorkflowRun(WorkflowState):
         display_settings.pop(0)
         return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
+    def method_dict(self, method_name: str = None):
         """ Get run again default dict. """
-        if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
-            dict_ = serialize_dict(self.input_values)
-            for property_, value in method_jsonschema['properties'].items():
-                if property_ in dict_ and 'object_id' in value and 'object_class' in value:
-                    # TODO : Check. this is probably useless as we are not dealing with default values here
-                    dict_[property_] = value
-            return dict_
-        # TODO Check this result. Might raise an error
-        return DessiaObject.method_dict(self, method_name=method_name, method_jsonschema=method_jsonschema)
+        if method_name is not None and method_name == 'run_again':
+            return serialize_dict(self.input_values)
+        raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
     def run_again(self, input_values, progress_callback=None, name=None):
         """ Execute workflow again with given inputs. """
@@ -2110,13 +2060,12 @@ class WorkflowRun(WorkflowState):
 
     @property
     def _method_jsonschemas(self):
+        """ Compute the run jsonschema (had to be overloaded). """
         # TODO This is outdated now that WorkflowRun inherits from WorkflowState and has already broke once.
         #  We should outsource the "run" jsonschema computation from workflow in order to mutualize it with run_again,
         #  and have WorkflowRun have its inheritances from WorkflowState _method_jsonschema method
-        workflow_jsonschemas = self.workflow._method_jsonschemas
-        jsonschemas = {"run_again": workflow_jsonschemas.pop('run')}
-        jsonschemas['run_again']['classes'] = ["dessia_common.workflow.WorkflowRun"]
-        return jsonschemas
+        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
+        return self.method_schemas
 
     @property
     def method_schemas(self):
