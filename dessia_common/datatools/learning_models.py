@@ -68,14 +68,11 @@ class Scaler(DessiaObject):
 
         :param matrix:
             Matrix of data of dimension `n_samples x n_features`
-        :type matrix: Matrix
 
         :param name:
             Name of Scaler
-        :type name: str, `optional`, defaults to `''`
 
         :return: The Scaler or children (DessiaObject) fit on matrix.
-        :rtype: Scaler
         """
         scaler = cls._skl_class()()
         reshaped_matrix = vector_to_2d_matrix(matrix)
@@ -91,10 +88,8 @@ class Scaler(DessiaObject):
 
         :param matrix:
             Matrix of data of dimension `n_samples x n_features`
-        :type matrix: List[List[float]]
 
         :return: The scaled matrix according to the rules set of scaler.
-        :rtype: List[List[float]]
         """
         scaler, reshaped_matrix = self._prepare_transform(matrix)
         return scaler.transform(reshaped_matrix).tolist()
@@ -106,10 +101,8 @@ class Scaler(DessiaObject):
 
         :param matrix:
             Scaled matrix of data of dimension `n_samples x n_features`
-        :type matrix: List[List[float]]
 
         :return: The raw matrix according to the rules of scaler.
-        :rtype: List[List[float]]
         """
         scaler, reshaped_matrix = self._prepare_transform(matrix)
         return scaler.inverse_transform(reshaped_matrix).tolist()
@@ -258,10 +251,8 @@ class Model(DessiaObject):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :return: The predicted values for inputs.
-        :rtype: Union[List[float], List[List[float]]]
         """
         model = self._instantiate_skl()
         return model.predict(inputs).tolist()
@@ -284,14 +275,11 @@ class Model(DessiaObject):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :return: The score of `Model` or children (DessiaObject).
-        :rtype: float
         """
         model = self._instantiate_skl()
         return model.score(inputs, outputs)
@@ -373,19 +361,15 @@ class Ridge(LinearModel):
             solved by the `LinearRegression` object. For numerical reasons, using `alpha = 0` with the `Ridge` object is
             not advised. Instead, you should use the `LinearRegression` object. If an array is passed, penalties are
             assumed to be specific to the targets. Hence they must correspond in number.
-        :type alpha: float, `optional`, defaults to 1.
 
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
             (i.e. X and Y are expected to be centered).
-        :type fit_intercept: bool, `optional`, defaults to True
 
         :param tol:
             Precision of the solution.
-        :type tol: float, `optional`, defaults to 0.001
 
         :return: The `Ridge` class, the hyperparameters to instantiate it and the future name of instance.
-        :rtype: Tuple['Ridge', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
@@ -399,11 +383,9 @@ class Ridge(LinearModel):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
@@ -411,23 +393,18 @@ class Ridge(LinearModel):
             solved by the `LinearRegression` object. For numerical reasons, using `alpha = 0` with the `Ridge` object is
             not advised. Instead, you should use the `LinearRegression` object. If an array is passed, penalties are
             assumed to be specific to the targets. Hence they must correspond in number.
-        :type alpha: float, `optional`, defaults to 1.
 
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
             (i.e. X and Y are expected to be centered).
-        :type fit_intercept: bool, `optional`, defaults to True
 
         :param tol:
             Precision of the solution.
-        :type tol: float, `optional`, defaults to 0.001
 
         :param name:
             Name of `Ridge` model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The `Ridge` model fit on inputs and outputs.
-        :rtype: `Ridge`
         """
         return cls.fit_(inputs, outputs, name=name, alpha=alpha, fit_intercept=fit_intercept, tol=tol)
 
@@ -488,14 +465,11 @@ class LinearRegression(LinearModel):
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
             (i.e. X and Y are expected to be centered).
-        :type fit_intercept: bool, `optional`, defaults to True
 
         :param positive:
             When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
-        :type positive: bool, `optional`, defaults to False
 
         :return: The `LinearRegression` model fit on inputs and outputs.
-        :rtype: Tuple['LinearRegression', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(fit_intercept=fit_intercept, positive=positive)
 
@@ -509,27 +483,21 @@ class LinearRegression(LinearModel):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
             (i.e. X and Y are expected to be centered).
-        :type fit_intercept: bool, `optional`, defaults to True
 
         :param positive:
             When set to True, forces the coefficients to be positive. This option is only supported for dense arrays.
-        :type positive: bool, `optional`, defaults to False
 
         :param name:
             Name of `LinearRegression` model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The Linear model fit on inputs and outputs.
-        :rtype: `LinearRegression`
         """
         return cls.fit_(inputs, outputs, name=name, fit_intercept=fit_intercept, positive=positive)
 
@@ -705,15 +673,12 @@ class DecisionTreeRegressor(Model):
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
             L1 loss using the median of each terminal node, and “Poisson” which uses reduction in Poisson deviance to
             find splits.
-        :type criterion: str, `optional`, defaults to 'squared_error'
 
         :param max_depth:
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
-        :type max_depth: int, `optional`, defaults to `None`
 
         :return: The `DecisionTreeRegressor` model fit on inputs and outputs.
-        :rtype: Tuple['DecisionTreeRegressor', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(criterion=criterion, max_depth=max_depth)
 
@@ -727,11 +692,9 @@ class DecisionTreeRegressor(Model):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :param criterion:
             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
@@ -740,19 +703,15 @@ class DecisionTreeRegressor(Model):
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
             L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
             find splits.
-        :type criterion: str, `optional`, defaults to 'squared_error'
 
         :param max_depth:
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
-        :type max_depth: int, `optional`, defaults to `None`
 
         :param name:
             Name of `DecisionTreeRegressor` model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The `DecisionTreeRegressor` model fit on inputs and outputs.
-        :rtype: `DecisionTreeRegressor`
         """
         criterion = cls._check_criterion(criterion)
         formated_outputs = cls._check_outputs(outputs)
@@ -848,14 +807,11 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :return: The score of `Model` or children (`DessiaObject`).
-        :rtype: float
         """
         model = self._instantiate_skl()
         # if self.n_outputs_ == 1:
@@ -914,7 +870,6 @@ class RandomForest(Model):
 
         :param n_estimators:
             Number of `DecisionTree` contained in `RandomForestRegressor` or `RandomForestClassifier`
-        :type n_estimators: int, `optional`, defaults to 100
 
         :param criterion:
          |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
@@ -927,15 +882,12 @@ class RandomForest(Model):
          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
             impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
          |  Note: This parameter is tree-specific.
-        :type criterion: str, `optional`, defaults to 'squared_error'
 
         :param max_depth:
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
-        :type max_depth: int, `optional`, defaults to `None`
 
         :return: The `RandomForest` model fit on inputs and outputs.
-        :rtype: Tuple['RandomForest', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
 
@@ -951,15 +903,12 @@ class RandomForest(Model):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :param n_estimators:
             Number of DecisionTree contained in `RandomForestRegressor` or `RandomForestClassifier`
-        :type n_estimators: int, `optional`, defaults to 100
 
         :param criterion:
          |  - **Regressor:** The function to measure the quality of a split. Supported criteria are “squared_error” for
@@ -972,19 +921,15 @@ class RandomForest(Model):
          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
             impurity and “log_loss” and “entropy” both for the Shannon information gain, see Mathematical formulation.
          |  Note: This parameter is tree-specific.
-        :type criterion: str, `optional`, defaults to 'squared_error'
 
         :param max_depth:
             The maximum depth of the tree. If `None`, then nodes are expanded until all leaves are pure or until all
             leaves contain less than min_samples_split samples.
-        :type max_depth: int, `optional`, defaults to `None`
 
         :param name:
             Name of RandomForestRegressor or `RandomForestClassifier` model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The RandomForestRegressor or `RandomForestClassifier` model fit on inputs and outputs.
-        :rtype: RandomForest
         """
         criterion = cls._check_criterion(criterion)
         formated_outputs = cls._check_outputs(matrix_1d_to_vector(outputs))
@@ -1190,17 +1135,14 @@ class SupportVectorMachine(Model):
         :param C:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type C: float, `optional`, defaults to `1.`
 
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
             Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, `‘rbf’` will be
             used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix
             should be an matrix of shape `n_samples x n_samples`.
-        :type kernel: str, `optional`, defaults to `'rbf'`
 
         :return: The `SupportVectorMachine` model fit on inputs and outputs.
-        :rtype: Tuple['SupportVectorMachine', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(C=C, kernel=kernel)
 
@@ -1216,30 +1158,24 @@ class SupportVectorMachine(Model):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x 1`
-        :type outputs: List[List[float]]
 
         :param C:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type C: float, `optional`, defaults to `1.`
 
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
             Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
             If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
             an matrix of shape `n_samples x n_samples`
-        :type kernel: str, `optional`, defaults to `'rbf'`
 
         :param name:
             Name of `SupportVectorRegressor` or `SupportVectorClassifier` model
-        :type name: str, `optional`, defaults to `''`
 
         :return: The `SupportVectorRegressor` or `SupportVectorClassifier` model fit on inputs and outputs.
-        :rtype: SupportVectorMachine
         """
         if is_sequence(outputs[0]):
             if len(outputs[0]) != 1:
@@ -1475,7 +1411,6 @@ class MultiLayerPerceptron(Model):
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to `C`.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type hidden_layer_sizes: List[int]
 
         :param activation:
             Activation function for the hidden layer:
@@ -1483,12 +1418,10 @@ class MultiLayerPerceptron(Model):
                 - `‘logistic’`, the logistic sigmoid function, returns `f(x) = 1 / (1 + exp(-x))`.
                 - `‘tanh’`, the hyperbolic tan function, returns `f(x) = tanh(x)`.
                 - `‘relu’`, the rectified linear unit function, returns `f(x) = max(0, x)`
-        :type activation: str, `optional`, defaults to `'relu'`
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
             float i.e. in `[0, inf[`.
-        :type alpha: float, `optional`, defaults to `0.0001`
 
         :param solver:
             The solver for weight optimization:
@@ -1498,22 +1431,18 @@ class MultiLayerPerceptron(Model):
             Note: The default solver ‘adam’ works pretty well on relatively large datasets (with thousands of training
             samples or more) in terms of both training time and validation score. For small datasets, however,
             `‘lbfgs’` can converge faster and perform better.
-        :type solver: str, `optional`, defaults to `'adam'`
 
         :param max_iter:
             Maximum number of iterations. The solver iterates until convergence (determined by `‘tol’`) or this number
             of iterations. For stochastic solvers (`‘sgd’`, `‘adam’`), note that this determines the number of epochs
             (how many times each data point will be used), not the number of gradient steps.
-        :type max_iter: int, `optional`, defaults to `200`
 
         :param tol:
             Tolerance for the optimization. When the loss or score is not improving by at least tol for
             `n_iter_no_change` consecutive iterations, unless `learning_rate` is set to `‘adaptive’`, convergence is
             considered to be reached and training stops.
-        :type tol: float, `optional`, defaults to `0.0001`
 
         :return: The `MultiLayerPerceptron` model fit on inputs and outputs.
-        :rtype: Tuple['MultiLayerPerceptron', Dict[str, Any], str]
         """
         return cls.init_for_modeler_(hidden_layer_sizes=hidden_layer_sizes, activation=activation, alpha=alpha,
                                      solver=solver, max_iter=max_iter, tol=tol)
@@ -1531,16 +1460,13 @@ class MultiLayerPerceptron(Model):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
 
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
             Must be strictly positive. The penalty is a squared l2 penalty.
-        :type hidden_layer_sizes: List[int]
 
         :param activation:
             Activation function for the hidden layer:
@@ -1548,12 +1474,10 @@ class MultiLayerPerceptron(Model):
                 - `‘logistic’`, the logistic sigmoid function, returns `f(x) = 1 / (1 + exp(-x))`.
                 - `‘tanh’`, the hyperbolic tan function, returns `f(x) = tanh(x)`.
                 - `‘relu’`, the rectified linear unit function, returns `f(x) = max(0, x)`
-        :type activation: str, `optional`, defaults to `'relu'`
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
             float i.e. in [0, inf[.
-        :type alpha: float, `optional`, defaults to `0.0001`
 
         :param solver:
             The solver for weight optimization:
@@ -1563,22 +1487,18 @@ class MultiLayerPerceptron(Model):
             Note: The default solver `‘adam’` works pretty well on relatively large datasets (with thousands of training
             samples or more) in terms of both training time and validation score. For small datasets, however,
             `‘lbfgs’` can converge faster and perform better.
-        :type solver: str, `optional`, defaults to `'adam'`
 
         :param max_iter:
             Maximum number of iterations. The solver iterates until convergence (determined by `‘tol’`) or this number
             of iterations. For stochastic solvers (`‘sgd’`, `‘adam’`), note that this determines the number of epochs
             (how many times each data point will be used), not the number of gradient steps.
-        :type max_iter: int, `optional`, defaults to `200`
 
         :param tol:
             Tolerance for the optimization. When the loss or score is not improving by at least tol for
             `n_iter_no_change` consecutive iterations, unless `learning_rate` is set to `‘adaptive’`, convergence is
             considered to be reached and training stops.
-        :type tol: float, `optional`, defaults to `0.0001`
 
         :return: The `MLPRegressor` or `MLPClassifier` model fit on inputs and outputs.
-        :rtype: MultiLayerPerceptron
         """
         outputs = matrix_1d_to_vector(outputs)
         return cls.fit_(inputs, outputs, name=name, hidden_layer_sizes=hidden_layer_sizes, activation=activation,
@@ -1753,21 +1673,17 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
 
     :param len_matrix:
         Length of matrix to split.
-    :type len_matrix: List[List[float]]
 
     :param ratio:
         Ratio on which to split matrix. If ratio > 1, ind_train will be of length `int(ratio)` and ind_test of
         length `len_matrix - int(ratio)`.
-    :type ratio: float, `optional`, defaults to 0.8
 
     :param shuffled:
         Whether to shuffle or not the results.
-    :type shuffled: bool, `optional`, defaults to True
 
     :return:
         A list containing all split matrices in the following order: `[train_M1, test_M1, train_M2, test_M2, ...,
         train_Mn, test_Mn]`.
-    :rtype: List[List[List[float]]]
     """
     len_matrices = [len(matrix) for matrix in matrices]
     if len(set(len_matrices)) != 1:

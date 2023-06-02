@@ -161,13 +161,11 @@ class Modeler(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def _is_scaled(self, scaler: models.Scaler):
-        if isinstance(scaler, models.IdentityScaler):
-            return False
-        return True
+        return not isinstance(scaler, models.IdentityScaler)
 
     def _format_output(self, scaled_outputs: Matrix):
         """ Format output to List[List[float]] in any case for code consistency and simplicity. """
-        if not isinstance(scaled_outputs[0], list):
+        if not isinstance(scaled_outputs[0], (list, tuple)):
             return [[value] for value in scaled_outputs]
         return scaled_outputs
 
@@ -198,26 +196,20 @@ class Modeler(DessiaObject):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type outputs: List[List[float]]
 
         :param input_is_scaled:
             Whether to standardize inputs or not with a `models.StandardScaler`
-        :type input_is_scaled: bool, `optional`, True
 
         :param output_is_scaled:
             Whether to standardize outputs or not with a `models.StandardScaler`
-        :type output_is_scaled: bool, `optional`, False
 
         :param name:
             Name of Modeler
-        :type name: str, `optional`, defaults to `''`
 
         :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
-        :rtype: Modeler
         """
         return cls._fit(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
 
@@ -229,30 +221,23 @@ class Modeler(DessiaObject):
 
         :param dataset:
             Dataset containing data, both inputs and outputs
-        :type dataset: Dataset
 
         :param input_names:
             Names of input features
-        :type input_names: List[str]
 
         :param output_names:
             Names of output features
-        :type output_names: List[str]
 
         :param input_is_scaled:
             Whether to standardize inputs or not with a `models.StandardScaler`
-        :type input_is_scaled: bool, `optional`, True
 
         :param output_is_scaled:
             Whether to standardize outputs or not with a `models.StandardScaler`
-        :type output_is_scaled: bool, `optional`, False
 
         :param name:
             Name of Modeler
-        :type name: str, `optional`, defaults to `''`
 
         :return: The equivalent Modeler object containing the fitted model and scalers associated to inputs and outputs
-        :rtype: Modeler
         """
         inputs, outputs = dataset.to_input_output(input_names, output_names)
         return cls.fit_matrix(inputs, outputs, model, input_is_scaled, output_is_scaled, name)
@@ -267,10 +252,8 @@ class Modeler(DessiaObject):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :return: The predicted values for inputs.
-        :rtype: List[List[float]]
         """
         return self._format_output(self._predict(inputs))
 
@@ -280,18 +263,14 @@ class Modeler(DessiaObject):
 
         :param dataset:
             Dataset containing data, both inputs and outputs
-        :type dataset: Dataset
 
         :param input_names:
             Names of input features to predict
-        :type input_names: List[str]
 
         :param output_names:
             Names of predicted features
-        :type output_names: List[str]
 
         :return: The predicted values for inputs.
-        :rtype: List[List[float]]
         """
         inputs = dataset.sub_matrix(input_names)
         outputs = self.predict_matrix(inputs)
@@ -337,14 +316,11 @@ class Modeler(DessiaObject):
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type outputs: List[List[float]]
 
         :return: The score of Modeler.
-        :rtype: float
         """
         return self._score(inputs, outputs)
 
@@ -358,18 +334,14 @@ class Modeler(DessiaObject):
 
         :param dataset:
             Dataset containing data, both inputs and outputs
-        :type dataset: Dataset
 
         :param input_names:
             Names of input features
-        :type input_names: List[str]
 
         :param output_names:
             Names of output features
-        :type output_names: List[str]
 
         :return: The score of Modeler.
-        :rtype: float
         """
         inputs, outputs = dataset.to_input_output(input_names, output_names)
         return self._score(inputs, outputs)
@@ -552,36 +524,28 @@ class ModelValidation(DessiaObject):
         :param modeler:
             Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
              modeler does not need to be fitted.
-        :type modeler: Modeler
 
         :param inputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
 
         :param outputs:
             Matrix of data of dimension `n_samples x n_features`
-        :type outputs: List[List[float]]
 
         :param input_names:
             Names of input features
-        :type input_names: List[str]
 
         :param output_names:
             Names of output features
-        :type output_names: List[str]
 
         :param ratio:
             Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
-        :type ratio: float, `optional`, defaults to 0.8
 
         :param name:
             Name of `ModelValidation`
-        :type name: str, `optional`, defaults to `''`
 
         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
          predictions for input, stored in a `ValidationData` object.
-        :rtype: ModelValidation
         """
         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
@@ -595,32 +559,25 @@ class ModelValidation(DessiaObject):
         :param modeler:
             Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
              modeler does not need to be fitted.
-        :type modeler: Modeler
 
         :param dataset:
             Dataset containing data, both inputs and outputs
-        :type dataset: Dataset
 
         :param input_names:
             Names of input features
-        :type input_names: List[str]
 
         :param output_names:
             Names of output features
-        :type output_names: List[str]
 
         :param ratio:
             Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
-        :type ratio: float, `optional`, defaults to 0.8
 
         :param name:
             Name of `ModelValidation`
-        :type name: str, `optional`, defaults to `''`
 
         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
          predictions for input, stored in a ValidationData object.
-        :rtype: ModelValidation
         """
         train_dataset, test_dataset = dataset.train_test_split(ratio=ratio, shuffled=True)
         in_train, out_train = train_dataset.to_input_output(input_names, output_names)
@@ -705,28 +662,22 @@ class CrossValidation(DessiaObject):
         :param modeler:
             Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
              modeler does not need to be fitted.
-        :type modeler: List[List[float]]
 
         :param dataset:
             Dataset containing data, both inputs and outputs
-        :type dataset: Dataset
 
         :param input_names:
             Names of input features
-        :type input_names: List[str]
 
         :param output_names:
             Names of output features
-        :type output_names: List[str]
 
         :param nb_tests:
             Number of train test validation to run in cross_validation method
-        :type nb_tests: int, `optional`, defaults to 1
 
         :param ratio:
             Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
             length `len_matrix - int(ratio)`.
-        :type ratio: float, `optional`, defaults to 0.8
         """
         validations = []
         for idx in range(nb_tests):
