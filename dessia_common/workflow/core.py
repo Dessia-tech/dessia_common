@@ -2142,10 +2142,9 @@ class WorkflowRun(WorkflowState):
         # TODO Check this result. Might raise an error
         return DessiaObject.method_dict(self, method_name=method_name, method_jsonschema=method_jsonschema)
 
-
     def run_again(self, input_values, progress_callback=lambda x: None, name=None):
         """Execute workflow again with given inputs. """
-        
+
         return self.workflow.run(input_values=input_values, verbose=False,
                                  progress_callback=progress_callback, name=name)
 
