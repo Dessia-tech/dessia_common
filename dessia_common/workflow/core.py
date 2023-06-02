@@ -2145,6 +2145,7 @@ class WorkflowRun(WorkflowState):
 
     def run_again(self, input_values, progress_callback=lambda x: None, name=None):
         """Execute workflow again with given inputs. """
+        
         return self.workflow.run(input_values=input_values, verbose=False,
                                  progress_callback=progress_callback, name=name)
 
