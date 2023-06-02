@@ -144,7 +144,7 @@ setup(
         "numpy<1.24.0",
         "pandas",
         "mypy_extensions",
-        "scipy",
+        "scipy<1.11",
         "pyDOE",
         "pyDOE2",
         "dectree",
