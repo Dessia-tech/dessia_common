@@ -61,6 +61,7 @@ networkx
 numpy
 Openpyxl
 orjson
+Pycharm
 rtype
 schemas
 scipy
