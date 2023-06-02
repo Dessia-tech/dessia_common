@@ -100,4 +100,3 @@ class Power(Measure):
     """ Represent a power in watts. """
 
     si_unit = 'N*m/s'
-
