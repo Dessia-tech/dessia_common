@@ -3,7 +3,7 @@ from dessia_common.schemas.core import deserialize_annotation, extract_args, ser
 from dessia_common.forms import StandaloneObject
 from dessia_common.tests import Model
 from dessia_common.measures import Distance
-from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import InstanceOf, MethodType, ClassMethodType, AttributeType, ClassAttributeType
 from dessia_common.files import StringFile, BinaryFile
 import unittest
 from parameterized import parameterized
@@ -72,6 +72,10 @@ class TestAnnotationSerializationValid(unittest.TestCase):
         # Methods
         (MethodType[StandaloneObject], "MethodType[dessia_common.forms.StandaloneObject]"),
         (ClassMethodType[StandaloneObject], "ClassMethodType[dessia_common.forms.StandaloneObject]"),
+
+        # Attributes
+        (AttributeType[StandaloneObject], "AttributeType[dessia_common.forms.StandaloneObject]"),
+        (ClassAttributeType[StandaloneObject], "ClassAttributeType[dessia_common.forms.StandaloneObject]"),
 
         # Types
         (Type, "Type"),

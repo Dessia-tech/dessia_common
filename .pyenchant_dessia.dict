@@ -4,6 +4,7 @@ BallTree
 binarized
 BinaryFile
 bool
+boolarg
 builtins
 cKDTree
 classmethod
@@ -30,29 +31,26 @@ dessia
 DessiaObject
 dict
 dicts
+distarg
 docstring
-<<<<<<< HEAD
-DOE
-filepath
-frobenius
-frontend
-ge
-getitem
-gini
-=======
 Dessia's
 DessiaFilter
+DOE
 eps
 eq
 filepath
+floatarg
 Frobenius
 frontend
 hlist
 ge
+getitem
+getsizeof
+gini
 gt
->>>>>>> origin/dev
 gte
 init
+intarg
 itertools
 th
 json
@@ -96,6 +94,7 @@ RandomForestClassifier
 RandomForestRegressor
 rbf
 Ridge
+Pycharm
 rtype
 schemas
 scipy
@@ -117,6 +116,7 @@ submodule
 subobjects
 subscriptable
 SVD
+sys
 tol
 traceback
 typings

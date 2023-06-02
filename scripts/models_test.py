@@ -22,14 +22,14 @@ assert diff.is_empty()
 # Let this print to test diff utils __repr__
 print(diff)
 
-simulation_list.jsonschema()
+simulation_list.schema()
 
 pointer_analysis = dcs.pointers_analysis(simulation_list)
 pointer_graph = dcs.pointer_graph(d)
 draw_networkx_graph(pointer_graph)
 
 system1._check_platform()
-system1.jsonschema()
+system1.schema()
 system1.save_export_to_file('xlsx', 'generic_xlsx')
 os.path.isfile('generic_xlsx.xlsx')
 
