@@ -74,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License changed from GPL to Lesser GPL 
 
 ### Fix
+
 - Workflow name correction: correct the name if it contains an apostrophe.
 
 
