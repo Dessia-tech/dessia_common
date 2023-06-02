@@ -201,7 +201,7 @@ class DessiaObject(SerializableObject):
 
     def method_dict(self, method_name: str):
         """ Return a default dict for the given method name. """
-        schema = self.method_schemas[method_name]
+        schema = self.raw_method_schemas[method_name]
         return schema.default_dict()
 
     def dict_to_arguments(self, dict_, method):
