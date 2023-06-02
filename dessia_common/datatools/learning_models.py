@@ -689,6 +689,10 @@ class DecisionTreeRegressor(Model):
         return criterion
 
     @classmethod
+    def _check_outputs(cls, outputs: Matrix):
+        return outputs
+
+    @classmethod
     def init_for_modeler(cls, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
         """
@@ -751,7 +755,8 @@ class DecisionTreeRegressor(Model):
         :rtype: `DecisionTreeRegressor`
         """
         criterion = cls._check_criterion(criterion)
-        return cls.fit_(inputs, outputs, name=name, criterion=criterion, max_depth=max_depth)
+        formated_outputs = cls._check_outputs(outputs)
+        return cls.fit_(inputs, formated_outputs, name=name, criterion=criterion, max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
@@ -804,6 +809,16 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
     @classmethod
     def _skl_class(cls):
         return tree.DecisionTreeClassifier
+
+    @classmethod
+    def _check_outputs(cls, outputs: Matrix):
+        if isinstance(outputs[0], float):
+            return [[int(output)] for output in outputs]
+        if not isinstance(outputs[0], list):
+            return [[output] for output in outputs]
+        if not isinstance(outputs[0][0], (int, str)):
+            return [list(map(int, output)) for output in outputs]
+        return outputs
 
     def _instantiate_skl(self):
         model = self.generic_skl_attributes()
@@ -888,6 +903,10 @@ class RandomForest(Model):
         return criterion
 
     @classmethod
+    def _check_outputs(cls, outputs: Matrix):
+        return outputs
+
+    @classmethod
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['RandomForest', Dict[str, Any], str]:
         """
@@ -968,8 +987,9 @@ class RandomForest(Model):
         :rtype: RandomForest
         """
         criterion = cls._check_criterion(criterion)
-        outputs = matrix_1d_to_vector(outputs)
-        return cls.fit_(inputs, outputs, name=name, n_estimators=n_estimators, criterion=criterion, max_depth=max_depth)
+        formated_outputs = cls._check_outputs(matrix_1d_to_vector(outputs))
+        return cls.fit_(inputs, formated_outputs, name=name, n_estimators=n_estimators, criterion=criterion,
+                        max_depth=max_depth)
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
@@ -1071,6 +1091,16 @@ class RandomForestClassifier(RandomForest):
     def _skl_class(cls):
         return ensemble.RandomForestClassifier
 
+    @classmethod
+    def _check_outputs(cls, outputs: Matrix):
+        if isinstance(outputs[0], float):
+            return [int(output) for output in outputs]
+        if not isinstance(outputs[0], list):
+            return outputs
+        if not isinstance(outputs[0][0], (int, str)):
+            return [list(map(int, output)) for output in outputs]
+        return outputs
+
     def _instantiate_skl(self):
         model = self.generic_skl_attributes()
         model.n_classes_ = self.n_classes_
@@ -1090,28 +1120,6 @@ class RandomForestClassifier(RandomForest):
                        'classes_': (model.classes_.tolist() if isinstance(model.classes_, npy.ndarray)
                                     else [klass.tolist() for klass in model.classes_])})
         return cls(**kwargs)
-
-    def score(self, inputs: Matrix, outputs: Matrix) -> float:
-        """
-        Compute the score of `Model` or children.
-
-        Please be sure to fit the model before computing its score and use test data and not train data.
-        Train data is data used to train the model and shall not be used to evaluate its quality.
-        Test data is data used to test the model and must not be used to train (fit) it.
-
-        :param inputs:
-            Matrix of data of dimension `n_samples x n_features`
-        :type inputs: List[List[float]]
-
-        :param outputs:
-            Matrix of data of dimension `n_samples x n_outputs`
-        :type outputs: List[List[float]]
-
-        :return: The score of `Model` or children (DessiaObject).
-        :rtype: float
-        """
-        model = self._instantiate_skl()
-        return model.score(inputs, outputs)
 
 
 class SupportVectorMachine(Model):
@@ -1763,7 +1771,7 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     """
     len_matrices = [len(matrix) for matrix in matrices]
     if len(set(len_matrices)) != 1:
-        raise ValueError("matrices are not of the same length in train_test_split.")
+        raise ValueError("Matrices are not of the same length in train_test_split.")
 
     ind_train, ind_test = get_split_indexes(len_matrices[0], ratio=ratio, shuffled=shuffled)
     train_test_split_matrices = [[[matrix[idx] for idx in ind_train], [matrix[idx] for idx in ind_test]]

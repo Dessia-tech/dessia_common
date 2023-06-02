@@ -461,7 +461,7 @@ class ValidationData(DessiaObject):
     def _matrix_ranges(self) -> Matrix:
         return matrix_ranges(self._concatenate_outputs(), nb_points=10)
 
-    def _ref_pred_names(self) -> List[str]:
+    def _ref_pred_names(self) -> List[List[str]]:
         return [[name + '_ref', name + '_pred'] for name in self.output_names]
 
     def _tooltip(self) -> Tooltip:
@@ -481,7 +481,9 @@ class ValidationData(DessiaObject):
     def _ref_pred_datasets(self, points_train: Points, points_test: Points) -> List[pl_Dataset]:
         tooltip = self._tooltip()
         ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
+                    #, 'partial_points': False} waiting for plot_data release
         pred_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
+                    #, 'partial_points': False} waiting for plot_data release
         return [pl_Dataset(elements=points_train, **ref_args), pl_Dataset(elements=points_test, **pred_args)]
 
     def _bisectrice_points(self) -> Points:
@@ -521,7 +523,6 @@ class ModelValidation(DessiaObject):
     """ Class to handle a modeler and the `ValidationData` used to train and test it. """
 
     _non_data_eq_attributes = ['_score']
-    _non_serializable_attributes = ['modeler']
     _standalone_in_db = True
 
     def __init__(self, data: ValidationData, score: float, name: str = ''):
@@ -629,127 +630,6 @@ class ModelValidation(DessiaObject):
     def plot_data(self, reference_path: str = '#', **_):
         """ Plot data method for `ModelValidation`. """
         return self.data.plot_data(reference_path=reference_path)
-
-# class ModelValidation(DessiaObject):
-#     """ Class to handle a modeler and the `ValidationData` used to train and test it. """
-
-#     _non_data_eq_attributes = ['_score']
-#     _non_serializable_attributes = ['modeler']
-#     _standalone_in_db = True
-
-#     def __init__(self, modeler: Modeler, data: ValidationData, name: str = ''):
-#         self.modeler = modeler
-#         self.data = data
-#         self._score = None
-#         DessiaObject.__init__(self, name=name)
-# # TODO: is this too heavy ? To merge with ValidationData ?
-
-#     @property
-#     def score(self) -> float:
-#         """ Score of fitted `Modeler` stored in attribute modeler. """
-#         if self._score is None:
-#             self._score = self.modeler.score_matrix(self.data.input_test, self.data.output_test)
-#         return self._score
-
-#     @classmethod
-#     def _build(cls, modeler: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix,
-#                output_test: Matrix, input_names: List[str], output_names: List[str],
-#                name: str = '') -> 'ModelValidation':
-#         trained_mdlr, pred_test = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
-#                                                              modeler.in_scaled, modeler.out_scaled, name)
-#         pred_train = trained_mdlr.predict_matrix(input_train)
-#         validation_data = ValidationData(input_train, input_test, output_train, output_test, pred_train, pred_test,
-#                                          input_names, output_names, f"{name}_data")
-#         return cls(trained_mdlr, validation_data, name)
-
-
-#     @classmethod
-#     def from_matrix(cls, modeler: Modeler, inputs: Matrix, outputs: Matrix, input_names: List[str],
-#                     output_names: List[str], ratio: float = 0.8, name: str = '') -> 'ModelValidation':
-#         """
-#         Create a `ModelValidation` object from inputs and outputs matrices.
-
-#         :param modeler:
-#             Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
-#              modeler does not need to be fitted.
-#         :type modeler: Modeler
-
-#         :param inputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type inputs: List[List[float]]
-
-#         :param outputs:
-#             Matrix of data of dimension `n_samples x n_features`
-#         :type outputs: List[List[float]]
-
-#         :param input_names:
-#             Names of input features
-#         :type input_names: List[str]
-
-#         :param output_names:
-#             Names of output features
-#         :type output_names: List[str]
-
-#         :param ratio:
-#             Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
-#             length `len_matrix - int(ratio)`.
-#         :type ratio: float, `optional`, defaults to 0.8
-
-#         :param name:
-#             Name of `ModelValidation`
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
-#          predictions for input, stored in a `ValidationData` object.
-#         :rtype: ModelValidation
-#         """
-#         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
-#         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
-
-#     @classmethod
-#     def from_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
-#                      ratio: float = 0.8, name: str = '') -> 'ModelValidation':
-#         """
-#         Create a `ModelValidation` object from a dataset.
-
-#         :param modeler:
-#             Modeler type and its hyperparameters, stored in a `Modeler` object for the sake of simplicity. Here,
-#              modeler does not need to be fitted.
-#         :type modeler: Modeler
-
-#         :param dataset:
-#             Dataset containing data, both inputs and outputs
-#         :type dataset: Dataset
-
-#         :param input_names:
-#             Names of input features
-#         :type input_names: List[str]
-
-#         :param output_names:
-#             Names of output features
-#         :type output_names: List[str]
-
-#         :param ratio:
-#             Ratio on which to split matrix. If ratio > 1, `in_train` will be of length `int(ratio)` and `in_test` of
-#             length `len_matrix - int(ratio)`.
-#         :type ratio: float, `optional`, defaults to 0.8
-
-#         :param name:
-#             Name of `ModelValidation`
-#         :type name: str, `optional`, defaults to `''`
-
-#         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
-#          predictions for input, stored in a ValidationData object.
-#         :rtype: ModelValidation
-#         """
-#         train_dataset, test_dataset = dataset.train_test_split(ratio=ratio, shuffled=True)
-#         in_train, out_train = train_dataset.to_input_output(input_names, output_names)
-#         in_test, out_test = test_dataset.to_input_output(input_names, output_names)
-#         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
-
-#     def plot_data(self, reference_path: str = '#', **_):
-#         """ Plot data method for `ModelValidation`. """
-#         return self.data.plot_data(reference_path=reference_path)
 
 
 class CrossValidation(DessiaObject):
@@ -859,9 +739,9 @@ class CrossValidation(DessiaObject):
         graphs = []
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.data.build_graphs(reference_path=f"{reference_path}/model_validations/{idx}")[0]
-        if len(self.model_validations[0].data.output_names) >= 1 and \
-            "ssifier" in type(self.model_validations[0].modeler.model).__name__:
-            return [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
+        # if len(self.model_validations[0].data.output_names) > 1 and \
+        #     "ssifier" in type(self.model_validations[0].modeler.model).__name__:
+        #     return [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
         return [self._plot_score(reference_path=reference_path),
                 MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
