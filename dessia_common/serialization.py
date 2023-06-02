@@ -3,7 +3,6 @@
 """ Serialization Tools. """
 
 import uuid
-import sys
 import warnings
 import inspect
 import collections
@@ -35,19 +34,7 @@ class SerializableObject(CoreDessiaObject):
 
     def base_dict(self):
         """ A base dict for to_dict: set up a dict with object class and version. """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
         dict_ = {'object_class': self.full_classname}
-        if package_version:
-            dict_['package_version'] = package_version
         return dict_
 
     def _serializable_dict(self):
@@ -554,10 +541,10 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of subattributes of an object.
+    Create a graph of sub-attributes of an object.
 
     Edges representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub attribute to an attribute
      * the pointer link between the 2 elements
     """
     nodes = set()
@@ -678,12 +665,12 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyses given dict.
+    Analyze given dict.
 
      Useful in order to:
-    - find jsonpointers
+    - find JSON pointers
     - deserialize them in the right order to respect pointers graph
-    :returns: a dict with key the path of the item and the value is the python object
+    :returns: a dictionary with key the path of the item and the value is the python object
     """
     order = deserialization_order(dict_)
     pointers_memo = {}
@@ -757,10 +744,10 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object.
+    Analyze object to output stats on pointer use in it.
 
     Maybe useless now that we use uuids.
-    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
+    :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
         dict_ = obj

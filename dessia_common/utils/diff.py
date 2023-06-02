@@ -105,9 +105,6 @@ def diff(value1, value2, path='#'):
         return sequence_diff(value1, value2, path=path)
 
     if not isinstance(value1, type(value2)):
-        # print('tv2', type(value2), type(value1))
-        # print(isinstance(value1, type(value2)))
-        # invalid_types.append(path)
         invalid_types.append(DifferentType(path, value1, value2))
         return Diff(diff_values, missing_keys_in_other_object, invalid_types)
 
@@ -155,7 +152,8 @@ def dict_diff(dict1, dict2, path='#'):
     for key, value in dict_.items():
         path_key = f'{path}/{key}'
         if key not in other_dict:
-            diff_object.missing_attributes.append(MissingAttribute(path=path_key, missing_in_first_object=first_object))
+            diff_object.missing_attributes.append(MissingAttribute(path=path_key,
+                                                                   missing_in_first_object=first_object))
         else:
             diff_key = diff(value, other_dict[key], path=path_key)
             diff_object += diff_key
@@ -228,7 +226,7 @@ def data_eq(value1, value2):
 
 
 def dict_data_eq(dict1, dict2):
-    """ Returns if two dicts are equal on data equality. """
+    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
     for key, value in dict1.items():
         if key not in dict2:
             return False
@@ -244,7 +242,6 @@ def sequence_data_eq(seq1, seq2):
 
     for v1, v2 in zip(seq1, seq2):
         if not data_eq(v1, v2):
-            # print('seq false')
             return False
 
     return True
@@ -266,7 +263,7 @@ def sequence_hash(sequence):
     Return hash of a sequence value.
 
     Only checks for first and last elements hashes if defined for performance purpose.
-    It also looks that previous sequence hash method was lest efficient as the sum of all hashes in sequence
+    It also looks that previous sequence hash method was less efficient as the sum of all hashes in sequence
     returned less unique values for normally different sequences.
     """
     if not sequence:
@@ -293,7 +290,7 @@ def dict_hash(dict_):
         # Try and sort keys in order to get first and last elements.
         sorted_keys = sorted(dict_.keys())
     except TypeError:
-        # Old less efficient hash for non ordered keys.
+        # Old less efficient hash for non order-able keys.
         for key, value in dict_.items():
             hash_ += hash(key) + choose_hash(value)
         return hash_

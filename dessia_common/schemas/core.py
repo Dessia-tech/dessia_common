@@ -15,7 +15,7 @@ from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
-from dessia_common.schemas.interfaces import Annotations, T
+from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 
 SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
@@ -25,6 +25,17 @@ TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'st
 TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
 
 _fullargsspec_cache = {}
+
+
+class BackendReference(CoreDessiaObject):
+    """ Enable Backend reference injection. """
+
+    def __init__(self, object_id: str):
+        self.object_id = object_id
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method: bool = True, id_memo=None):
+        """ Is used for default value when computing schema to dict with objects default values. """
+        return {"object_id": self.object_id}
 
 
 class UntypedArgument(FailedCheck):
@@ -52,7 +63,7 @@ class Schema:
 
     It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
-    This dictionnary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
@@ -117,6 +128,11 @@ class Schema:
         """ Concatenate schema chunks into a List. """
         return [self.chunk(a) for a in self.attributes]
 
+    @property
+    def standalone_properties(self):
+        """ Return all properties that are standalone. """
+        return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
+
     def to_dict(self):
         """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
@@ -176,7 +192,6 @@ class ClassSchema(Schema):
 
     def __init__(self, class_: Type[CoreDessiaObject]):
         self.class_ = class_
-        self.standalone_in_db = class_._standalone_in_db
         self.python_typing = full_classname(class_, compute_for="class")
         annotations = get_type_hints(class_.__init__)
 
@@ -188,9 +203,22 @@ class ClassSchema(Schema):
 
     @property
     def editable_attributes(self):
-        """ Attributes that are not in RESERVED_ARGNAMES nor defined as non editable by user. """
+        """ Attributes that are not in RESERVED_ARGNAMES nor defined as non-editable by user. """
         attributes = super().editable_attributes
         return [a for a in attributes if a not in self.class_._non_editable_attributes]
+
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if class is standalone. """
+        return self.class_._standalone_in_db
+
+    def to_dict(self):
+        """ Write the whole schema. """
+        schema = super().to_dict()
+        classname = full_classname(object_=self.class_, compute_for="class")
+        schema.update({"classes": [classname], "standalone_in_db": self.standalone_in_db})
+        # TODO Check if we can get rid of this and use Property schema to simplify frontend
+        return schema
 
     def default_dict(self):
         """ Compute class default Dict. Add object_class to base one. """
@@ -295,6 +323,11 @@ class Property:
         """ Stringified annotation. """
         return str(self.annotation)
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Properties cannot be in database by default. """
+        return False
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Simple get class from its name. """
@@ -305,7 +338,7 @@ class Property:
         """ Shortcut for Check message prefixes. """
         return f"Attribute '{self.attribute}' : "
 
-    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+    def to_dict(self, title: str = "", editable: bool = False, description: str = "") -> PropertySchema:
         """ Write base schema as a Dict. """
         return {'title': title, 'editable': editable, 'description': description,
                 'python_typing': self.serialized, "type": None}
@@ -313,6 +346,11 @@ class Property:
     def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
         return self.definition_default
+
+    def inject_reference(self, object_id: str):
+        """ Exposed to backend in order to inject mongo reference in place of object default value. """
+        if self.standalone_in_db:
+            self.definition_default = BackendReference(object_id)
 
     def check_list(self) -> CheckList:
         """
@@ -359,7 +397,7 @@ class TypingProperty(Property):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Split Typing and Args and delegate deserialization to specific classes. """
+        """ Split Typing and Arguments and delegate deserialization to specific classes. """
         typename = cls.type_from_serialized(serialized)
         schema_class = SERIALIZED_TO_SCHEMA_CLASS[typename]
         return schema_class.annotation_from_serialized(serialized)
@@ -378,7 +416,7 @@ class TypingProperty(Property):
         return ""
 
     @classmethod
-    def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T]]:
+    def _args_from_serialized(cls, serialized: str) -> Tuple[Type[T], ...]:
         """ Deserialize arguments. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
@@ -386,7 +424,7 @@ class TypingProperty(Property):
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
-        """ Get Typing and Args as strings. """
+        """ Get Typing and Arguments as strings. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).groups()
 
     def has_one_arg(self) -> PassedCheck:
@@ -396,7 +434,7 @@ class TypingProperty(Property):
             msg = f"{self.check_prefix}is typed as a '{pretty_origin}' which requires exactly 1 argument. " \
                   f"Expected '{pretty_origin}[T]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
-        return PassedCheck(f"{self.check_prefix}has exactly one arg in its definition.")
+        return PassedCheck(f"{self.check_prefix}has exactly one argument in its definition.")
 
 
 class ProxyProperty(TypingProperty):
@@ -413,7 +451,7 @@ class ProxyProperty(TypingProperty):
 
     @property
     def schema(self):
-        """ Return a reference to its only arg. """
+        """ Return a reference to its only argument. """
         return get_schema(annotation=self.annotation, attribute=self.attribute,
                           definition_default=self.definition_default)
 
@@ -442,8 +480,9 @@ class OptionalProperty(ProxyProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Optional as a Dict. """
         default_value = self.schema.default_value()
-        chunk = self.schema.to_dict(title=title, editable=editable, description=description)
-        chunk["default_value"] = default_value
+
+        base_chunk = self.schema.to_dict(title=title, editable=editable, description=description)
+        chunk = {**base_chunk, "default_value": default_value}
         return chunk
 
     @classmethod
@@ -456,8 +495,8 @@ class AnnotatedProperty(ProxyProperty):
     """
     Proxy Schema class for annotated type hints.
 
-    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges, or probably enums,
-    precision,...
+    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges,
+    or probably enumerations, precision,...
 
     This could enable quite effective type checking on frontend form.
 
@@ -598,11 +637,15 @@ class CustomClass(Property):
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for='class')
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Whether the class is standalone in db. """
+        return self.annotation._standalone_in_db
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write CustomClass as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'standalone_in_db': self.annotation._standalone_in_db,
-                      "classes": [self.serialized]})
+        chunk.update({'type': 'object', 'standalone_in_db': self.standalone_in_db, "classes": [self.serialized]})
         return chunk
 
     def default_value(self):
@@ -634,28 +677,35 @@ class UnionProperty(TypingProperty):
     def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-        standalone_args = [a._standalone_in_db for a in self.args]
-        if all(standalone_args):
-            self.standalone = True
-        elif not any(standalone_args):
-            self.standalone = False
-        else:
-            self.standalone = None
-
     @property
     def serialized(self) -> str:
         """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
+    @property
+    def standalone_in_db(self) -> Optional[bool]:
+        """ True if all subclasses are standalone, False if None of them are, None else. """
+        standalone_args = [a._standalone_in_db for a in self.args]
+        if all(standalone_args):
+            return True
+        if not any(standalone_args):
+            return False
+        return None
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Union annotation. """
         return Union[TypingProperty._args_from_serialized(serialized)]
 
+    @property
+    def classes(self):
+        """ Compute all possible classes for this annotation. Every class specified in Union annotation. """
+        return [full_classname(object_=a, compute_for="class") for a in self.args]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Union as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({'type': 'object', 'classes': [self.serialized], 'standalone_in_db': self.standalone})
+        chunk.update({'type': 'object', 'classes': self.classes, 'standalone_in_db': self.standalone_in_db})
         return chunk
 
     def default_value(self):
@@ -760,12 +810,12 @@ class HeterogeneousSequence(TypingProperty):
 
     def ellipsis_has_exactly_two_args(self) -> PassedCheck:
         """
-        Tuple can be ellipsed (Tuple[T, ...]), meaning that it contains any number of element.
+        Tuple can use Ellipsis (Tuple[T, ...]), meaning that it contains any number of element.
 
         In this case it MUST have exactly two arguments.
         """
         if self.additional_items and len(self.args) != 2:
-            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactaly 2 arguments. " \
+            msg = f"{self.check_prefix}is typed as an ellipsed 'Tuple' which requires at exactly 2 arguments. " \
                   f"Expected 'Tuple[T, ...]', got '{self.annotation}'."
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
@@ -905,7 +955,7 @@ class InstanceOfProperty(TypingProperty):
     """
     Schema class for InstanceOf type hints.
 
-    Datatype that can be seen as a union of classes that inherits from the only arg given.
+    Datatype that can be seen as a union of classes that inherits from the only argument given.
     Instances of these classes validate against this type.
     """
 
@@ -923,11 +973,22 @@ class InstanceOfProperty(TypingProperty):
         """ Get Schema of base class. """
         return ClassSchema(self.args[0])
 
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
+        return self.args[0]._standalone_in_db
+
+    @property
+    def classes(self):
+        """ Compute all possible classes for this annotation. Return base class. """
+        return [full_classname(object_=self.args[0], compute_for="class")]
+
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        class_ = self.args[0]
-        chunk.update({'type': 'object', 'instance_of': self.serialized, 'standalone_in_db': class_._standalone_in_db})
+        chunk.update({"type": "object", "instance_of": self.classes[0],
+                      "classes": self.classes,
+                      "standalone_in_db": self.standalone_in_db})
         return chunk
 
     def default_value(self) -> BaseClass:
@@ -957,6 +1018,11 @@ class SubclassProperty(TypingProperty):
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Subclass annotation. """
         return Subclass[TypingProperty._args_from_serialized(serialized)]
+
+    @property
+    def standalone_in_db(self) -> bool:
+        """ Return True if base class is standalone. """
+        return self.args[0]._standalone_in_db
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write Subclass as a Dict. """
@@ -1107,7 +1173,7 @@ class ClassProperty(TypingProperty):
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
-        """ Deserialize Type annotation. Support undefined and defined arg. """
+        """ Deserialize Type annotation. Support undefined and defined argument. """
         args = TypingProperty._args_from_serialized(serialized)
         if args:
             return Type[args]
@@ -1231,7 +1297,7 @@ ORIGIN_TO_SCHEMA_CLASS = {
     collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
     dict: DynamicDict, InstanceOf: InstanceOfProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
-    type: ClassProperty, AttributeType: AttributeTypeProperty
+    type: ClassProperty, AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
@@ -1239,7 +1305,7 @@ SERIALIZED_TO_SCHEMA_CLASS = {
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
     "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty,
-    "AttributeType": AttributeTypeProperty
+    "AttributeType": AttributeTypeProperty, "ClassAttributeType": AttributeTypeProperty
 }
 
 
@@ -1383,7 +1449,7 @@ def parse_class_docstring(class_) -> ParsedDocstring:
 
 
 def parse_docstring(docstring: str, annotations: Dict[str, Any]) -> ParsedDocstring:
-    """ Parse user-defined docstring of given class. Refer to docs to see how docstrings should be built. """
+    """ Parse user-defined docstring of given class. Refer to docs to see how docstring should be built. """
     if docstring:
         no_return_docstring = docstring.split(':return:')[0]
         splitted_docstring = no_return_docstring.split(':param ')

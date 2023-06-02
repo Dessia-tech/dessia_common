@@ -115,7 +115,7 @@ class InstantiateModel(Block):
 
 class ClassMethod(Block):
     """
-    Run given classmethod during workflow execution. Handle static method as well.
+    Run given class method during workflow execution. Handle static method as well.
 
     :param method_type: Denotes the class and method to run.
     :param name: Name of the block.
@@ -322,7 +322,7 @@ class WorkflowBlock(Block):
     Wrapper around workflow to put it in a block of another workflow.
 
     Even if a workflow is a block, it can't be used directly as it has a different behavior
-    than a Block in eq and hash which is problematic to handle in dicts for example.
+    than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
     :param name: Name of the block.
@@ -428,7 +428,7 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def evaluate(self, values, **kwargs):
-        """ Loop on input list and run subworkflow on each. """
+        """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:
@@ -641,7 +641,7 @@ class Display(Block):
 
 class MultiPlot(Display):
     """
-    Generate a Multiplot which axes will be the given attributes.
+    Generate a Multi plot which axes will be the given attributes.
 
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
@@ -815,7 +815,7 @@ class GetModelAttribute(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"GetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
                    full_classname(object_=self.attribute_type.class_, compute_for='class'),
@@ -863,7 +863,7 @@ class SetModelAttribute(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"SetModelAttribute(attribute_type=AttributeType(" \
-                 f"{self.attribute_type.class_.__name__}, name='{self.attribute_type.name}')" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
