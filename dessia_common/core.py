@@ -199,16 +199,10 @@ class DessiaObject(SerializableObject):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    def method_dict(self, method_name=None, method_jsonschema=None):
-        """ Return a jsonschema of a method arguments. """
-        if method_name is None and method_jsonschema is None:
-            msg = 'No method name nor jsonschema provided'
-            raise NotImplementedError(msg)
-
-        if method_name is not None and method_jsonschema is None:
-            method_jsonschema = self.method_schemas[method_name]
-            # TODO CHeck this
-        return method_jsonschema.to_dict()
+    def method_dict(self, method_name: str):
+        """ Return a default dict for the given method name. """
+        schema = self.method_schemas[method_name]
+        return schema.default_dict()
 
     def dict_to_arguments(self, dict_, method):
         """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
