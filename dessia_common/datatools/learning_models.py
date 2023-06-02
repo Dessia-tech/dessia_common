@@ -6,6 +6,7 @@ import numpy as npy
 from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_network
 
 from dessia_common.core import DessiaObject
+from dessia_common.utils.types import is_sequence
 
 Vector = List[float]
 Matrix = List[Vector]
@@ -81,6 +82,9 @@ class Scaler(DessiaObject):
         scaler.fit(reshaped_matrix)
         return cls.instantiate_dessia(scaler, name)
 
+    def _prepare_transform(self, matrix: Matrix) -> Tuple['Scaler', Matrix]:
+        return self.instantiate_skl(), vector_to_2d_matrix(matrix)
+
     def transform(self, matrix: Matrix) -> Matrix:
         """
         Transform the data stored in matrix according to this Scaler or children.
@@ -92,8 +96,7 @@ class Scaler(DessiaObject):
         :return: The scaled matrix according to the rules set of scaler.
         :rtype: List[List[float]]
         """
-        scaler = self.instantiate_skl()
-        reshaped_matrix = vector_to_2d_matrix(matrix)
+        scaler, reshaped_matrix = self._prepare_transform(matrix)
         return scaler.transform(reshaped_matrix).tolist()
 
 
@@ -108,8 +111,7 @@ class Scaler(DessiaObject):
         :return: The raw matrix according to the rules of scaler.
         :rtype: List[List[float]]
         """
-        scaler = self.instantiate_skl()
-        reshaped_matrix = vector_to_2d_matrix(matrix)
+        scaler, reshaped_matrix = self._prepare_transform(matrix)
         return scaler.inverse_transform(reshaped_matrix).tolist()
 
     @classmethod
@@ -1231,6 +1233,9 @@ class SupportVectorMachine(Model):
         :return: The `SupportVectorRegressor` or `SupportVectorClassifier` model fit on inputs and outputs.
         :rtype: SupportVectorMachine
         """
+        if is_sequence(outputs[0]):
+            if len(outputs[0]) != 1:
+                raise NotImplementedError("Support Vector Machine do not handle multi-output.")
         return cls.fit_(inputs, npy.array(outputs).ravel(), name=name, C=C, kernel=kernel)
 
     @classmethod

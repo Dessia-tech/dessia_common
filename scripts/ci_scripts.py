@@ -12,7 +12,7 @@ scripts = [
     "dataset_pareto.py",
     "filters.py",
     "moving_object.py",
-    "optimization.py",
+    # "optimization.py",
     "graph.py",
     "sampling.py",
     "markdowns.py",

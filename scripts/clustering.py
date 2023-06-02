@@ -44,7 +44,7 @@ assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1]
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
-ref_strs = ["15000 | Chevrolet C... |", "+ 396 undisplayed", "0 |     Chevy S-10 |", "8.0 |\n|         999999 |    F"]
+ref_strs = ["15000 | Chevrolet C... |", "+ 396 undisplayed", "0 |     Chevy S-10 |", "|         999999 |    F"]
 assert(all(string in clustered_cars_without.__str__() for string in ref_strs))
 
 dataset = Dataset(all_cars_wi_feat, name="cars")

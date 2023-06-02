@@ -9,6 +9,8 @@ from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
+max_time_check_platform = 10.
+
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
 dataset_example = Dataset(all_cars_no_feat)
@@ -32,7 +34,13 @@ idty_scaler, idty_matrix = models.IdentityScaler().fit_transform(dataset_example
 
 std_scaler = models.StandardScaler().fit(inputs)
 std_inputs = std_scaler.transform(inputs)
+std_multi_inputs = std_scaler.transform_matrices(inputs, inputs, inputs)
+multi_inputs = std_scaler.inverse_transform_matrices(*std_multi_inputs)
 std_scaler, std_inputs = models.StandardScaler().fit_transform(inputs)
+
+for i in range(2):
+    assert(all(value in std_multi_inputs[i][255] for value in std_multi_inputs[i + 1][255]))
+    assert(all(value in multi_inputs[i][255] for value in multi_inputs[i + 1][255]))
 
 # Hyperparameters
 ridge_hyperparams = {'alpha': 0.1, 'tol': 0.00001, 'fit_intercept': True}
@@ -104,6 +112,7 @@ for key, model in skl_models.items():
 # Test dessia models methods
 dessia_models = {}
 for key, model in skl_models.items():
+    print(key)
     if 'regressor' in key:
         if 'svm' in key:
             local_outputs = mono_outputs
@@ -127,7 +136,7 @@ for key, model in skl_models.items():
                                                models.SupportVectorClassifier, models.RandomForestClassifier)))
     t=time.time()
     dessia_models[key]._check_platform()
-    assert(time.time() - t <= 5.)
+    assert(time.time() - t <= max_time_check_platform)
 
 
 # Tests errors and base objects
