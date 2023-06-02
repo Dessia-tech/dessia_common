@@ -826,7 +826,7 @@ class Workflow(Block):
     def _start_run_dict(self) -> Dict:
         return {}
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None) -> Dict:
+    def method_dict(self, method_name: str = None) -> Dict:
         """ Wrapper method to get dictionaries of run and start_run methods. """
         if method_name == 'run':
             return self._run_dict()
@@ -2047,17 +2047,11 @@ class WorkflowRun(WorkflowState):
         display_settings.pop(0)
         return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
-    def method_dict(self, method_name: str = None, method_jsonschema: Any = None):
+    def method_dict(self, method_name: str = None):
         """ Get run again default dict. """
-        if method_name is not None and method_name == 'run_again' and method_jsonschema is not None:
-            dict_ = serialize_dict(self.input_values)
-            for property_, value in method_jsonschema['properties'].items():
-                if property_ in dict_ and 'object_id' in value and 'object_class' in value:
-                    # TODO : Check. this is probably useless as we are not dealing with default values here
-                    dict_[property_] = value
-            return dict_
-        # TODO Check this result. Might raise an error
-        return DessiaObject.method_dict(self, method_name=method_name, method_jsonschema=method_jsonschema)
+        if method_name is not None and method_name == 'run_again':
+            return serialize_dict(self.input_values)
+        raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
     def run_again(self, input_values, progress_callback=None, name=None):
         """ Execute workflow again with given inputs. """
