@@ -41,7 +41,7 @@ class Scaler(DessiaObject):
         return name + (f"{in_out}_scaler" if is_scaled else "identity_scaler")
 
     @classmethod
-    def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> 'Scaler':
+    def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> Tuple['Scaler', str]:
         """ Set scaler in modeler. """
         class_ = cls._set_class(is_scaled)
         name = cls._set_name(modeler_name, in_out, is_scaled)
@@ -115,18 +115,12 @@ class Scaler(DessiaObject):
         return scaler, scaler.transform(reshaped_matrix)
 
     def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
-        """ Iteratively scale all matrices in argument. """
-        scaled_matrices = tuple()
-        for matrix in matrices:
-            scaled_matrices += (self.transform(matrix), )
-        return scaled_matrices
+        """ Iteratively scale all matrices. """
+        return tuple([self.transform(m) for m in matrices])
 
     def inverse_transform_matrices(self, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
-        """ Iteratively unscale all matrices in argument. """
-        unscaled_matrices = tuple()
-        for matrix in scaled_matrices:
-            unscaled_matrices += (self.inverse_transform(matrix), )
-        return unscaled_matrices
+        """ Iteratively unscale all matrices. """
+        return tuple([self.inverse_transform(m) for m in scaled_matrices])
 
 
 class StandardScaler(Scaler):
@@ -232,6 +226,14 @@ class Model(DessiaObject):
     @classmethod
     def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
+
+    @classmethod
+    def _check_criterion(cls, criterion: str):
+        return criterion
+
+    @classmethod
+    def _check_outputs(cls, outputs: Matrix):
+        return outputs
 
     @classmethod
     def init_for_modeler_(cls, **parameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
@@ -560,7 +562,7 @@ class Tree(Model):
         return self._skl_class()(self.n_features, npy.array(self.n_classes), self.n_outputs)
 
     @staticmethod
-    def _getstate_dessia(model):
+    def _getstate(model):
         state = model.__getstate__()
         dessia_state = {'max_depth': int(state['max_depth']),
                         'node_count': int(state['node_count']),
@@ -569,7 +571,7 @@ class Tree(Model):
         return dessia_state
 
     @staticmethod
-    def _setstate_dessia(model, state):
+    def _setstate(model, state):
         skl_state = {'max_depth': int(state['max_depth']),
                      'node_count': int(state['node_count']),
                      'values': npy.array(state['values']),
@@ -579,13 +581,13 @@ class Tree(Model):
 
     def _instantiate_skl(self):
         model = self._call_skl_model()
-        model = self._setstate_dessia(model, self.tree_state)
+        model = self._setstate(model, self.tree_state)
         return model
 
     @classmethod
     def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
         kwargs = {'name': name,
-                  'tree_state': cls._getstate_dessia(model),
+                  'tree_state': cls._getstate(model),
                   'n_classes': model.n_classes.tolist(),
                   'n_features': model.n_features,
                   'n_outputs': model.n_outputs}
@@ -649,16 +651,6 @@ class DecisionTreeRegressor(Model):
     @classmethod
     def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
-
-    @classmethod
-    def _check_criterion(cls, criterion: str):
-        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
-            return 'gini'
-        return criterion
-
-    @classmethod
-    def _check_outputs(cls, outputs: Matrix):
-        return outputs
 
     @classmethod
     def init_for_modeler(cls, criterion: str = 'squared_error',
@@ -770,6 +762,12 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         return tree.DecisionTreeClassifier
 
     @classmethod
+    def _check_criterion(cls, criterion: str):
+        if criterion == 'squared_error':
+            return 'gini'
+        return criterion
+
+    @classmethod
     def _check_outputs(cls, outputs: Matrix):
         if isinstance(outputs[0], float):
             return [[int(output)] for output in outputs]
@@ -851,16 +849,6 @@ class RandomForest(Model):
         return {'name': name,
                 'n_outputs_': model.n_outputs_,
                 'parameters': parameters}
-
-    @classmethod
-    def _check_criterion(cls, criterion: str):
-        if 'egressor' not in cls.__name__ and criterion == 'squared_error':
-            return 'gini'
-        return criterion
-
-    @classmethod
-    def _check_outputs(cls, outputs: Matrix):
-        return outputs
 
     @classmethod
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
@@ -1035,6 +1023,12 @@ class RandomForestClassifier(RandomForest):
     @classmethod
     def _skl_class(cls):
         return ensemble.RandomForestClassifier
+
+    @classmethod
+    def _check_criterion(cls, criterion: str):
+        if criterion == 'squared_error':
+            return 'gini'
+        return criterion
 
     @classmethod
     def _check_outputs(cls, outputs: Matrix):

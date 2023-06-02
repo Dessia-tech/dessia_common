@@ -55,28 +55,12 @@ class ModeledDataset(Dataset):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
         """ Specific `dict_to_object` method. """
-        dessia_objects = []
-        for dessia_object in dict_['dessia_objects']:
-            dessia_objects.append(Sample(dessia_object['values'],
-                                         dessia_object['reference_path'],
-                                         dessia_object['name']))
-        dict_['dessia_objects'] = dessia_objects
+        dessia_objects = [Sample(obj['values'], obj['reference_path'], obj['name']) for obj in dict_['dessia_objects']]
+        # dict_['dessia_objects'] = dessia_objects
         return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
 
     def _printed_attributes(self):
         return self.common_attributes
-
-    # @classmethod
-    # def from_predicted_dataset(cls, modeler: Modeler, dataset: Dataset, input_names: List[str], output_names: List[str],
-    #                            name: str = ''):
-    #     """ Predict new inputs from a a modeler and a dataset of unknown inputs. """
-    #     predictions = modeler.predict_dataset(dataset, input_names)
-    #     samples = []
-    #     for idx, (input_, pred) in enumerate(zip(dataset, predictions)):
-    #         sample = {attr: getattr(input_, attr) for attr in input_names}
-    #         sample.update(dict(zip(output_names, pred)))
-    #         samples.append(Sample(sample, reference_path=f"#/dessia_objects/{idx}", name=f"{name}_{idx}"))
-    #     return cls(samples, input_names, output_names)
 
     @classmethod
     def from_matrices(cls, inputs: Matrix, predictions: Matrix, input_names: List[str], output_names: List[str],
@@ -96,28 +80,9 @@ class ModeledDataset(Dataset):
             matrix = []
             for sample in self:
                 vector_features, temp_row = list(zip(*list(sample.values.items())))
-                matrix.append(list(temp_row[vector_features.index(attr)] for attr in self.common_attributes))
+                matrix.append([temp_row[vector_features.index(attr)] for attr in self.common_attributes])
             self._matrix = matrix
         return self._matrix
-
-    # @classmethod
-    # def fit_validate_predict(cls, train_dataset: Dataset, to_predict_dataset: Dataset, model: models.Model,
-    #                          input_names: List[str], output_names: List[str], input_is_scaled: bool = True,
-    #                          output_is_scaled: bool = False, nb_tests: int = 5, ratio: float = 0.8, name: str = '') \
-    #     -> Tuple['ModeledDataset', 'Modeler', 'CrossValidation']:
-    #     """ Train and validate a modeler with `train_dataset` and predict `to_predict_dataset`. """
-    #     modeler = Modeler.fit_dataset(dataset=train_dataset, input_names=input_names, output_names=output_names,
-    #                                   model=model, input_is_scaled=input_is_scaled, output_is_scaled=output_is_scaled,
-    #                                   name=name + "_modeler")
-
-    #     cross_val = CrossValidation.from_dataset(modeler=modeler, dataset=train_dataset,
-    #                                              input_names=input_names, output_names=output_names,
-    #                                              nb_tests=nb_tests, ratio=ratio)
-
-    #     modeled_dataset = cls.from_predicted_dataset(modeler=modeler, dataset=to_predict_dataset,
-    #                                                  input_names=input_names, output_names=output_names, name=name)
-
-    #     return modeled_dataset, modeler, cross_val
 
 
 class Modeler(DessiaObject):
@@ -617,7 +582,6 @@ class CrossValidation(DessiaObject):
         """ List of scores of modelers contained in `model_validations`. """
         if self._scores is None:
             self._scores = [model_val.score for model_val in self.model_validations]
-            return self._scores
         return self._scores
 
     def _points_scores(self, reference_path: str) -> Points:
@@ -646,11 +610,8 @@ class CrossValidation(DessiaObject):
                     output_names: List[str], nb_tests: int = 5, ratio: float = 0.8,
                     name: str = '') -> 'CrossValidation':
         """ Cross validation of modeler from inputs and outputs matrices, given `input_names` and `output_names`. """
-        validations = []
-        for idx in range(nb_tests):
-            name = f"{name}_val_{idx}"
-            validations.append(ModelValidation.from_matrix(modeler, inputs, outputs, input_names, output_names, ratio,
-                                                           name))
+        validations = [ModelValidation.from_matrix(modeler, inputs, outputs, input_names, output_names, ratio,
+                                                   f"{name}_val_{idx}") for idx in range(nb_tests)]
         return cls(validations, name)
 
     @classmethod
