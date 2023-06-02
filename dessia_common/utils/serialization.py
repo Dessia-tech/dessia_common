@@ -136,10 +136,10 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of sub-attributes of an object.
+    Create a graph of sub attributes of an object.
 
     For this function, edge representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub-attribute to an attribute
      * the pointer link between the 2 elements
     """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
@@ -153,14 +153,14 @@ def update_pointers_data(global_dict, current_dict, pointers_memo):
 
 
 def deserialization_order(dict_):
-    """ Analyse a dictionary representing an object and give a deserialization order. """
+    """ Analyze a dictionary representing an object and give a deserialization order. """
     warnings.warn("Module serialization.py have been moved outside utils. Please use it instead")
     return dcs.deserialization_order(dict_)
 
 
 def dereference_jsonpointers(dict_):
     """
-    Analyse the given dictionary.
+    Analyze the given dictionary.
 
     It searches for:
     - find JSON pointers
@@ -192,7 +192,7 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object.
+    Analyze object to output stats on pointer use in it.
 
     :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """

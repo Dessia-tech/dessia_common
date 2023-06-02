@@ -10,8 +10,8 @@ from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, 
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
-from dessia_common.files import StringFile, BinaryFile
+from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
+from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
@@ -115,7 +115,7 @@ class InstantiateModel(Block):
 
 class ClassMethod(Block):
     """
-    Run given classmethod during workflow execution. Handle static method as well.
+    Run given class method during workflow execution. Handle static method as well.
 
     :param method_type: Denotes the class and method to run.
     :param name: Name of the block.
@@ -322,7 +322,7 @@ class WorkflowBlock(Block):
     Wrapper around workflow to put it in a block of another workflow.
 
     Even if a workflow is a block, it can't be used directly as it has a different behavior
-    than a Block in eq and hash which is problematic to handle in dicts for example.
+    than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
     :param name: Name of the block.
@@ -354,7 +354,7 @@ class WorkflowBlock(Block):
         return self.workflow == other.workflow
 
     def evaluate(self, values, **kwargs):
-        """ Format subworkflow arguments and run it. """
+        """ Format sub workflow arguments and run it. """
         arguments = {self.inputs.index(input_): v for input_, v in values.items()}
         workflow_run = self.workflow.run(arguments)
         return [workflow_run.output_value]
@@ -364,7 +364,7 @@ class WorkflowBlock(Block):
         return self.workflow.package_mix()
 
     def _docstring(self):
-        """ Recursively get docstring of subworkflow. """
+        """ Recursively get docstring of sub workflow. """
         workflow_docstrings = self.workflow._docstring()
         docstring = {}
         for block_docstring in workflow_docstrings:
@@ -428,7 +428,7 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def evaluate(self, values, **kwargs):
-        """ Loop on input list and run subworkflow on each. """
+        """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:
@@ -641,7 +641,7 @@ class Display(Block):
 
 class MultiPlot(Display):
     """
-    Generate a Multiplot which axes will be the given attributes.
+    Generate a Multi plot which axes will be the given attributes.
 
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
@@ -774,6 +774,54 @@ class ModelAttribute(Block):
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+   
+class GetModelAttribute(Block):
+    """
+    Fetch attribute of given object during workflow execution.
+
+    :param attribute_type: AttributeType variable that contain the model and the name of the attribute to select.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type = attribute_type
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
+        if type_:
+            outputs = [TypedVariable(type_=type_, name='Model attribute')]  
+        else:
+            outputs=[Variable(name='Model attribute')]
+        Block.__init__(self, inputs, outputs, name=name, position=position)
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        classname = self.attribute_type.class_.__name__
+        return len(classname) + 7 * len(self.attribute_type.name)
+
+    def equivalent(self, other):
+        """ Return whether the block is equivalent to the other given or not. """
+        classname = self.attribute_type.class_.__name__
+        other_classname = other.attribute_type.class_.__name__
+        same_model = classname == other_classname
+        same_method = self.attribute_type.name == other.attribute_type.name
+        return Block.equivalent(self, other) and same_model and same_method
+
+    def evaluate(self, values, **kwargs):
+        """ Get input object's deep attribute. """
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_type.name}')]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"GetModelAttribute(attribute_type=AttributeType(" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
+                 f", {self.base_script()})"
+        imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
+                   full_classname(object_=self.attribute_type.class_, compute_for='class'),
+                   self.full_classname]
+        return ToScriptElement(declaration=script, imports=imports)
+
 
 class SetModelAttribute(Block):
     """
@@ -784,29 +832,39 @@ class SetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
-        self.attribute_name = attribute_name
-        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {attribute_name}')]
-        outputs = [Variable(name=f'Model with changed attribute {attribute_name}')]
+    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type = attribute_type
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
+        inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model')]
+        if type_:
+            inputs.append(TypedVariable(type_=type_, 
+                                        name=f'Value to insert for attribute {self.attribute_type.name}'))
+        else:
+            inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
+        outputs = [TypedVariable(type_=self.attribute_type.class_, 
+                                    name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
-        return 3 + len(self.attribute_name)
+        return 3 + len(self.attribute_type.name)
 
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+        return Block.equivalent(self, other) and self.attribute_type.name == other.attribute_type.name
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
         model = values[self.inputs[0]]
-        setattr(model, self.attribute_name, values[self.inputs[1]])
+        setattr(model, self.attribute_type.name, values[self.inputs[1]])
         return [model]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        script = f"SetModelAttribute(attribute_type=AttributeType(" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
+                 f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
@@ -1005,14 +1063,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                if isinstance(value, StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                archive = generate_archive(zip_archive, value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:
@@ -1025,3 +1076,15 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+def get_attribute_type(attribute_name: str, parameters):
+    """ Get type of attribute name of class."""
+    parameter = parameters.get(attribute_name)
+    if not parameter:
+        return None
+    if not hasattr(parameter, "annotation"):
+        return parameter
+    if parameter.annotation == inspect.Parameter.empty:
+        return None 
+    return parameter.annotation

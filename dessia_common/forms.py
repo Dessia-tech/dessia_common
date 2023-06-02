@@ -6,7 +6,7 @@ It should be used as a repertory of rules and available typing.
 Some general rules :
 
 - Lists are homogeneous, IE, they should not contain several types of elements
-    ex : List[int], List[str], List[CustomClass], ...
+    ex : List[int], List[str], List[Class], ...
 - Tuples can, therefore, be used as heterogeneous sequences, thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
@@ -610,7 +610,7 @@ DEF_SOWDV = StandaloneObjectWithDefaultValues()
 
 
 class ObjectWithOtherTypings(DessiaObject):
-    """ Dummy class to test some typing jsonschemas. """
+    """ Dummy class to test some typing schemas. """
 
     def __init__(self, undefined_type_attribute: Any, name: str = ""):
         self.undefined_type_attribute = undefined_type_attribute

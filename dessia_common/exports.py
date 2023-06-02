@@ -260,8 +260,9 @@ class MarkdownWriter:
         self.table_limit = table_limit
 
     @staticmethod
-    def _object_titles():
-        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
+    def object_titles():
+        """ Return a list of strings representing the titles for the object matrix. """
+        return ['Attribute', 'Type', 'Value']
 
     @staticmethod
     def _sequence_to_str(value: Sequence):
@@ -305,7 +306,8 @@ class MarkdownWriter:
     def _string_in_table(self, string: str = ''):
         return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
 
-    def _object_matrix(self, object_):
+    def object_matrix(self, object_):
+        """ Return a matrix representing the object passed as argument. """
         matrix = []
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
@@ -366,8 +368,8 @@ class MarkdownWriter:
 
     def object_table(self, object_) -> str:
         """Print object_'s attributes in table."""
-        return self.matrix_table(self._object_matrix(object_),
-                                 self._object_titles())
+        return self.matrix_table(self.object_matrix(object_),
+                                 self.object_titles())
 
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
