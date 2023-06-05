@@ -57,7 +57,7 @@ class Scaler(DessiaObject):
     @classmethod
     def instantiate_dessia(cls, scaler, name: str = '') -> 'Scaler':
         """ Instantiate `Scaler` dessia object, or children, from scikit-learn scaler. """
-        kwargs = {attr: get_scaler_attr(scaler, attr) for attr in cls._rebuild_attributes}
+        kwargs = {attr: get_scaler_attribute(scaler, attr) for attr in cls._rebuild_attributes}
         kwargs["name"] = name
         return cls(**kwargs)
 
@@ -116,11 +116,11 @@ class Scaler(DessiaObject):
 
     def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
         """ Iteratively scale all matrices. """
-        return tuple([self.transform(m) for m in matrices])
+        return tuple(self.transform(m) for m in matrices)
 
     def inverse_transform_matrices(self, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
-        """ Iteratively unscale all matrices. """
-        return tuple([self.inverse_transform(m) for m in scaled_matrices])
+        """ Iteratively invert scaler for all matrices. """
+        return tuple(self.inverse_transform(m) for m in scaled_matrices)
 
 
 class StandardScaler(Scaler):
@@ -237,7 +237,7 @@ class Model(DessiaObject):
 
     @classmethod
     def init_for_modeler_(cls, **parameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
-        """ Initialize class of Model with its name and hyperparemeters to fit in Modeler. """
+        """ Initialize class of Model with its name and hyperparameters to fit in Modeler. """
         return cls(parameters=parameters)
 
     @classmethod
@@ -355,7 +355,7 @@ class Ridge(LinearModel):
     def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True,
                          tol: float = 0.001) -> Tuple['Ridge', Dict[str, Any], str]:
         """
-        Initialize class `Ridge` with its name and hyperparemeters to fit in Modeler.
+        Initialize class `Ridge` with its name and hyperparameters to fit in Modeler.
 
         :param alpha:
             Constant that multiplies the L2 term, controlling regularization strength. alpha must be a non-negative
@@ -462,7 +462,7 @@ class LinearRegression(LinearModel):
     def init_for_modeler(cls, fit_intercept: bool = True,
                          positive: bool = False) -> Tuple['LinearRegression', Dict[str, Any], str]:
         """
-        Initialize class `LinearRegression` with its name and hyperparemeters to fit in Modeler.
+        Initialize class `LinearRegression` with its name and hyperparameters to fit in Modeler.
 
         :param fit_intercept:
             Whether to fit the intercept for this model. If set to False, no intercept will be used in calculations
@@ -656,14 +656,14 @@ class DecisionTreeRegressor(Model):
     def init_for_modeler(cls, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
         """
-        Initialize class `DecisionTreeRegressor` with its name and hyperparemeters to fit in Modeler.
+        Initialize class `DecisionTreeRegressor` with its name and hyperparameters to fit in Modeler.
 
         :param criterion:
             The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-            L1 loss using the median of each terminal node, and “Poisson” which uses reduction in Poisson deviance to
+            L1 loss using the median of each terminal node, and `“poisson”` which uses reduction in Poisson deviance to
             find splits.
 
         :param max_depth:
@@ -689,11 +689,11 @@ class DecisionTreeRegressor(Model):
             Matrix of data of dimension `n_samples x n_outputs`
 
         :param criterion:
-            The function to measure the quality of a split. Supported criteria are “squared_error” for the mean
+            The function to measure the quality of a split. Supported criteria are `“squared_error”` for the mean
             squared error, which is equal to variance reduction as feature selection criterion and minimizes the L2
             loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with Friedman’s
             improvement score for potential splits, “absolute_error” for the mean absolute error, which minimizes the
-            L1 loss using the median of each terminal node, and “poisson” which uses reduction in Poisson deviance to
+            L1 loss using the median of each terminal node, and `“poisson”` which uses reduction in Poisson deviance to
             find splits.
 
         :param max_depth:
@@ -812,10 +812,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         :return: The score of `Model` or children (`DessiaObject`).
         """
         model = self._instantiate_skl()
-        # if self.n_outputs_ == 1:
-        #     return model.score(inputs, outputs)
         return model.score(inputs, outputs)
-    #[model.score(inputs, output) for output in zip(*outputs)] #ValueError('multiclass-multioutput is not supported')
 
 
 class RandomForest(Model):
@@ -854,7 +851,7 @@ class RandomForest(Model):
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
                          max_depth: int = None) -> Tuple['RandomForest', Dict[str, Any], str]:
         """
-        Initialize class `RandomForest` with its name and hyperparemeters to fit in `Modeler`.
+        Initialize class `RandomForest` with its name and hyperparameters to fit in `Modeler`.
 
         :param n_estimators:
             Number of `DecisionTree` contained in `RandomForestRegressor` or `RandomForestClassifier`
@@ -864,7 +861,7 @@ class RandomForest(Model):
             the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
             the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
             Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
-            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            which minimizes the L1 loss using the median of each terminal node, and `“poisson”` which uses reduction in
             Poisson deviance to find splits.
 
          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
@@ -903,7 +900,7 @@ class RandomForest(Model):
             the mean squared error, which is equal to variance reduction as feature selection criterion and minimizes
             the L2 loss using the mean of each terminal node, “friedman_mse”, which uses mean squared error with
             Friedman’s improvement score for potential splits, “absolute_error” for the mean absolute error,
-            which minimizes the L1 loss using the median of each terminal node, and “poisson” which uses reduction in
+            which minimizes the L1 loss using the median of each terminal node, and `“poisson”` which uses reduction in
             Poisson deviance to find splits.
 
          |  - **Classifier:** The function to measure the quality of a split. Supported criteria are “gini” for the Gini
@@ -1124,7 +1121,7 @@ class SupportVectorMachine(Model):
     @classmethod
     def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
         """
-        Initialize class `SupportVectorMachine` with its name and hyperparemeters to fit in Modeler.
+        Initialize class `SupportVectorMachine` with its name and hyperparameters to fit in Modeler.
 
         :param C:
             Regularization parameter. The strength of the regularization is inversely proportional to C.
@@ -1400,7 +1397,7 @@ class MultiLayerPerceptron(Model):
                          solver: str = 'adam', max_iter: int = 200,
                          tol: float = 0.0001) -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
         """
-        Initialize class `MultiLayerPerceptron` with its name and hyperparemeters to fit in `Modeler`.
+        Initialize class `MultiLayerPerceptron` with its name and hyperparameters to fit in `Modeler`.
 
         :param hidden_layer_sizes:
             Regularization parameter. The strength of the regularization is inversely proportional to `C`.
@@ -1636,8 +1633,8 @@ class MLPClassifier(MultiLayerPerceptron):
         return cls(**kwargs)
 
 
-def get_scaler_attr(scaler, attr: str):
-    """ Get attribute attr of scikit-learn scaler with an exception for numpy arrays (to instantiate a Scaler). """
+def get_scaler_attribute(scaler, attr: str):
+    """ Get attribute `attr` of scikit-learn scaler with an exception for numpy arrays (to instantiate a Scaler). """
     scaler_attr = getattr(scaler, attr)
     if isinstance(scaler_attr, npy.ndarray):
         return scaler_attr.tolist()

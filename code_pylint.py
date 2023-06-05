@@ -26,14 +26,14 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "protected-access": 70,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "protected-access": 69,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 9,  # Reduce by dropping vectored objects
     "too-many-branches": 12,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "too-many-arguments": 55,  # Huge refactor needed
-    "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
+    "too-many-arguments": 54,  # Huge refactor needed
+    "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 9,  # Huge refactor needed (workflow, etc...)

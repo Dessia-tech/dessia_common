@@ -1,3 +1,4 @@
+adam
 argspecs
 backend
 BallTree
@@ -96,6 +97,7 @@ rbf
 Ridge
 Pycharm
 rtype
+scalers
 schemas
 scipy
 scikit

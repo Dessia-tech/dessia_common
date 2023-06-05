@@ -91,7 +91,7 @@ class Modeler(DessiaObject):
 
     `Modeler` object allows to:
         * fit a model from models
-        * pre-scale input and output data before fit or predict
+        * scale input and output data before fit or predict
         * score a model from models
         * validate a modeling process with cross_validation method
         * plot performances and predictions of a model stored in `Modeler`
@@ -651,15 +651,12 @@ class CrossValidation(DessiaObject):
         graphs = []
         for idx, validation in enumerate(self.model_validations):
             graphs += validation.data.build_graphs(reference_path=f"{reference_path}/model_validations/{idx}")[0]
-        # if len(self.model_validations[0].data.output_names) > 1 and \
-        #     "ssifier" in type(self.model_validations[0].modeler.model).__name__:
-        #     return [MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
         return [self._plot_score(reference_path=reference_path),
                 MultiplePlots(graphs, elements=[{"factice_key":0}], initial_view_on=True)]
 
 
 def matrix_ranges(matrix: Matrix, nb_points: int = 20) -> Matrix:
-    """ Dessia linspace of `nb_points` points between extremum of each column of matrix. """
+    """ Dessia linspace of `nb_points` points between extrema of each column of matrix. """
     ranges = []
     for feature_column in zip(*matrix):
         min_value = min(feature_column)
