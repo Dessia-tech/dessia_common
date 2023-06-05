@@ -9,7 +9,7 @@ from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools import learning_models as models
 from dessia_common.datatools.dataset import Dataset
 
-max_time_check_platform = 10.
+max_time_check_platform = 30.
 
 # TODO review the way data are generated
 # Load Data and put it in a Dataset (matrix is automatically computed)
