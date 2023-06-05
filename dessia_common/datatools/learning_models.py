@@ -18,6 +18,8 @@ class Scaler(DessiaObject):
     """ Base object for handling a scikit-learn Scaler. """
 
     _rebuild_attributes = []
+    _allowed_methods = ["fit", "transform", "inverse_transform", "fit_transform", "transform_matrices",
+                        "inverse_transform_matrices"]
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -209,6 +211,8 @@ class LabelBinarizer(Scaler):
 class Model(DessiaObject):
     """ Base object for handling a scikit-learn models (classifier and regressor). """
 
+    _allowed_methods = ["predict", "score"]
+
     def __init__(self, parameters: Dict[str, Any], name: str = ''):
         self.parameters = parameters
         DessiaObject.__init__(self, name=name)
@@ -343,6 +347,7 @@ class Ridge(LinearModel):
     """
 
     _standalone_in_db = True
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
     def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
@@ -450,6 +455,7 @@ class LinearRegression(LinearModel):
     """
 
     _standalone_in_db = True
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
     def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
@@ -620,6 +626,7 @@ class DecisionTreeRegressor(Model):
     """
 
     _standalone_in_db = True
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
     def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -821,6 +828,8 @@ class RandomForest(Model):
 
     More information: https://scikit-learn.org/stable/modules/ensemble.html#forest
     """
+
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict"]
 
     def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None,
                  estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
@@ -1065,6 +1074,8 @@ class SupportVectorMachine(Model):
     Please refer to https://scikit-learn.org/stable/modules/svm.html for more
     information on `SupportVectorMachine` object and understanding the `SupportVectorMachine` for basic usage.
     """
+
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict"]
 
     def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
                  _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
@@ -1356,6 +1367,8 @@ class MultiLayerPerceptron(Model):
     Please refer to https://scikit-learn.org/stable/modules/neural_networks_supervised.html for more
     information on `MultiLayerPerceptron`.
     """
+
+    _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
     def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
