@@ -32,6 +32,7 @@ class SampleDataset(Dataset):
     """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modeling. """
 
     _standalone_in_db = True
+    _allowed_methods = Dataset._allowed_methods + ["from_matrices", "matrix"]
 
     def __init__(self, dessia_objects: List[Sample] = None, input_names: List[str] = None,
                  output_names: List[str] = None, name: str = ''):
@@ -115,6 +116,10 @@ class Modeler(DessiaObject):
     """
 
     _standalone_in_db = True
+    _allowed_methods = DessiaObject._allowed_methods + ["fit_matrix", "fit_dataset", "predict_matrix",
+                                                        "predict_dataset", "fit_predict_matrix", "fit_predict_dataset",
+                                                        "score_matrix", "score_dataset", "fit_score_matrix",
+                                                        "fit_score_dataset"]
 
     def __init__(self, model: models.Model, input_scaler: models.Scaler, output_scaler: models.Scaler, name: str = ''):
         self.model = model
@@ -351,16 +356,13 @@ class ValidationData(DessiaObject):
         Matrix of predicted inputs with a `Modeler`.
 
     :param input_names:
-        Names of input features
-    :type input_names: List[str]
+        Names of input features.
 
     :param output_names:
-        Names of output features
-    :type output_names: List[str]
+        Names of output features.
 
     :param name:
         Name of `ValidationData`.
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, inputs: Matrix, outputs: Matrix, predictions: Matrix, name: str = ''):
@@ -468,6 +470,7 @@ class ModelValidation(DessiaObject):
 
     _non_data_eq_attributes = ['_score']
     _standalone_in_db = True
+    _allowed_methods = DessiaObject._allowed_methods + ["from_matrix", "from_dataset", "scores"]
 
     def __init__(self, data: TrainTestData, score: float, name: str = ''):
         self.data = data
@@ -579,6 +582,7 @@ class CrossValidation(DessiaObject):
 
     _non_data_eq_attributes = ['_scores']
     _standalone_in_db = True
+    _allowed_methods = DessiaObject._allowed_methods + ["from_matrix", "from_dataset", "scores"]
 
     def __init__(self, model_validations: List[ModelValidation], name: str = ''):
         self.model_validations = model_validations
