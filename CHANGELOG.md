@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add default value to method types
 - Schemas refactor: add standalone in db property
 - Typings : add AttributeType and ClassAttributeType
+- Datatools : 
+    - Add the possibility to use scikit-learn principal machine learning algorithms as DessiaObjects
+    - Add Modeler class that allows to initialize, train, validate and use a machine learning model from sklearn
+    - Add CrossValidation stuff for these models
+    - Link it to Dataset
 
 
 ### Changed
