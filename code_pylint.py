@@ -32,11 +32,11 @@ MAX_ERROR_BY_TYPE = {
     "too-many-branches": 12,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "too-many-arguments": 54,  # Huge refactor needed
+    "too-many-arguments": 53,  # Huge refactor needed
     "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
-    "too-many-instance-attributes": 9,  # Huge refactor needed (workflow, etc...)
+    "too-many-instance-attributes": 8,  # Huge refactor needed (workflow, etc...)
     "broad-exception-caught": 10,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "bare-except": 1,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 3,  # Try to lower by splitting DessiaObject and Workflow

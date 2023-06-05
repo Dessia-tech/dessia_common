@@ -1130,7 +1130,7 @@ class SupportVectorMachine(Model):
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
             Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, `‘rbf’` will be
-            used. If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix
+            used. If a callable is given, it is used to compute the kernel matrix from data matrices; that matrix
             should be an matrix of shape `n_samples x n_samples`.
 
         :return: The `SupportVectorMachine` model fit on inputs and outputs.
@@ -1160,7 +1160,7 @@ class SupportVectorMachine(Model):
         :param kernel:
             Specifies the kernel type to be used in the algorithm.
             Can be one of `[‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’, ‘precomputed’]`. If `None` is given, ‘rbf’ will be used.
-            If a callable is given it is used to pre-compute the kernel matrix from data matrices; that matrix should be
+            If a callable is given, it is used to compute the kernel matrix from data matrices; that matrix should be
             an matrix of shape `n_samples x n_samples`
 
         :param name:
