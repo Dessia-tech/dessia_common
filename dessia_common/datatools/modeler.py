@@ -28,7 +28,7 @@ LIN_POINT_STYLE = PointStyle(BLACK, BLACK, 0.1, 1, 'crux')
 INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
 
 
-class ModeledDataset(Dataset):
+class SampleDataset(Dataset):
     """ Class allowing to plot and study data generated from a DOE and its prediction from a modeler modeling. """
 
     _standalone_in_db = True
@@ -56,7 +56,6 @@ class ModeledDataset(Dataset):
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
         """ Specific `dict_to_object` method. """
         dessia_objects = [Sample(obj['values'], obj['reference_path'], obj['name']) for obj in dict_['dessia_objects']]
-        # dict_['dessia_objects'] = dessia_objects
         return cls(dessia_objects, dict_['input_names'], dict_['output_names'], dict_['name'])
 
     def _printed_attributes(self):
@@ -64,8 +63,8 @@ class ModeledDataset(Dataset):
 
     @classmethod
     def from_matrices(cls, inputs: Matrix, predictions: Matrix, input_names: List[str], output_names: List[str],
-                      name: str = '') -> 'ModeledDataset':
-        """ Build a `ModeledDataset` from inputs matrix and their predictions matrix. """
+                      name: str = '') -> 'SampleDataset':
+        """ Build a `SampleDataset` from inputs matrix and their predictions matrix. """
         samples = []
         for index, (input_, pred) in enumerate(zip(inputs, predictions)):
             sample = {attr: input_[attr_index] for attr_index, attr in enumerate(input_names)}
@@ -222,7 +221,7 @@ class Modeler(DessiaObject):
         """
         return self._format_output(self._predict(inputs))
 
-    def predict_dataset(self, dataset: Dataset, input_names: List[str], output_names: List[str]) -> ModeledDataset:
+    def predict_dataset(self, dataset: Dataset, input_names: List[str], output_names: List[str]) -> SampleDataset:
         """
         Method to predict outputs from inputs with the current Modeler for Dataset object.
 
@@ -239,7 +238,7 @@ class Modeler(DessiaObject):
         """
         inputs = dataset.sub_matrix(input_names)
         outputs = self.predict_matrix(inputs)
-        return ModeledDataset.from_matrices(inputs, outputs, input_names, output_names, f'{self.name}_preds')
+        return SampleDataset.from_matrices(inputs, outputs, input_names, output_names, f'{self.name}_preds')
 
     @classmethod
     def _fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, model: models.Model,
@@ -338,34 +337,16 @@ class Modeler(DessiaObject):
         return cls._fit_score(inputs_train, inputs_test, output_train, output_test, model, input_is_scaled,
                               output_is_scaled, name)
 
-
 class ValidationData(DessiaObject):
     """
-    Object that stores data as 6 matrices.
+    :param inputs:
+        Matrix of input data.
 
-    :param input_train:
-        Matrix of input data used to train the modeler to validate.
-    :type input_train: List[List[float]]
+    :param outputs:
+        Matrix of output data.
 
-    :param input_test:
-        Matrix of input data used to test the modeler to validate.
-    :type input_test: List[List[float]]
-
-    :param output_train:
-        Matrix of reference output data corresponding to `input_train`.
-    :type output_train: List[List[float]]
-
-    :param output_test:
-        Matrix of reference output data corresponding to `input_test`.
-    :type output_test: List[List[float]]
-
-    :param pred_train:
-        Matrix of prediction of `input_train` made with the modeler to validate.
-    :type pred_train: List[List[float]]
-
-    :param pred_test:
-        Matrix of prediction of `input_test` made with the modeler to validate.
-    :type pred_test: List[List[float]]
+    :param predictions:
+        Matrix of predicted inputs with a `Modeler`.
 
     :param input_names:
         Names of input features
@@ -376,24 +357,59 @@ class ValidationData(DessiaObject):
     :type output_names: List[str]
 
     :param name:
-        Name of Modeler.
+        Name of `ValidationData`.
     :type name: str, `optional`, defaults to `''`
     """
 
-    def __init__(self, input_train: Matrix, input_test: Matrix, output_train: Matrix, output_test: Matrix,
-                 pred_train: Matrix, pred_test: Matrix,input_names: List[str], output_names: List[str], name: str = ''):
-        self.input_train = input_train
-        self.input_test = input_test
-        self.output_train = output_train
-        self.output_test = output_test
-        self.pred_train = pred_train
-        self.pred_test = pred_test
+    def __init__(self, inputs: Matrix, outputs: Matrix, predictions: Matrix, name: str = ''):
+        self.inputs = inputs
+        self.outputs = outputs
+        self.predictions = predictions
+        DessiaObject.__init__(self, name=name)
+
+    def points(self, input_names: List[str], output_names: List[str], reference_path: str) -> Points:
+        samples_list = []
+        for row, (input_, ref_out, pred_out) in enumerate(zip(self.inputs, self.outputs, self.predictions)):
+            values = {attr: input_[col] for col, attr in enumerate(input_names)}
+            values.update({f"{attr}_ref": ref_out[col] for col, attr in enumerate(output_names)})
+            values.update({f"{attr}_pred": pred_out[col] for col, attr in enumerate(output_names)})
+            full_reference_path = f"{reference_path}/dessia_objects/{row}"
+            name = f"Sample_{row}"
+            samples_list.append(Sample(values=values, reference_path=full_reference_path, name=name))
+        return samples_list
+
+
+class TrainTestData(DessiaObject):
+    """
+    Object that stores data as 6 matrices.
+
+    :param training_valdata:
+        `ValidationData` of training data.
+
+    :param testing_valdata:
+        `ValidationData` of testing data.
+
+    :param input_names:
+        Names of input features.
+
+    :param output_names:
+        Names of output features.
+
+    :param name:
+        Name of `TrainTestData`.
+    """
+
+    def __init__(self, training_valdata: ValidationData, testing_valdata: ValidationData, input_names: List[str],
+                 output_names: List[str], name: str = ''):
+        self.training_valdata = training_valdata
+        self.testing_valdata = testing_valdata
         self.input_names = input_names
         self.output_names = output_names
         DessiaObject.__init__(self, name=name)
 
     def _concatenate_outputs(self) -> Matrix:
-        return self.output_train + self.output_test + self.pred_train + self.pred_test
+        return self.training_valdata.outputs + self.testing_valdata.outputs + \
+            self.training_valdata.predictions + self.testing_valdata.predictions
 
     def _matrix_ranges(self) -> Matrix:
         return matrix_ranges(self._concatenate_outputs(), nb_points=10)
@@ -403,17 +419,6 @@ class ValidationData(DessiaObject):
 
     def _tooltip(self) -> Tooltip:
         return Tooltip(self.input_names + sum(self._ref_pred_names(), []))
-
-    def _points(self, inputs: Matrix, ref_outputs: Matrix, pred_outputs: Matrix, reference_path: str) -> Points:
-        samples_list = []
-        for row, (input_, ref_out, pred_out) in enumerate(zip(inputs, ref_outputs, pred_outputs)):
-            values = {attr: input_[col] for col, attr in enumerate(self.input_names)}
-            values.update({f"{attr}_ref": ref_out[col] for col, attr in enumerate(self.output_names)})
-            values.update({f"{attr}_pred": pred_out[col] for col, attr in enumerate(self.output_names)})
-            full_reference_path = f"{reference_path}/dessia_objects/{row}"
-            name = f"Sample_{row}"
-            samples_list.append(Sample(values=values, reference_path=full_reference_path, name=name))
-        return samples_list
 
     def _ref_pred_datasets(self, points_train: Points, points_test: Points) -> List[pl_Dataset]:
         tooltip = self._tooltip()
@@ -432,9 +437,8 @@ class ValidationData(DessiaObject):
         return hack_bisectrices
 
     def _to_val_points(self, reference_path: str) -> List[pl_Dataset]:
-        points_train = self._points(self.input_train, self.output_train, self.pred_train, reference_path)
-        points_test = self._points(self.input_test, self.output_test, self.pred_test, reference_path)
-        return points_train, points_test, self._bisectrice_points()
+        return self.training_valdata.points(self.input_names, self.output_names, reference_path), \
+            self.testing_valdata.points(self.input_names, self.output_names, reference_path), self._bisectrice_points()
 
     def build_graphs(self, reference_path: str) -> List[Graph2D]:
         """ Build elements and graphs for `plot_data` method. """
@@ -449,7 +453,7 @@ class ValidationData(DessiaObject):
         return graphs, points_train + points_test + points_bisectrice
 
     def plot_data(self, reference_path: str = '#', **_):
-        """ Plot data method for `ValidationData`. """
+        """ Plot data method for `TrainTestData`. """
         graphs, elements = self.build_graphs(reference_path)
         if len(graphs) == 1:
             return graphs
@@ -457,16 +461,16 @@ class ValidationData(DessiaObject):
 
 
 class ModelValidation(DessiaObject):
-    """ Class to handle a modeler and the `ValidationData` used to train and test it. """
+    """ Class to handle a modeler and the `TrainTestData` used to train and test it. """
 
     _non_data_eq_attributes = ['_score']
     _standalone_in_db = True
 
-    def __init__(self, data: ValidationData, score: float, name: str = ''):
+    def __init__(self, data: TrainTestData, score: float, name: str = ''):
         self.data = data
         self.score = score
         DessiaObject.__init__(self, name=name)
-# TODO: is this too heavy ? To merge with ValidationData ?
+# TODO: is this too heavy ? To merge with TrainTestData ?
 
     @classmethod
     def _build(cls, modeler: Modeler, input_train: Matrix, input_test: Matrix, output_train: Matrix,
@@ -475,9 +479,10 @@ class ModelValidation(DessiaObject):
         trained_mdlr, pred_test = Modeler.fit_predict_matrix(input_train, output_train, input_test, modeler.model,
                                                              modeler.in_scaled, modeler.out_scaled, name)
         pred_train = trained_mdlr.predict_matrix(input_train)
-        validation_data = ValidationData(input_train, input_test, output_train, output_test, pred_train, pred_test,
-                                         input_names, output_names, f"{name}_data")
-        return cls(validation_data, trained_mdlr.score_matrix(input_test, output_test), name)
+        train_test_data = TrainTestData(ValidationData(input_train, output_train, pred_train),
+                                        ValidationData(input_test, output_test, pred_test),
+                                        input_names, output_names, f"{name}_data")
+        return cls(train_test_data, trained_mdlr.score_matrix(input_test, output_test), name)
 
 
     @classmethod
@@ -510,7 +515,7 @@ class ModelValidation(DessiaObject):
             Name of `ModelValidation`
 
         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
-         predictions for input, stored in a `ValidationData` object.
+         predictions for input, stored in a `TrainTestData` object.
         """
         in_train, in_test, out_train, out_test = models.train_test_split(inputs, outputs, ratio=ratio)
         return cls._build(modeler, in_train, in_test, out_train, out_test, input_names, output_names, name)
@@ -542,7 +547,7 @@ class ModelValidation(DessiaObject):
             Name of `ModelValidation`
 
         :return: A `ModelValidation` object, containing the fitted modeler, its score, train and test data and their
-         predictions for input, stored in a ValidationData object.
+         predictions for input, stored in a TrainTestData object.
         """
         train_dataset, test_dataset = dataset.train_test_split(ratio=ratio, shuffled=True)
         in_train, out_train = train_dataset.to_input_output(input_names, output_names)

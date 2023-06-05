@@ -4,7 +4,7 @@ Tests for dessia_common.datatools.modeler file.
 from dessia_common.models import all_cars_no_feat
 from dessia_common.datatools.dataset import Dataset
 from dessia_common.datatools import learning_models as models
-from dessia_common.datatools.modeler import ModeledDataset, Modeler, ModelValidation, CrossValidation
+from dessia_common.datatools.modeler import Modeler, ModelValidation, CrossValidation
 
 # ======================================================================================================================
 #                                                   Load Data
@@ -17,7 +17,7 @@ inputs = ['displacement', 'horsepower', 'acceleration']
 outputs_reg = ['weight', 'mpg']
 
 # Set outputs to predict for classification
-outputs_clf = ['cylinders', 'mpg']
+outputs_clf = ['cylinders', 'model']
 
 # Extract training matrices
 input_train = training_data.sub_matrix(inputs)
