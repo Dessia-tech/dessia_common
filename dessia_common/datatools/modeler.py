@@ -339,6 +339,8 @@ class Modeler(DessiaObject):
 
 class ValidationData(DessiaObject):
     """
+    Object that stores modeling data as inputs, outputs and predictions matrices.
+
     :param inputs:
         Matrix of input data.
 
@@ -368,6 +370,7 @@ class ValidationData(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     def points(self, input_names: List[str], output_names: List[str], reference_path: str) -> Points:
+        """ Get output vs prediction for each row of outputs matrix. """
         samples_list = []
         for row, (input_, ref_out, pred_out) in enumerate(zip(self.inputs, self.outputs, self.predictions)):
             values = {attr: input_[col] for col, attr in enumerate(input_names)}
@@ -381,7 +384,7 @@ class ValidationData(DessiaObject):
 
 class TrainTestData(DessiaObject):
     """
-    Object that stores data as 6 matrices.
+    Object that train and test data to validate modelers.
 
     :param training_valdata:
         `ValidationData` of training data.
