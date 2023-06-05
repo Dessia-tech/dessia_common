@@ -18,8 +18,8 @@ class Scaler(DessiaObject):
     """ Base object for handling a scikit-learn Scaler. """
 
     _rebuild_attributes = []
-    _allowed_methods = ["fit", "transform", "inverse_transform", "fit_transform", "transform_matrices",
-                        "inverse_transform_matrices"]
+    _allowed_methods = DessiaObject._allowed_methods + ["fit", "transform", "inverse_transform", "fit_transform",
+                                                        "transform_matrices", "inverse_transform_matrices"]
 
     def __init__(self, name: str = ''):
         DessiaObject.__init__(self, name=name)
@@ -130,16 +130,13 @@ class StandardScaler(Scaler):
     Data scaler that standard scale data. The operation made by this scaler is `new_X = (X - mean(X))/std(X)`.
 
     :param mean_:
-        List of means
-    :type mean_: List[float], `optional`, defaults to `None`
+        List of means.
 
     :param scale_:
-        List of standard deviations
-    :type scale_: List[float], `optional`, defaults to `None`
+        List of standard deviations.
 
     :param var_:
-        List of variances
-    :type var_: List[float], `optional`, defaults to `None`
+        List of variances.
     """
 
     _rebuild_attributes = ['mean_', 'scale_', 'var_']
@@ -172,15 +169,12 @@ class LabelBinarizer(Scaler):
 
     :param classes_:
         List of classes to standardize. Can be any int.
-    :type classes_: List[int]
 
     :param y_type_:
         Type of output labels.
-    :type y_type_: str
 
     :param sparse_input_:
         Specify if the inputs are a sparse matrix or not.
-    :type sparse_input_: bool, defaults to `False`
     """
 
     _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
@@ -211,7 +205,7 @@ class LabelBinarizer(Scaler):
 class Model(DessiaObject):
     """ Base object for handling a scikit-learn models (classifier and regressor). """
 
-    _allowed_methods = ["predict", "score"]
+    _allowed_methods = DessiaObject._allowed_methods + ["predict", "score"]
 
     def __init__(self, parameters: Dict[str, Any], name: str = ''):
         self.parameters = parameters
@@ -329,21 +323,17 @@ class Ridge(LinearModel):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
         the i-th output from the j-th input.
-    :type coef_: List[List[float]]
 
     :param intercept_:
         List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
         compute the i-th element of outputs prediction.
-    :type intercept_: List[float]
 
     :param name:
         Name of `Ridge` regression
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -437,21 +427,17 @@ class LinearRegression(LinearModel):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model. Each element (i, j) of coef_ is the slope of the linear model predicting
         the i-th output from the j-th input.
-    :type coef_: List[List[float]]
 
     :param intercept_:
         List of offsets of the model. Each element (i, ) of intercept_ is added to the prediction made with coef_ to
         compute the i-th element of outputs prediction.
-    :type intercept_: List[float]
 
     :param name:
         Name of Linear regression
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -526,23 +512,18 @@ class Tree(Model):
 
     :param n_classes:
         Number of output classes to predict from data.
-    :type n_classes: List[int], `optional`, defaults to `None`
 
     :param n_features:
         Number of features to handle in data.
-    :type n_features: int, `optional`, defaults to `None`
 
     :param n_outputs:
         The number of outputs when fit is performed.
-    :type n_outputs: int, `optional`, defaults to `None`
 
     :param tree_state:
         All required values to re-instantiate a fully working scikit-learn tree are stored in this parameter.
-    :type tree_state: Dict[str, Any], `optional`, defaults to `None`
 
     :param name:
         Name of Tree
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
@@ -608,21 +589,17 @@ class DecisionTreeRegressor(Model):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
 
     :param tree_:
         The underlying Tree object.
         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-    :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
         Name of `DecisionTreeRegressor`
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -732,30 +709,24 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
         (for multi-output problems).
-    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
 
     :param classes_:
         The number of outputs when fit is performed.
-    :type classes_: List[int], `optional`, defaults to `None`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
 
     :param tree_:
         The underlying Tree object.
         Please refer to https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html for
         attributes of Tree object and understanding the decision tree structure for basic usage of these attributes.
-    :type tree_: Tree, `optional`, defaults to `None`
 
     :param name:
         Name of `DecisionTreeClassifier`
-    :type name: str, `optional`, defaults to `''`
     """
 
     def __init__(self, parameters: Dict[str, Any], n_classes_: Union[int, List[int]] = None, classes_: List[int] = None,
@@ -949,19 +920,15 @@ class RandomForestRegressor(RandomForest):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
 
     :param estimators_:
         The collection of fitted sub-trees.
-    :type estimators_: List[DecisionTreeRegressor], `optional`, defaults to `None`
 
     :param name:
         Name of `RandomForestRegressor`
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -994,28 +961,22 @@ class RandomForestClassifier(RandomForest):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param n_classes_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
         (for multi-output problems).
-    :type n_classes_: Union[int, List[int]], `optional`, defaults to `None`
 
     :param classes_:
         The number of outputs when fit is performed.
-    :type classes_: List[int], `optional`, defaults to `None`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
 
     :param estimators_:
         The collection of fitted sub-trees.
-    :type estimators_: List[DecisionTreeClassifier], `optional`, defaults to `None`
 
     :param name:
         Name of `RandomForestClassifier`
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -1200,52 +1161,41 @@ class SupportVectorRegressor(SupportVectorMachine):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
         (for multi-output problems).
-    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
 
     :param _dual_coef_:
         Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
-    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
 
     :param _intercept_:
         Constants in decision function.
-    :type _intercept_: List[float], `optional`, defaults to `None`
 
     :param support_:
         Indices of support vectors.
-    :type support_: List[int], `optional`, defaults to `None`
 
     :param support_vectors_:
         Support vectors.
-    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
 
     :param _n_support:
         Number of support vectors for each class.
-    :type _n_support: List[int], `optional`, defaults to `None`
 
     :param _probA:
         Parameter learned in Platt scaling when `probability=True`.
         https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
-    :type _probA: List[float], `optional`, defaults to `None`
 
     :param _probB:
         Parameter learned in Platt scaling when `probability=True`.
         https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
-    :type _probB: List[float], `optional`, defaults to `None`
 
     :param _gamma:
         Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
            - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
            - if `‘auto’`, uses `1 / n_features`.
-    :type _gamma: float, `optional`, defaults to `1.`
 
     :param _sparse:
         Specify if the inputs are a sparse matrix or not.
-    :type _sparse: bool, `optional`, defaults to `False`
     """
 
     _standalone_in_db = True
@@ -1280,56 +1230,44 @@ class SupportVectorClassifier(SupportVectorMachine):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param raw_coef_:
         The number of classes (for single output problems), or a list containing the number of classes for each output
         (for multi-output problems).
-    :type raw_coef_: List[List[float]], `optional`, defaults to `None`
 
     :param _dual_coef_:
         Coefficients of the support vector in the decision function. Shape is `1 x _n_support`.
-    :type _dual_coef_: List[List[float]], `optional`, defaults to `None`
 
     :param _intercept_:
         Constants in decision function.
-    :type _intercept_: List[float], `optional`, defaults to `None`
 
     :param support_:
         Indices of support vectors.
-    :type support_: List[int], `optional`, defaults to `None`
 
     :param support_vectors_:
         Support vectors.
-    :type support_vectors_: List[List[float]], `optional`, defaults to `None`
 
     :param _n_support:
         Number of support vectors for each class.
-    :type _n_support: List[int], `optional`, defaults to `None`
 
     :param _probA:
         Parameter learned in Platt scaling when `probability=True`.
         https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probA_
-    :type _probA: List[float], `optional`, defaults to `None`
 
     :param _probB:
         Parameter learned in Platt scaling when `probability=True`.
         https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC.probB_
-    :type _probB: List[float], `optional`, defaults to `None`
 
     :param _gamma:
         Kernel coefficient for ‘rbf’, ‘poly’ and ‘sigmoid’.
            - if `gamma='scale'` (default) is passed then it uses `1 / (n_features * X.var())` as value of gamma,
            - if `‘auto’`, uses `1 / n_features`.
-    :type _gamma: float, `optional`, defaults to `1.`
 
     :param _sparse:
         Specify if the inputs are a sparse matrix or not.
-    :type _sparse: bool, `optional`, defaults to `False`
 
     :param classes_:
         The classes labels.
-    :type classes_: List[int], `optional`, defaults to `None`
     """
 
     _standalone_in_db = True
@@ -1526,31 +1464,24 @@ class MLPRegressor(MultiLayerPerceptron):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.
-    :type coef_: List[List[float]], `optional`, defaults to `None`
 
     :param intercept_:
         List of offsets of the model.
-    :type intercept_: List[List[float]], `optional`, defaults to `None`
 
     :param n_layers_:
         Number of hidden layers contained in the current `MLPRegressor`.
-    :type n_layers_: int, `optional`, defaults to `None`
 
     :param activation:
         Activation function for hidden layers.
-    :type activation: str, `optional`, defaults to `'relu'`
 
     :param out_activation_:
         Activation function for the output layer.
-    :type out_activation_: str, `optional`, defaults to `'identity'`
 
     :param name:
         Name of `MLPRegressor`
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
@@ -1582,39 +1513,30 @@ class MLPClassifier(MultiLayerPerceptron):
 
     :param parameters:
         Hyperparameters of the used scikit-learn object.
-    :type parameters: dict[str, Any], `optional`
 
     :param coef_:
         List of coefficients of the model.
-    :type coef_: List[List[float]], `optional`, defaults to `None`
 
     :param intercept_:
         List of offsets of the model.
-    :type intercept_: List[List[float]], `optional`, defaults to `None`
 
     :param n_layers_:
         Number of hidden layers contained in the current `MLPClassifier`.
-    :type n_layers_: int, `optional`, defaults to `None`
 
     :param activation:
         Activation function for hidden layers.
-    :type activation: str, `optional`, defaults to `'relu'`
 
     :param out_activation_:
         Activation function for the output layer.
-    :type out_activation_: str, `optional`, defaults to `'identity'`
 
     :param n_outputs_:
         The number of outputs when fit is performed.
-    :type n_outputs_: int, `optional`, defaults to `None`
 
     :param _label_binarizer:
         Data scaler used in `MLPClassifier` to standardize class labels.
-    :type _label_binarizer: `LabelBinarizer`, `optional`, defaults to `None`
 
     :param name:
         Name of `MLPClassifier`
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True

@@ -100,19 +100,15 @@ class Modeler(DessiaObject):
 
     :param model:
         Fitted model to make predictions.
-    :type model: models.Model
 
     :param input_scaler:
         Scaler for input data.
-    :type input_scaler: models.Scaler
 
     :param output_scaler:
         Scaler for output data.
-    :type output_scaler: models.Scaler
 
     :param name:
         Name of `Modeler`.
-    :type name: str, `optional`, defaults to `''`
     """
 
     _standalone_in_db = True
