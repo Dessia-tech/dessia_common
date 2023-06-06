@@ -204,10 +204,23 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
 
     def _to_script(self) -> ToScriptElement:
-        warnings.warn("to_script method is not implemented for TypedVariableWithDefaultValue yet. "
-                      "We are losing the default value as we call the TypedVariable method")
-        casted_variable = TypedVariable(type_=self.type_, name=self.name, position=self.position)
-        return casted_variable._to_script()
+        script = self._get_to_script_elements()
+        script.declaration = f"{self.__class__.__name__}({script.declaration})"
+
+        script.imports.append(self.full_classname)
+        return script
+
+    def _get_to_script_elements(self) -> ToScriptElement:
+        script = super()._get_to_script_elements()
+
+        if self.type_ == str:
+            script.declaration += f", default_value='{self.default_value}'"
+        else:
+            script.declaration += f", default_value={self.default_value}"
+
+        if "builtins" not in serialize_annotation(self.type_):
+            script.imports.append(serialize_annotation(self.type_))
+        return script
 
 
 NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
