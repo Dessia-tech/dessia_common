@@ -629,7 +629,7 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown", load_by_default=False),
+        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown"),
                 DisplaySetting(selector="workflow", type_="workflow", method="to_dict")]
 
     @property
