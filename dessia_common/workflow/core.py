@@ -1912,6 +1912,7 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable=input_, value=value)
             local_values[input_] = value
 
+        kwargs['progress_callback'] = progress_callback
         output_values = block.evaluate(local_values, **kwargs)
         self._activate_block(block=block, output_values=output_values)
 
