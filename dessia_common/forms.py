@@ -51,7 +51,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     :param distarg: A Distance with units
     :param floatarg: A float
     :param intarg: An integer
-    :param boolarg: A boolean
+    :param boolarg: A Boolean
     :param name: Object's name
     """
 
@@ -409,7 +409,7 @@ class StandaloneObject(MovingObject):
         for timestep, current in zip(timesteps, current1):
             elements1.append({'timestep': timestep, 'electric current': current})
 
-        # The previous line instantiates a dataset with limited arguments but several customizations are available
+        # The previous line instantiates a dataset with limited arguments but several customization are available
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 

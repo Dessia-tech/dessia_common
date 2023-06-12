@@ -526,7 +526,7 @@ class DessiaObject(SerializableObject):
             filepath += '.docx'
             print(f'Changing name to {filepath}')
         self.to_docx_stream(filepath)
-        
+
     def zip_settings(self):
         """
         Returns a list of streams containing different representations of the object.
@@ -845,7 +845,7 @@ class DessiaFilter(DessiaObject):
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
-        Get the boolean indexing of a filtered list.
+        Get the Boolean indexing of a filtered list.
 
         :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
@@ -983,7 +983,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of boolean indices with the logical operator into a simple boolean index.
+        Combine a list of Boolean indices with the logical operator into a simple boolean index.
 
         :param booleans_lists: List of boolean indices
 
