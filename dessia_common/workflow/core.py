@@ -1789,7 +1789,10 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
         if block in self._activable_blocks():
             nblocks = len(self.workflow.blocks)
-            def block_progress_callback(x): progress_callback(self.progress + x / nblocks)
+
+            def block_progress_callback(x):
+                progress_callback(self.progress + x / nblocks)
+
             self._evaluate_block(block, progress_callback=block_progress_callback)
             progress_callback(self.progress)
             return True
