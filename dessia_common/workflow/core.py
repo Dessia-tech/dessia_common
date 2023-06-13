@@ -2040,12 +2040,21 @@ class WorkflowRun(WorkflowState):
 
         Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
+        workflow_settings = self.workflow.display_settings()
         block_settings = self.workflow.blocks_display_settings
         displays_by_default = [s.load_by_default for s in block_settings]
-        workflow_settings = DisplaySetting(selector="Workflow", type_="workflow", method="workflow.to_dict")
-        doc_settings = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
-                                      load_by_default=not any(displays_by_default))
-        return [workflow_settings, doc_settings] + block_settings
+
+        for setting in workflow_settings:
+            # Update workflow settings
+            setting.compose("workflow")
+
+            if setting.selector == "Workflow":
+                setting.load_by_default = False
+
+            if setting.selector == "Documentation":
+                setting.load_by_default = not any(displays_by_default)
+
+        return workflow_settings + block_settings
 
     def method_dict(self, method_name: str = None):
         """ Get run again default dict. """
