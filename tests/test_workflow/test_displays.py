@@ -14,8 +14,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         self.display_settings = self.workflow_run.display_settings()
 
     @parameterized.expand([
-        (0, "documentation"),
-        (1, "workflow"),
+        (0, "Documentation"),
+        (1, "Workflow"),
         (2, "3D (1)"),
         (3, "2D (2)"),
         (4, "MD (3)"),
@@ -25,8 +25,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         self.assertEqual(setting.selector, expected_selector)
 
     @parameterized.expand([
-        ("documentation", "markdown"),
-        ("workflow", "workflow"),
+        ("Documentation", "markdown"),
+        ("Workflow", "workflow"),
         ("3D (1)", "babylon_data"),
         ("2D (2)", "plot_data"),
         ("MD (3)", "markdown"),
@@ -41,8 +41,8 @@ class TestWorkflowDisplays(unittest.TestCase):
             self.assertTrue(is_jsonable(display.data))
 
     @parameterized.expand([
-        ("documentation", str),
-        ("workflow", dict),
+        ("Documentation", str),
+        ("Workflow", dict),
         ("3D (1)", dict),
         ("2D (2)", list),
         ("MD (3)", str),
@@ -52,7 +52,7 @@ class TestWorkflowDisplays(unittest.TestCase):
         self.assertIsInstance(display.data, expected_type)
 
     def test_workflow(self):
-        display = self.workflow_run._display_from_selector("workflow")
+        display = self.workflow_run._display_from_selector("Workflow")
         self.assertSetEqual(set(display.data.keys()), WORKFLOW_KEYS)
 
     def test_cad(self):
