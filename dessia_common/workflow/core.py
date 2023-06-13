@@ -2032,7 +2032,7 @@ class WorkflowRun(WorkflowState):
         """ Compute run method's arguments from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
-        raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
+        raise NotImplementedError(f"Method '{method}' not in WorkflowRun allowed methods")
 
     def display_settings(self) -> List[DisplaySetting]:
         """
@@ -2044,15 +2044,15 @@ class WorkflowRun(WorkflowState):
         block_settings = self.workflow.blocks_display_settings
         displays_by_default = [s.load_by_default for s in block_settings]
 
-        for setting in workflow_settings:
+        for settings in workflow_settings:
             # Update workflow settings
-            setting.compose("workflow")
+            settings.compose("workflow")
 
-            if setting.selector == "Workflow":
-                setting.load_by_default = False
+            if settings.selector == "Workflow":
+                settings.load_by_default = False
 
-            if setting.selector == "Documentation":
-                setting.load_by_default = not any(displays_by_default)
+            if settings.selector == "Documentation":
+                settings.load_by_default = not any(displays_by_default)
 
         return workflow_settings + block_settings
 
@@ -2103,8 +2103,8 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
     else:
         output = None
-    return Workflow(blocks=blocks, pipes=pipes, output=output,
-                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
+    detached_variables = [v for v, is_connected in connected_nbvs.items() if not is_connected]
+    return Workflow(blocks=blocks, pipes=pipes, output=output, detached_variables=detached_variables)
 
 
 def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
