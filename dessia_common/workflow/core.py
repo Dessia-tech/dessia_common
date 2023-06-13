@@ -2053,7 +2053,6 @@ class WorkflowRun(WorkflowState):
 
             if settings.selector == "Documentation":
                 settings.load_by_default = not any(displays_by_default)
-
         return workflow_settings + block_settings
 
     def method_dict(self, method_name: str = None):
