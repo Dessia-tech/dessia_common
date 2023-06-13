@@ -63,6 +63,19 @@ class TestWorkflowDisplays(unittest.TestCase):
         display = self.workflow_run._display_from_selector("2D (2)")
         self.assertEqual(len(display.data), 5)
 
+    @parameterized.expand([
+        (True,),
+        (False,)
+    ])
+    def test_default_displays(self, block_by_default: bool):
+        self.assertTrue(workflow._display_settings_from_selector("Documentation").load_by_default)
+        self.assertTrue(workflow._display_settings_from_selector("Workflow").load_by_default)
+
+        workflow.blocks[1].load_by_default = block_by_default
+        settings = self.workflow_run._display_settings_from_selector("Documentation")
+        self.assertEqual(settings.load_by_default, not block_by_default)
+        self.assertFalse(self.workflow_run._display_settings_from_selector("Workflow").load_by_default)
+
 
 if __name__ == '__main__':
     unittest.main()

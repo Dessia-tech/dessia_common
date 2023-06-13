@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export: export all 3d formats in zip file
 - Files: add functions to init StringFile and BinaryFile from local path
 - MarkdownWriter: add some functions (table_of_contents, header)
+- Workflow : WorkflowRun now has smart display by default computation
+  - Documentation is disabled when at least one block is displayed by default, enabled otherwise
+  - Workflow always shows Documentation and its Display by default
 
 
 ### Fixed
@@ -75,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - License changed from GPL to Lesser GPL 
 
 ### Fix
+
 - Workflow name correction: correct the name if it contains an apostrophe.
 
 
