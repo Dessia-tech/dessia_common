@@ -629,8 +629,8 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown"),
-                DisplaySetting(selector="workflow", type_="workflow", method="to_dict")]
+        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True)]
 
     @property
     def export_blocks(self):
@@ -2040,12 +2040,12 @@ class WorkflowRun(WorkflowState):
 
         Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
-        workflow_settings = self.workflow.display_settings()
-        doc_setting = workflow_settings[0]
-        workflow_setting = workflow_settings[1]
-        display_settings = WorkflowState.display_settings(self)
-        display_settings.pop(0)
-        return [doc_setting, workflow_setting.compose("workflow")] + display_settings
+        block_settings = self.workflow.blocks_display_settings
+        displays_by_default = [s.load_by_default for s in block_settings]
+        workflow_settings = DisplaySetting(selector="Workflow", type_="workflow", method="workflow.to_dict")
+        doc_settings = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
+                                      load_by_default=not any(displays_by_default))
+        return [workflow_settings, doc_settings] + block_settings
 
     def method_dict(self, method_name: str = None):
         """ Get run again default dict. """
