@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add default value to method types
 - Schemas refactor: add standalone in db property
 - Typings : add AttributeType and ClassAttributeType
+- Workflow : add Tasks display
 
 
 ### Changed

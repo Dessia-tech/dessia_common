@@ -630,7 +630,8 @@ class Workflow(Block):
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
         return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
-                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True)]
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
+                DisplaySetting(selector="Tasks", type_="tasks", method="")]
 
     @property
     def export_blocks(self):
