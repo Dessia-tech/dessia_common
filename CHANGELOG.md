@@ -62,9 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix Spelling (x2)
 
-### Perf
-
-- use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
 
 
 ## 0.13.3
