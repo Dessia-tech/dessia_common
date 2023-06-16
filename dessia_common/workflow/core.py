@@ -826,8 +826,12 @@ class Workflow(Block):
     def _start_run_dict(self) -> Dict:
         return {}
 
-    def method_dict(self, method_name: str = None) -> Dict:
+    def method_dict(self, method_name: str = None, method_jsonschema=None) -> Dict:
         """ Wrapper method to get dictionaries of run and start_run methods. """
+        if method_jsonschema is not None:
+            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
+                          " Please remove it from your function call. Method name is sufficient to get schema",
+                          DeprecationWarning)
         if method_name == 'run':
             return self._run_dict()
         if method_name == 'start_run':
@@ -2047,8 +2051,12 @@ class WorkflowRun(WorkflowState):
         display_settings.pop(0)
         return [doc_setting, workflow_setting.compose("workflow")] + display_settings
 
-    def method_dict(self, method_name: str = None):
+    def method_dict(self, method_name: str = None, method_jsonschema=None):
         """ Get run again default dict. """
+        if method_jsonschema is not None:
+            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
+                          " Please remove it from your function call. Method name is sufficient to get schema",
+                          DeprecationWarning)
         if method_name is not None and method_name == 'run_again':
             return serialize_dict(self.input_values)
         raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
