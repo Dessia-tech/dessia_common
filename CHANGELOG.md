@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chore
 
 - Fix Spelling (x2)
+- Object : Add Backward Compitibality over method_dict to cover old frontend calls
 
 
 
