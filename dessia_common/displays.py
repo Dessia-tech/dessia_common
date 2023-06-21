@@ -48,16 +48,14 @@ class DisplaySetting:
         return {"selector": self.selector, "type": self.type, "method": self.method, "arguments": self.arguments,
                 "serialize_data": self.serialize_data, "load_by_default": self.load_by_default}
 
-    def compose(self, attribute: str, serialize_data: bool = False):
+    def compose(self, attribute: str):
         """
         Handles deep calls to method.
 
-        In case of a parent getting the display settings of a children this methods allow
+        In case of a parent getting the display settings of a children, this method allow
         to inject the attribute name to method name.
         """
-        return DisplaySetting(selector=self.selector, type_=self.type, method=f"{attribute}.{self.method}",
-                              arguments=self.arguments, serialize_data=serialize_data,
-                              load_by_default=self.load_by_default)
+        self.method = f"{attribute}.{self.method}"
 
 
 class DisplayObject:
