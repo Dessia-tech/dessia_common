@@ -2050,7 +2050,7 @@ class WorkflowRun(WorkflowState):
         displays_by_default = [s.load_by_default for s in block_settings]
 
         workflow_settings_to_keep = []
-        for i, settings in enumerate(workflow_settings):
+        for settings in workflow_settings:
             # Update workflow settings
             settings.compose("workflow")
 
