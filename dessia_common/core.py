@@ -161,8 +161,7 @@ class DessiaObject(SerializableObject):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
-        schema = dcs.ClassSchema(cls)
-        return schema
+        return dcs.ClassSchema(cls)
 
     @classmethod
     def schema(cls):
@@ -184,8 +183,7 @@ class DessiaObject(SerializableObject):
         schemas = {}
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
-            schema = dcs.MethodSchema(method)
-            schemas[method_name] = schema
+            schemas[method_name] = dcs.MethodSchema(method)
         return schemas
 
     @property
@@ -210,7 +208,7 @@ class DessiaObject(SerializableObject):
 
     def dict_to_arguments(self, dict_, method):
         """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
-        method_full_name = f'{self.full_classname}.{method}'
+        method_full_name = f"{self.full_classname}.{method}"
         if method_full_name in _fullargsspec_cache:
             args_specs = _fullargsspec_cache[method_full_name]
         else:
@@ -228,8 +226,8 @@ class DessiaObject(SerializableObject):
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError as err:
-                    msg = 'Error in deserialisation of value: '
-                    msg += f'{value} of expected type {arg_specs}'
+                    msg = "Error in deserialisation of value: "
+                    msg += f"{value} of expected type {arg_specs}"
                     raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments

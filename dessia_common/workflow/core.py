@@ -629,8 +629,9 @@ class Workflow(Block):
     @staticmethod
     def display_settings() -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="documentation", type_="markdown", method="to_markdown", load_by_default=True),
-                DisplaySetting(selector="workflow", type_="workflow", method="to_dict")]
+        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
+                DisplaySetting(selector="Tasks", type_="tasks", method="")]
 
     @property
     def export_blocks(self):
@@ -2043,7 +2044,7 @@ class WorkflowRun(WorkflowState):
         """ Compute run method's arguments from serialized ones. """
         if method in self._allowed_methods:
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
-        raise NotImplementedError(f"Method {method} not in WorkflowRun allowed methods")
+        raise NotImplementedError(f"Method '{method}' not in WorkflowRun allowed methods")
 
     def display_settings(self) -> List[DisplaySetting]:
         """
@@ -2052,11 +2053,23 @@ class WorkflowRun(WorkflowState):
         Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
         workflow_settings = self.workflow.display_settings()
-        doc_setting = workflow_settings[0]
-        workflow_setting = workflow_settings[1]
-        display_settings = WorkflowState.display_settings(self)
-        display_settings.pop(0)
-        return [doc_setting, workflow_setting.compose("workflow")] + display_settings
+        block_settings = self.workflow.blocks_display_settings
+        displays_by_default = [s.load_by_default for s in block_settings]
+
+        workflow_settings_to_keep = []
+        for settings in workflow_settings:
+            # Update workflow settings
+            settings.compose("workflow")
+
+            if settings.selector == "Workflow":
+                settings.load_by_default = False
+
+            if settings.selector == "Documentation":
+                settings.load_by_default = not any(displays_by_default)
+
+            if settings.selector != "Tasks":
+                workflow_settings_to_keep.append(settings)
+        return workflow_settings_to_keep + block_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema=None):
         """ Get run again default dict. """
@@ -2109,8 +2122,8 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
         output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
     else:
         output = None
-    return Workflow(blocks=blocks, pipes=pipes, output=output,
-                    detached_variables=[v for v, is_connected in connected_nbvs.items() if not is_connected])
+    detached_variables = [v for v, is_connected in connected_nbvs.items() if not is_connected]
+    return Workflow(blocks=blocks, pipes=pipes, output=output, detached_variables=detached_variables)
 
 
 def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
