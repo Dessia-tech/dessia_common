@@ -1793,7 +1793,12 @@ class WorkflowState(DessiaObject):
         block = self.workflow.blocks[block_index]
         self.activate_inputs()
         if block in self._activable_blocks():
-            self._evaluate_block(block)
+            nblocks = len(self.workflow.blocks)
+
+            def block_progress_callback(x):
+                progress_callback(self.progress + x / nblocks)
+
+            self._evaluate_block(block, progress_callback=block_progress_callback)
             progress_callback(self.progress)
             return True
         return False
@@ -1803,10 +1808,9 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
         blocks = self._activable_blocks()
         if blocks:
-            block = blocks[0]
-            self._evaluate_block(block)
-            progress_callback(self.progress)
-            return block
+            block_index = self.workflow.blocks.index(blocks[0])
+            self.block_evaluation(block_index, progress_callback=progress_callback)
+            return blocks[0]
         return None
 
     def continue_run(self, progress_callback=lambda x: None, export: bool = False):
@@ -1820,7 +1824,9 @@ class WorkflowState(DessiaObject):
             blocks = [b for b in self.workflow.runtime_blocks if b in self._activable_blocks()]
             for block in blocks:
                 evaluated_blocks.append(block)
-                self._evaluate_block(block)
+                block_index = self.workflow.blocks.index(block)
+                self.block_evaluation(block_index, progress_callback=progress_callback)
+                # self._evaluate_block(block)
                 if not export:
                     progress_callback(self.progress)
                 something_activated = True
@@ -1914,6 +1920,7 @@ class WorkflowState(DessiaObject):
             self._activate_variable(variable=input_, value=value)
             local_values[input_] = value
 
+        kwargs['progress_callback'] = progress_callback
         output_values = block.evaluate(local_values, **kwargs)
         self._activate_block(block=block, output_values=output_values)
 

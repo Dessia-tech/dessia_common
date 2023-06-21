@@ -219,10 +219,17 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
-    def evaluate(self, values, **kwargs):
+    def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
-        return [getattr(values[self.inputs[0]], self.method_type.name)(**arguments), values[self.inputs[0]]]
+        method = getattr(values[self.inputs[0]], self.method_type.name)
+        try:
+            # Trying to inject progress callback to method
+            result = method(progress_callback=progress_callback, **arguments)
+        except TypeError:
+            result = method(**arguments)
+
+        return [result, values[self.inputs[0]]]
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
