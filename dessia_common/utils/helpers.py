@@ -73,37 +73,3 @@ def get_python_class_from_class_name(full_class_name: str):
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
     return class_
-
-
-def plotdata(selector: str = None, serialize_data: bool = True, load_by_default: bool = False):
-    """ Decorator to plot data."""
-    def decorator(function):   
-        """ Decorator to plot data. """
-        function.__dict__['decorator'] = 'plotdata'
-        function.__dict__['selector'] = selector
-        function.__dict__['serialize_data'] = serialize_data
-        function.__dict__['load_by_default'] = load_by_default
-        return function
-    return decorator
-
-
-def markdown(selector: str = None, serialize_data: bool = False, load_by_default: bool = False):
-    """ Decorator to markdown."""
-    def decorator(function):   
-        """ Decorator to markdown. """
-        function.__dict__['decorator'] = 'markdown'
-        function.__dict__['selector'] = selector
-        function.__dict__['serialize_data'] = serialize_data
-        function.__dict__['load_by_default'] = load_by_default
-        return function
-    return decorator
-
-
-def get_class_and_super_class_text(class_name) -> str:
-    """ Get class and super class text. """
-    text_informations = []
-    for class_ in inspect.getmro(class_name):
-        if class_.__name__ != 'object':
-            source_lines = inspect.getsourcelines(class_)
-            text_informations.extend(source_lines[0])
-    return text_informations

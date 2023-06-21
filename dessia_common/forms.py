@@ -43,7 +43,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.utils.helpers import plotdata, markdown
+from dessia_common.decorators import plot_data_display, markdown_display
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -521,7 +521,7 @@ class StandaloneObject(MovingObject):
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
     
-    @plotdata('2DTest')
+    @plot_data_display('2DTest')
     def plot_data_test(self):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on platform.
@@ -530,7 +530,7 @@ class StandaloneObject(MovingObject):
         """
         return []
     
-    @markdown('MDTest')
+    @markdown_display('MDTest')
     def markdown_test(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
