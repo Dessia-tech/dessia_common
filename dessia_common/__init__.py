@@ -7,5 +7,5 @@ import pkg_resources
 __version__ = pkg_resources.require("dessia_common")[0].version
 
 FLOAT_TOLERANCE = 1e-9
-REF_MARKER = "ref__"
+REF_MARKER = "$ref"
 OLD_REF_MARKER = "$ref"

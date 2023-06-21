@@ -279,7 +279,7 @@ def recursive_type(obj):
 
 def typematch(type_: Type, match_against: Type) -> bool:
     """
-    Return wether type_ matches against match_against.
+    Return whether type_ matches against match_against.
 
     match_against needs to be "wider" than type_, and the check is not bilateral
     """

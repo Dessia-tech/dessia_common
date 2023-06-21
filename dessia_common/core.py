@@ -161,8 +161,7 @@ class DessiaObject(SerializableObject):
             warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
                           "Please consider so", DeprecationWarning)
             return cls._jsonschema
-        schema = dcs.ClassSchema(cls)
-        return schema
+        return dcs.ClassSchema(cls)
 
     @classmethod
     def schema(cls):
@@ -184,8 +183,7 @@ class DessiaObject(SerializableObject):
         schemas = {}
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
-            schema = dcs.MethodSchema(method)
-            schemas[method_name] = schema
+            schemas[method_name] = dcs.MethodSchema(method)
         return schemas
 
     @property
@@ -199,14 +197,18 @@ class DessiaObject(SerializableObject):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    def method_dict(self, method_name: str):
+    def method_dict(self, method_name: str, method_jsonschema=None):
         """ Return a default dict for the given method name. """
+        if method_jsonschema is not None:
+            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
+                          " Please remove it from your function call. Method name is sufficient to get schema",
+                          DeprecationWarning)
         schema = self.raw_method_schemas[method_name]
         return schema.default_dict()
 
     def dict_to_arguments(self, dict_, method):
         """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
-        method_full_name = f'{self.full_classname}.{method}'
+        method_full_name = f"{self.full_classname}.{method}"
         if method_full_name in _fullargsspec_cache:
             args_specs = _fullargsspec_cache[method_full_name]
         else:
@@ -224,8 +226,8 @@ class DessiaObject(SerializableObject):
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError as err:
-                    msg = 'Error in deserialisation of value: '
-                    msg += f'{value} of expected type {arg_specs}'
+                    msg = "Error in deserialisation of value: "
+                    msg += f"{value} of expected type {arg_specs}"
                     raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments
@@ -548,7 +550,7 @@ class DessiaObject(SerializableObject):
             filepath += '.docx'
             print(f'Changing name to {filepath}')
         self.to_docx_stream(filepath)
-        
+
     def zip_settings(self):
         """
         Returns a list of streams containing different representations of the object.
@@ -867,7 +869,7 @@ class DessiaFilter(DessiaObject):
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
-        Get the boolean indexing of a filtered list.
+        Get the Boolean indexing of a filtered list.
 
         :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
@@ -1005,7 +1007,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of boolean indices with the logical operator into a simple boolean index.
+        Combine a list of Boolean indices with the logical operator into a simple boolean index.
 
         :param booleans_lists: List of boolean indices
 
