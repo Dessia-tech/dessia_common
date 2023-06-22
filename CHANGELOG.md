@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Blocks : add GetModelAttribute which will replace ModelAttribute in few release
 - Blocks : display blocks are now more configurable (custom selector and type)
 - DessiaObject: add type to load_from_file method
+- Displays: Displays can now be defined with decorators
 - Document generator: add new class Table
 - Files: .doc & .docx files typings
 - Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
