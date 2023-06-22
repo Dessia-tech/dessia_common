@@ -26,10 +26,10 @@ WEEKLY_DECREASE = 0.03
 UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 
 MAX_ERROR_BY_TYPE = {
-    "protected-access": 45,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "protected-access": 42,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
-    "too-many-locals": 9,  # Reduce by dropping vectored objects
-    "too-many-branches": 12,  # Huge refactor needed. Will be reduced by schema refactor
+    "too-many-locals": 8,  # Reduce by dropping vectored objects
+    "too-many-branches": 11,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 22,  # Huge refactor needed
@@ -37,10 +37,10 @@ MAX_ERROR_BY_TYPE = {
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
-    "broad-exception-caught": 10,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
+    "broad-exception-caught": 9,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "bare-except": 1,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
-    "too-many-statements": 2,  # Will be solved by schema refactor and jsonchema removal
+    "too-many-statements": 1,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
     "attribute-defined-outside-init": 3,  # For test purposes
     "consider-using-generator": 1,

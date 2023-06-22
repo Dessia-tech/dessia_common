@@ -43,6 +43,8 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
+from dessia_common.decorators import plot_data_display, markdown_display, cad_display
+
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
     """
@@ -518,6 +520,28 @@ class StandaloneObject(MovingObject):
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
+    
+    @plot_data_display('2DTest')
+    def plot_data_test(self):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
+
+        Should return a list of plot_data's objects.
+        """
+        return []
+    
+    @markdown_display(selector='MDTest', load_by_default=True)
+    def markdown_test(self):
+        """ Write a standard markdown of StandaloneObject. """
+        contents = " # Ceci est un markdown test"
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
+        return contents
+
+    @cad_display
+    def cad_display_method(self):
+        """ Test CAD Display by decorator. """
+        return None
 
     def count_until(self, duration: float, raise_error: bool = False):
         """

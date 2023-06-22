@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (OptionalProperty(annotation=Optional[List[int]], attribute="optional_list", definition_default=None))
+        (OptionalProperty(annotation=Optional[List[int]], attribute="optional_list", definition_default=None),)
     ])
     def test_schema_check(self, schema):
         self.assertEqual(schema.args, (int,))

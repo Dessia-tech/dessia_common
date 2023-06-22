@@ -20,7 +20,7 @@ import traceback as tb
 from importlib import import_module
 
 from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid
+from dessia_common.utils.types import is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -33,6 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
 
 
 def __getattr__(name):
@@ -398,12 +399,33 @@ class DessiaObject(SerializableObject):
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
         return axs
-
-    @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    
+    @classmethod
+    def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
-                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+        display_settings = [DisplaySetting(selector="markdown", type_="markdown",
+                                           method="to_markdown", load_by_default=True),
+                            DisplaySetting(selector="plot_data", type_="plot_data",
+                                           method="plot_data", serialize_data=True)]
+        display_settings.extend(cls._display_settings_from_decorators())
+        return display_settings
+    
+    @classmethod
+    def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
+        """ Return a list, computed from decorated functions, of objects describing how to call displays. """
+        methods = [m for d in DISPLAY_DECORATORS for m in get_decorated_methods(class_=cls, decorator_name=d)]
+        display_settings = []
+        for method in methods:
+            name = method.__name__
+            type_ = getattr(method, "type_", False)
+            serialize_data = getattr(method, "serialize_data", False)
+            load_by_default = getattr(method, "load_by_default", False)
+            selector = getattr(method, "selector", None)
+            if selector is None:
+                selector = name
+            display_settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
+                                                   serialize_data=serialize_data, load_by_default=load_by_default))
+        return display_settings
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
@@ -606,10 +628,10 @@ class DessiaObject(SerializableObject):
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
-    @staticmethod
-    def display_settings():
+    @classmethod
+    def display_settings(cls):
         """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = DessiaObject.display_settings()
+        display_settings = super().display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
@@ -1076,31 +1098,6 @@ def stringify_dict_keys(obj):
     else:
         return obj
     return new_obj
-
-
-def concatenate_attributes(prefix, suffix, type_: str = 'str'):
-    """ Concatenate sequence of attributes to a string. """
-    wrong_prefix_format = "Attribute prefix is wrongly formatted. Is of type {}. Should be str or list."
-    if type_ == 'str':
-        if isinstance(prefix, str):
-            return prefix + '/' + str(suffix)
-        if is_sequence(prefix):
-            return sequence_to_deepattr(prefix) + '/' + str(suffix)
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-
-    if type_ == 'sequence':
-        if isinstance(prefix, str):
-            return [prefix, suffix]
-        if is_sequence(prefix):
-            return prefix + [suffix]
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-    raise ValueError(f"Type {type_} for concatenation is not supported. Should be 'str' or 'sequence'")
-
-
-def sequence_to_deepattr(sequence):
-    """ Convert a list to the corresponding string pointing to deep_attribute. """
-    healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
-    return '/'.join(healed_sequence)
 
 
 def type_from_annotation(type_, module):

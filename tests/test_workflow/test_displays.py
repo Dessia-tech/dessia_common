@@ -19,6 +19,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         (2, "3D (1)"),
         (3, "2D (2)"),
         (4, "MD (3)"),
+        (5, "2DTest (4)"),
+        (6, "MDTest (5)"),
     ])
     def test_selectors(self, index, expected_selector):
         setting = self.display_settings[index]
@@ -30,6 +32,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         ("3D (1)", "babylon_data"),
         ("2D (2)", "plot_data"),
         ("MD (3)", "markdown"),
+        ("2DTest (4)", "plot_data_test"),
+        ("MDTest (5)", "markdown_test"),
     ])
     def test_types(self, selector, expected_type):
         setting = self.workflow_run._display_settings_from_selector(selector)
@@ -46,6 +50,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         ("3D (1)", dict),
         ("2D (2)", list),
         ("MD (3)", str),
+        ("2DTest (4)", list),
+        ("MDTest (5)", str),
     ])
     def test_data_types(self, selector, expected_type):
         display = self.workflow_run._display_from_selector(selector)
