@@ -43,7 +43,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_display, markdown_display
+from dessia_common.decorators import plot_data_display, markdown_display, cad_display
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -537,6 +537,10 @@ class StandaloneObject(MovingObject):
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
+
+    @cad_display
+    def cad_display_method(self):
+        return None
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
