@@ -1100,25 +1100,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def concatenate_attributes(prefix, suffix, type_: str = 'str'):
-    """ Concatenate sequence of attributes to a string. """
-    wrong_prefix_format = "Attribute prefix is wrongly formatted. Is of type {}. Should be str or list."
-    if type_ == 'str':
-        if isinstance(prefix, str):
-            return prefix + '/' + str(suffix)
-        if is_sequence(prefix):
-            return sequence_to_deepattr(prefix) + '/' + str(suffix)
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-
-    if type_ == 'sequence':
-        if isinstance(prefix, str):
-            return [prefix, suffix]
-        if is_sequence(prefix):
-            return prefix + [suffix]
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-    raise ValueError(f"Type {type_} for concatenation is not supported. Should be 'str' or 'sequence'")
-
-
 def sequence_to_deepattr(sequence):
     """ Convert a list to the corresponding string pointing to deep_attribute. """
     healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
