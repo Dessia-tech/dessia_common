@@ -3,7 +3,7 @@ import inspect
 import ast
 
 
-DISPLAY_DECORATORS = ["plot_data_display", "markdown_display"]
+DISPLAY_DECORATORS = ["plot_data_display", "markdown_display", "cad_display"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -48,6 +48,16 @@ def markdown_display(selector: str = None, load_by_default: bool = False, serial
     def decorator(function):
         """ Decorator to markdown. """
         set_decorated_function_metadata(function=function, type_="markdown", selector=selector,
+                                        serialize_data=serialize_data, load_by_default=load_by_default)
+        return function
+    return decorator
+
+
+def cad_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+    """ Decorator to markdown."""
+    def decorator(function):
+        """ Decorator to markdown. """
+        set_decorated_function_metadata(function=function, type_="cad", selector=selector,
                                         serialize_data=serialize_data, load_by_default=load_by_default)
         return function
     return decorator
