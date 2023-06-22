@@ -1,3 +1,5 @@
+""" This module provides decorators that work as 'flags' for display settings. """
+
 from typing import Type, List
 import inspect
 import ast
