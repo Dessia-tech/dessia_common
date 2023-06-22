@@ -97,4 +97,3 @@ def default_dict(jsonschema):
     else:
         return None
     return dict_
-
