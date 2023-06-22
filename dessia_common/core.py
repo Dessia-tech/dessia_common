@@ -1100,12 +1100,6 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def sequence_to_deepattr(sequence):
-    """ Convert a list to the corresponding string pointing to deep_attribute. """
-    healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
-    return '/'.join(healed_sequence)
-
-
 def type_from_annotation(type_, module):
     """ Clean up a proposed type if there are stringified. """
     if isinstance(type_, str):
