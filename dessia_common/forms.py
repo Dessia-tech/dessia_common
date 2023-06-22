@@ -540,6 +540,7 @@ class StandaloneObject(MovingObject):
 
     @cad_display
     def cad_display_method(self):
+        """ Test CAD Display by decorator"""
         return None
 
     def count_until(self, duration: float, raise_error: bool = False):
