@@ -1,4 +1,4 @@
-""" This module provides decorators that work as 'flags' for display settings. """
+""" Provides decorators that work as 'flags' for display settings. """
 
 from typing import Type, List
 import inspect
@@ -67,7 +67,7 @@ def cad_display(selector: str = None, load_by_default: bool = False, serialize_d
 
 def set_decorated_function_metadata(function, type_: str, selector: str = None,
                                     serialize_data: bool = False, load_by_default: bool = False):
-    """ Attach metadata to function object. Is there any better way to do this ? """
+    """ Attach metadata to function object. Is there any better way to do this ? It seems a bit dirty. """
     setattr(function, "type_", type_)
     setattr(function, "selector", selector)
     setattr(function, "serialize_data", serialize_data)
