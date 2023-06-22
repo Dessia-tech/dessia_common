@@ -33,6 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
 
 
 def __getattr__(name):
@@ -402,29 +403,28 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        display_settings = [DisplaySetting(selector="markdown", type_="markdown", 
-                                                method="to_markdown", load_by_default=True),
-                                DisplaySetting(selector="plot_data", type_="plot_data", 
-                                               method="plot_data", serialize_data=True)]
+        display_settings = [DisplaySetting(selector="markdown", type_="markdown",
+                                           method="to_markdown", load_by_default=True),
+                            DisplaySetting(selector="plot_data", type_="plot_data",
+                                           method="plot_data", serialize_data=True)]
         display_settings.extend(cls._display_settings_from_decorators())
         return display_settings
     
     @classmethod
     def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
-        """ Return a list of objects describing how to call plot data displays. """
-        methods = inspect.getmembers(cls, inspect.isfunction)
+        """ Return a list, computed from decorated functions, of objects describing how to call displays. """
+        methods = [m for d in DISPLAY_DECORATORS for m in get_decorated_methods(class_=cls, decorator_name=d)]
         display_settings = []
-        for function_name, function in methods:
-            serialize_data = function.__dict__.get("serialize_data", False)
-            load_by_default = function.__dict__.get("load_by_default", False)
-            if 'selector' in function.__dict__.keys():
-                selector = function.__dict__['selector']
-                if selector is None:
-                    selector = function_name
-                display_settings.append(DisplaySetting(selector=selector, type_=function_name, 
-                                                    method=function_name, serialize_data=serialize_data, 
-                                                    load_by_default=load_by_default))
-
+        for method in methods:
+            name = method.__name__
+            type_ = getattr(method, "type_", False)
+            serialize_data = getattr(method, "serialize_data", False)
+            load_by_default = getattr(method, "load_by_default", False)
+            selector = getattr(method, "selector", None)
+            if selector is None:
+                selector = name
+            display_settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
+                                                   serialize_data=serialize_data, load_by_default=load_by_default))
         return display_settings
 
     def _display_from_selector(self, selector: str) -> DisplayObject:

@@ -530,12 +530,10 @@ class StandaloneObject(MovingObject):
         """
         return []
     
-    @markdown_display('MDTest')
+    @markdown_display(selector='MDTest', load_by_default=True)
     def markdown_test(self):
         """ Write a standard markdown of StandaloneObject. """
-        contents = """
-        # Ceci est un markdown test
-        """
+        contents = " # Ceci est un markdown test"
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
