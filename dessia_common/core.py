@@ -20,7 +20,7 @@ import traceback as tb
 from importlib import import_module
 
 from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid
+from dessia_common.utils.types import is_bson_valid
 from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
