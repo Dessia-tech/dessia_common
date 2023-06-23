@@ -403,18 +403,16 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        display_settings = [DisplaySetting(selector="markdown", type_="markdown",
-                                           method="to_markdown", load_by_default=True),
-                            DisplaySetting(selector="plot_data", type_="plot_data",
-                                           method="plot_data", serialize_data=True)]
-        display_settings.extend(cls._display_settings_from_decorators())
-        return display_settings
+        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
+                    DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+        settings.extend(cls._display_settings_from_decorators())
+        return settings
     
     @classmethod
     def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
         """ Return a list, computed from decorated functions, of objects describing how to call displays. """
         methods = [m for d in DISPLAY_DECORATORS for m in get_decorated_methods(class_=cls, decorator_name=d)]
-        display_settings = []
+        settings = []
         for method in methods:
             name = method.__name__
             type_ = getattr(method, "type_", False)
@@ -423,9 +421,9 @@ class DessiaObject(SerializableObject):
             selector = getattr(method, "selector", None)
             if selector is None:
                 selector = name
-            display_settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
-                                                   serialize_data=serialize_data, load_by_default=load_by_default))
-        return display_settings
+            settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
+                                           serialize_data=serialize_data, load_by_default=load_by_default))
+        return settings
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """

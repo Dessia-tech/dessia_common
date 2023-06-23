@@ -3,6 +3,7 @@
 from typing import Type, List
 import inspect
 import ast
+import textwrap
 
 
 DISPLAY_DECORATORS = ["plot_data_display", "markdown_display", "cad_display"]
@@ -10,10 +11,13 @@ DISPLAY_DECORATORS = ["plot_data_display", "markdown_display", "cad_display"]
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
     """ Get all decorated method from class_. """
-    class_source = inspect.getsource(class_)
-    ast_tree = ast.parse(source=class_source)
-    class_body = ast_tree.body[0]
-    return [m for m in class_body.body if isinstance(m, ast.FunctionDef) and m.decorator_list]
+    methods = inspect.getmembers(class_, inspect.isfunction) + inspect.getmembers(class_, inspect.ismethod)
+    function_defs = []
+    for method_name, method in methods:
+        source = textwrap.dedent(inspect.getsource(method))
+        method_tree = ast.parse(source)
+        function_defs.append(method_tree.body[0])
+    return [m for m in function_defs if isinstance(m, ast.FunctionDef) and m.decorator_list]
 
 
 def get_decorated_methods(class_: Type, decorator_name: str):
