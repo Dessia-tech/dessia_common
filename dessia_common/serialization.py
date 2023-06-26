@@ -18,7 +18,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.graph import explore_tree_from_leaves  # , cut_tree_final_branches
 from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
-from dessia_common import measures
+
 fullargsspec_cache = {}
 
 
@@ -453,7 +453,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if argument is None:
         return None
 
-    if isinstance(argument, SerializableObject) or isinstance(argument, measures.Measure):
+    if isinstance(argument, SerializableObject):
         return argument
 
     if dcty.is_typing(type_):
