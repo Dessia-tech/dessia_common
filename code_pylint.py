@@ -28,7 +28,7 @@ UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
 MAX_ERROR_BY_TYPE = {
     "protected-access": 42,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
-    "too-many-locals": 8,  # Reduce by dropping vectored objects
+    "too-many-locals": 7,  # Reduce by dropping vectored objects
     "too-many-branches": 11,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject

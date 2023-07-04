@@ -402,34 +402,7 @@ class StandaloneObject(MovingObject):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (300, 0)], name='Multiple Plot')
-
-        attribute_names = ['timestep', 'electric current']
-        tooltip = plot_data.Tooltip(attributes=attribute_names)
-        timesteps = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in timesteps]
-        elements1 = []
-        for timestep, current in zip(timesteps, current1):
-            elements1.append({'timestep': timestep, 'electric current': current})
-
-        # The previous line instantiates a dataset with limited arguments but several customization are available
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
-
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
-                                           point_style=point_style, edge_style=edge_style)
-
-        # Now let's create another dataset for the purpose of this exercise
-        timesteps = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in timesteps]
-        elements2 = []
-        for timestep, current in zip(timesteps, current2):
-            elements2.append({'timestep': timestep, 'electric current': current})
-
-        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
-
-        graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    x_variable=attribute_names[0], y_variable=attribute_names[1])
-        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
+        return [primitives_group, scatterplot, parallelplot, multiplot]
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -528,7 +501,26 @@ class StandaloneObject(MovingObject):
 
         Should return a list of plot_data's objects.
         """
-        return []
+        attributes = ['timestep', 'electric current']
+        tooltip = plot_data.Tooltip(attributes=attributes)
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
+        elements1 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current1)]
+
+        # The previous line instantiates a dataset with limited arguments but some customization is available
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
+
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
+                                           point_style=point_style, edge_style=edge_style)
+
+        # Now let's create another dataset for the purpose of this exercise
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
+        elements2 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current2)]
+
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
+        return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
     
     @markdown_display(selector='MDTest', load_by_default=True)
     def markdown_test(self):

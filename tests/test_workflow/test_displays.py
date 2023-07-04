@@ -50,7 +50,7 @@ class TestWorkflowDisplays(unittest.TestCase):
         ("3D (1)", dict),
         ("2D (2)", list),
         ("MD (3)", str),
-        ("2DTest (4)", list),
+        ("2DTest (4)", dict),
         ("MDTest (5)", str),
     ])
     def test_data_types(self, selector, expected_type):
@@ -67,7 +67,7 @@ class TestWorkflowDisplays(unittest.TestCase):
 
     def test_plot_data(self):
         display = self.workflow_run._display_from_selector("2D (2)")
-        self.assertEqual(len(display.data), 5)
+        self.assertEqual(len(display.data), 4)
 
     @parameterized.expand([
         (True,),
