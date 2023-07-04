@@ -13,7 +13,7 @@ def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
     """ Get all decorated method from class_. """
     methods = inspect.getmembers(class_, inspect.isfunction) + inspect.getmembers(class_, inspect.ismethod)
     function_defs = []
-    for method_name, method in methods:
+    for _, method in methods:
         source = textwrap.dedent(inspect.getsource(method))
         method_tree = ast.parse(source)
         function_defs.append(method_tree.body[0])
