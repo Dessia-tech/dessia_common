@@ -401,7 +401,7 @@ class DessiaObject(SerializableObject):
         return axs
     
     @classmethod
-    def display_settings(cls) -> List[DisplaySetting]:
+    def display_settings(cls, *args, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
         settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
                     DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
@@ -455,7 +455,7 @@ class DessiaObject(SerializableObject):
             displays.append(display_.to_dict())
         return displays
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, *args, **kwargs) -> str:
         """ Render a markdown of the object output type: string. """
         writer = MarkdownWriter(print_limit=25, table_limit=None)
         template = templates.dessia_object_markdown_template

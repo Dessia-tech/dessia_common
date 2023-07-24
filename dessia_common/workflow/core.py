@@ -13,9 +13,9 @@ import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
 from copy import deepcopy
 import warnings
+import webbrowser
 
 import humanize
-import webbrowser
 import psutil
 import networkx as nx
 
@@ -1464,7 +1464,7 @@ class Workflow(Block):
 
 
 class ExecutionInfo(DessiaObject):
-    """ Workflow execution informations: start & end date, memory consumption. """
+    """ Workflow execution information: start & end date, memory consumption. """
 
     def __init__(self, start_time: float = None, end_time: float = None,
                  before_block_memory_usage: Dict[Block, int] = None,
@@ -1490,7 +1490,7 @@ class ExecutionInfo(DessiaObject):
             return None
         return self.end_time - self.start_time
 
-    def to_dict(self, block_indices):
+    def to_dict(self, block_indices, **args):
         dict_ = {"start_time": self.start_time,
                  "end_time": self.end_time}
 
@@ -1500,8 +1500,7 @@ class ExecutionInfo(DessiaObject):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_, index_to_block):
-
+    def dict_to_object(cls, dict_, index_to_block, **args):
         before_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["before_block_memory_usage"].items()}
         after_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["after_block_memory_usage"].items()}
         return cls(start_time=dict_["start_time"], end_time=dict_["end_time"],
@@ -1726,7 +1725,8 @@ class WorkflowState(DessiaObject):
 
         # Output value: priority for reference before values
         if self.output_value is not None:
-            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path='#/output_value')
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                    path='#/output_value')
             dict_['output_value'] = serialized_output_value
 
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
@@ -1738,7 +1738,8 @@ class WorkflowState(DessiaObject):
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
 
-        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        dict_.update({'start_time': self.execution_info.start_time, 'end_time': self.execution_info.end_time,
+                      'log': self.log})
         return dict_
 
     @classmethod
@@ -1779,7 +1780,7 @@ class WorkflowState(DessiaObject):
         activated_items.update({v: workflow.variable_indices(v) in var_indices for v in workflow.variables})
 
         execution_info = ExecutionInfo.dict_to_object(dict_=dict_['execution_info'],
-                                                      index_to_block={i: b for i, b in enumerate(workflow.blocks)})
+                                                      index_to_block=dict(enumerate(workflow.blocks)))
 
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
                    values=values, output_value=output_value, log=dict_['log'],
