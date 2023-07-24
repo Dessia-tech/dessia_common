@@ -1484,6 +1484,8 @@ class ExecutionInfo(DessiaObject):
             after_block_memory_usage = {}
         self.after_block_memory_usage = after_block_memory_usage
 
+        DessiaObject.__init__(self, name="")
+
     @property
     def execution_time(self):
         if self.end_time is None:
