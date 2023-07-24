@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Gathers all workflow relative features. """
+
 import ast
 import inspect
 import time
 import datetime
 import tempfile
 import json
-import webbrowser
 from functools import cached_property
 import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
 from copy import deepcopy
 import warnings
+
+import humanize
+import webbrowser
+import psutil
 import networkx as nx
 
 import dessia_common.errors
@@ -33,7 +37,8 @@ from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
-from dessia_common.exports import ExportFormat
+from dessia_common.exports import ExportFormat, MarkdownWriter
+import dessia_common.templates
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
     serialize_dict, add_references, deserialize_argument
 
@@ -1458,6 +1463,66 @@ class Workflow(Block):
         raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
 
 
+class ExecutionInfo(DessiaObject):
+    """ Workflow execution informations: start & end date, memory consumption. """
+
+    def __init__(self, start_time: float = None, end_time: float = None,
+                 before_block_memory_usage: Dict[Block, int] = None,
+                 after_block_memory_usage: Dict[Block, int] = None):
+
+        if start_time is None:
+            start_time = time.time()
+
+        self.start_time = start_time
+        self.end_time = end_time
+
+        if before_block_memory_usage is None:
+            before_block_memory_usage = {}
+        self.before_block_memory_usage = before_block_memory_usage
+
+        if after_block_memory_usage is None:
+            after_block_memory_usage = {}
+        self.after_block_memory_usage = after_block_memory_usage
+
+    @property
+    def execution_time(self):
+        if self.end_time is None:
+            return None
+        return self.end_time - self.start_time
+
+    def to_dict(self, block_indices):
+        dict_ = {"start_time": self.start_time,
+                 "end_time": self.end_time}
+
+        dict_["before_block_memory_usage"] = {block_indices[b]: m for b, m in self.before_block_memory_usage.items()}
+        dict_["after_block_memory_usage"] = {block_indices[b]: m for b, m in self.after_block_memory_usage.items()}
+
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_, index_to_block):
+
+        before_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["before_block_memory_usage"].items()}
+        after_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["after_block_memory_usage"].items()}
+        return cls(start_time=dict_["start_time"], end_time=dict_["end_time"],
+                   before_block_memory_usage=before_block_memory_usage,
+                   after_block_memory_usage=after_block_memory_usage)
+
+    def to_markdown(self, blocks):
+
+        table_content = []
+        for block in blocks:
+            mem_start = self.before_block_memory_usage[block]
+            mem_end = self.after_block_memory_usage[block]
+            mem_diff = mem_end - mem_start
+            table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
+                                  f"{humanize.naturalsize(mem_diff)}"))
+        writer = MarkdownWriter(print_limit=25, table_limit=None)
+        return writer.matrix_table(table_content,
+                                   ["Block", "Memory usage at start", "Memory usage at end",
+                                    "Memory diff"])
+
+
 class WorkflowState(DessiaObject):
     """ State of execution of a workflow. """
 
@@ -1467,7 +1532,7 @@ class WorkflowState(DessiaObject):
     _non_serializable_attributes = ['activated_items']
 
     def __init__(self, workflow: Workflow, input_values=None, activated_items=None, values=None,
-                 start_time: float = None, end_time: float = None, output_value=None, log: str = '', name: str = ''):
+                 output_value=None, log: str = '', execution_info: ExecutionInfo = None, name: str = ''):
         self.workflow = workflow
         if input_values is None:
             input_values = {}
@@ -1483,11 +1548,9 @@ class WorkflowState(DessiaObject):
             values = {}
         self.values = values
 
-        if start_time is None:
-            start_time = time.time()
-        self.start_time = start_time
-
-        self.end_time = end_time
+        if execution_info is None:
+            execution_info = ExecutionInfo()
+        self.execution_info = execution_info
 
         self.output_value = output_value
         self.log = log
@@ -1519,9 +1582,9 @@ class WorkflowState(DessiaObject):
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
         workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                                        values=values, start_time=self.start_time, end_time=self.end_time,
+                                        values=values,
                                         output_value=deepcopy_value(value=self.output_value, memo=memo),
-                                        log=self.log, name=self.name)
+                                        log=self.log, execution_info=self.execution_info, name=self.name)
         return workflow_state
 
     def _data_hash(self):
@@ -1581,8 +1644,9 @@ class WorkflowState(DessiaObject):
         else:
             workflow_dict = self.workflow.to_dict(use_pointers=False)
 
+        execution_info = self.execution_info.to_dict(block_indices={b: i for i, b in enumerate(self.workflow.blocks)})
         dict_ = self.base_dict()
-        dict_.update({'start_time': self.start_time, 'end_time': self.end_time,
+        dict_.update({'execution_info': execution_info,
                       'log': self.log, "workflow": workflow_dict})
         # Force migrating from dessia_common.workflow
         dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
@@ -1714,9 +1778,12 @@ class WorkflowState(DessiaObject):
                 var_indices.append(variable_indices)
         activated_items.update({v: workflow.variable_indices(v) in var_indices for v in workflow.variables})
 
+        execution_info = ExecutionInfo.dict_to_object(dict_=dict_['execution_info'],
+                                                      index_to_block={i: b for i, b in enumerate(workflow.blocks)})
+
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
-                   values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
-                   output_value=output_value, log=dict_['log'], name=dict_['name'])
+                   values=values, output_value=output_value, log=dict_['log'],
+                   execution_info=execution_info, name=dict_['name'])
 
     def add_input_value(self, input_index: int, value):
         """ Add a value for given input. """
@@ -1784,8 +1851,8 @@ class WorkflowState(DessiaObject):
         """
         evaluated_blocks = [self.activated_items[b] for b in self.workflow.runtime_blocks]
         progress = sum(evaluated_blocks) / len(evaluated_blocks)
-        if progress == 1 and self.end_time is None:
-            self.end_time = time.time()
+        if progress == 1 and self.execution_info.end_time is None:
+            self.execution_info.end_time = time.time()
         return progress
 
     def block_evaluation(self, block_index: int, progress_callback=lambda x: None) -> bool:
@@ -1921,7 +1988,9 @@ class WorkflowState(DessiaObject):
             local_values[input_] = value
 
         kwargs['progress_callback'] = progress_callback
+        self.execution_info.before_block_memory_usage[block] = int(psutil.Process().memory_info().vms)
         output_values = block.evaluate(local_values, **kwargs)
+        self.execution_info.after_block_memory_usage[block] = int(psutil.Process().memory_info().vms)
         self._activate_block(block=block, output_values=output_values)
 
         # Updating progress
@@ -1950,8 +2019,8 @@ class WorkflowState(DessiaObject):
         if self.progress == 1:
             values = {p: self.values[p] for p in self.workflow.pipes if p in self.values}
             return WorkflowRun(workflow=self.workflow, input_values=self.input_values, output_value=self.output_value,
-                               values=values, activated_items=self.activated_items, start_time=self.start_time,
-                               end_time=self.end_time, log=self.log, name=name)
+                               values=values, activated_items=self.activated_items, log=self.log,
+                               execution_info=self.execution_info, name=name)
         raise ValueError('Workflow not completed')
 
     def _export_formats(self):
@@ -1988,6 +2057,16 @@ class WorkflowState(DessiaObject):
         stream.filename = export_stream.filename
         return export_stream
 
+    def to_markdown(self) -> str:
+        """ Render to markdown. """
+        template = dessia_common.templates.workflow_state_markdown_template
+
+        table = self.execution_info.to_markdown(self.workflow.blocks)
+        return template.substitute(name=self.name, class_=self.__class__.__name__,
+                                   progress=100 * self.progress,
+                                   workflow_name=self.workflow.name,
+                                   table=table)
+
 
 class WorkflowRun(WorkflowState):
     """ Completed state of a workflow. """
@@ -1998,16 +2077,12 @@ class WorkflowRun(WorkflowState):
 
     def __init__(self, workflow: Workflow, input_values, output_value, values,
                  activated_items: Dict[Union[Pipe, Block, Variable], bool],
-                 start_time: float, end_time: float = None, log: str = "", name: str = ""):
-        if end_time is None:
-            end_time = time.time()
-        self.end_time = end_time
-        self.execution_time = end_time - start_time
+                 log: str = "", execution_info: ExecutionInfo = None, name: str = ""):
+
         filtered_values = {p: values[p] for p in workflow.memorized_pipes}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,
-                               start_time=start_time, end_time=end_time,
-                               output_value=output_value, log=log, name=name)
+                               output_value=output_value, log=log, execution_info=execution_info, name=name)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
         """ Add variable values to super WorkflowState dict. """

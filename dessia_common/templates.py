@@ -1,8 +1,7 @@
 """ Templates for dessia_common. """
 from string import Template
 
-dessia_object_markdown_template = Template('''
-# Object $name of class $class_
+dessia_object_markdown_template = Template('''# Object $name of class $class_
 
 This is a markdown file https://www.markdownguide.org/cheat-sheet/
 
@@ -19,8 +18,7 @@ $table
 
 ''')
 
-workflow_template = Template('''
-<!DOCTYPE html>
+workflow_template = Template('''<!DOCTYPE html>
 <html>
 <head>
 	<title>Dessia Workflow</title>
@@ -273,8 +271,7 @@ workflow_template = Template('''
 ''')
 
 
-visjs_template = Template('''
-<html>
+visjs_template = Template('''<html>
         <head>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" />
@@ -324,8 +321,7 @@ var edges = new vis.DataSet($edges);
 ''')
 
 
-dataset_markdown_template = Template('''
-# Dataset $name of $element_details:
+dataset_markdown_template = Template('''# Dataset $name of $element_details:
 
 $table
 
@@ -337,5 +333,16 @@ $table
     (like templates.py) to avoid mix python code and markdown, as python syntax conflicts with markdown
 
     You can substitute values with object attributes like the name of the object: $name
+
+''')
+
+
+workflow_state_markdown_template = Template('''# $class_ $name
+
+progress $progress% on workflow $workflow_name
+
+# Execution informations
+
+$table
 
 ''')

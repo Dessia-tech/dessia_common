@@ -371,6 +371,12 @@ class MarkdownWriter:
         return self.matrix_table(self.object_matrix(object_),
                                  self.object_titles())
 
+    def dict_table(self, dict_: Dict, col_names: List[str]) -> str:
+        """Print col_names of matrix as a table."""
+        dict_items = list(dict_.items())
+        return ''.join([self._head_table(col_names),
+                        self._content_table(dict_items)])
+
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
         return self._sequence_to_str(elements)
