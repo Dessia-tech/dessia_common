@@ -141,7 +141,7 @@ setup(
         "cma",
         "dectree",
         "docx",
-        "humanize"
+        "humanize",
         "matplotlib",
         "mypy_extensions",
         "networkx",
@@ -153,7 +153,7 @@ setup(
         "psutil",
         "pyDOE",
         "pyDOE2",
-        "python-docx"
+        "python-docx",
         "scipy<1.11",
         "scikit-learn>=1.2.0",
         "typeguard",
