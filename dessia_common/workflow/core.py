@@ -62,7 +62,7 @@ class Variable(DessiaObject):
         self.default_value = None
         self.type_ = None
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, *args, **kwargs):
         """ Serialize the variable with custom logic. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({'has_default_value': self.has_default_value, 'position': self.position})
@@ -96,7 +96,8 @@ class TypedVariable(Variable):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
@@ -109,7 +110,8 @@ class TypedVariable(Variable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariable':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
+                       *args, **kwargs) -> 'TypedVariable':
         """
         Compute variable from dict.
 
@@ -173,7 +175,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
         TypedVariable.__init__(self, type_=type_, name=name, position=position)
         self.default_value = default_value
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Serialize the variable with custom logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         dict_.update({'default_value': serialize(self.default_value)})
@@ -181,7 +184,8 @@ class TypedVariableWithDefaultValue(TypedVariable):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'TypedVariableWithDefaultValue':
+                       pointers_memo: Dict[str, Any] = None, path: str = '#',
+                       *args, **kwargs) -> 'TypedVariableWithDefaultValue':
         """
         Compute variable from dict.
 
@@ -332,7 +336,8 @@ class Pipe(DessiaObject):
         self.memorize = False
         DessiaObject.__init__(self, name=name)
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Transform the pipe into a dict. """
         return {'input_variable': self.input_variable, 'output_variable': self.output_variable,
                 'memorize': self.memorize}
@@ -632,7 +637,7 @@ class Workflow(Block):
         return display_settings
 
     @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def display_settings(*args, **kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
         return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
                 DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
@@ -662,7 +667,7 @@ class Workflow(Block):
         export_formats.append(script_export)
         return export_formats
 
-    def to_markdown(self):
+    def to_markdown(self, *args, **kwargs):
         """ Set workflow documentation as markdown. """
         return self.documentation
 
@@ -708,7 +713,7 @@ class Workflow(Block):
         schemas["start_run"]["required"] = []
         return schemas
 
-    def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None):
+    def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, *args, **kwargs):
         """ Compute a dict from the object content. """
         if memo is None:
             memo = {}
@@ -742,7 +747,8 @@ class Workflow(Block):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Workflow':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
+                       *args, **kwargs) -> 'Workflow':
         """ Recompute the object from a dict. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
@@ -1492,25 +1498,29 @@ class ExecutionInfo(DessiaObject):
             return None
         return self.end_time - self.start_time
 
-    def to_dict(self, block_indices, **args):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, *args, **kwargs):
         dict_ = {"start_time": self.start_time,
                  "end_time": self.end_time}
-
+        block_indices = kwargs['block_indices']
         dict_["before_block_memory_usage"] = {block_indices[b]: m for b, m in self.before_block_memory_usage.items()}
         dict_["after_block_memory_usage"] = {block_indices[b]: m for b, m in self.after_block_memory_usage.items()}
 
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_, index_to_block, **args):
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#', *args, **kwargs):
+        index_to_block = kwargs['index_to_block']
         before_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["before_block_memory_usage"].items()}
         after_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["after_block_memory_usage"].items()}
         return cls(start_time=dict_["start_time"], end_time=dict_["end_time"],
                    before_block_memory_usage=before_block_memory_usage,
                    after_block_memory_usage=after_block_memory_usage)
 
-    def to_markdown(self, blocks):
+    def to_markdown(self, *args, **kwargs):
 
+        blocks = kwargs["blocks"]
         table_content = []
         for block in blocks:
             mem_start = self.before_block_memory_usage[block]
@@ -1633,7 +1643,8 @@ class WorkflowState(DessiaObject):
         """ Empty schemas for WorkflowState because not directly used. """
         return {}
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Transform object into a dict. """
         if memo is None:
             memo = {}
@@ -1746,7 +1757,8 @@ class WorkflowState(DessiaObject):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
+                       *args, **kwargs) -> 'WorkflowState':
         """ Compute Workflow State from given dict. Handles pointers. """
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
@@ -1814,7 +1826,7 @@ class WorkflowState(DessiaObject):
         indices = self.workflow.block_inputs_global_indices(block_index)
         self.add_several_input_values(indices=indices, values=values)
 
-    def display_settings(self) -> List[DisplaySetting]:
+    def display_settings(self, *args, **kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the objects. """
         display_settings = [DisplaySetting(selector="workflow_state", type_="workflow_state", method="state_display")]
 
@@ -2060,7 +2072,7 @@ class WorkflowState(DessiaObject):
         stream.filename = export_stream.filename
         return export_stream
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, *args, **kwargs) -> str:
         """ Render to markdown. """
         template = dessia_common.templates.workflow_state_markdown_template
 
@@ -2087,7 +2099,8 @@ class WorkflowRun(WorkflowState):
                                activated_items=activated_items, values=filtered_values,
                                output_value=output_value, log=log, execution_info=execution_info, name=name)
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Add variable values to super WorkflowState dict. """
         if memo is None:
             memo = {}  # To make sure we have the good ref for next steps
@@ -2124,7 +2137,7 @@ class WorkflowRun(WorkflowState):
             return self.workflow.dict_to_arguments(dict_=dict_, method='run')
         raise NotImplementedError(f"Method '{method}' not in WorkflowRun allowed methods")
 
-    def display_settings(self) -> List[DisplaySetting]:
+    def display_settings(self, *args, **kwargs) -> List[DisplaySetting]:
         """
         Compute WorkflowRun display settings.
 
@@ -2168,7 +2181,7 @@ class WorkflowRun(WorkflowState):
     def _method_jsonschemas(self):
         """ Compute the run jsonschema (had to be overloaded). """
         # TODO This is outdated now that WorkflowRun inherits from WorkflowState and has already broke once.
-        #  We should outsource the "run" jsonschema computation from workflow in order to mutualize it with run_again,
+        #  We should outsource the "run" jsonschema computation from workflow in order to share it with run_again,
         #  and have WorkflowRun have its inheritances from WorkflowState _method_jsonschema method
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas

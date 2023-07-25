@@ -399,7 +399,7 @@ class DessiaObject(SerializableObject):
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
         return axs
-    
+
     @classmethod
     def display_settings(cls, *args, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
@@ -407,7 +407,7 @@ class DessiaObject(SerializableObject):
                     DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
         settings.extend(cls._display_settings_from_decorators())
         return settings
-    
+
     @classmethod
     def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
         """ Return a list, computed from decorated functions, of objects describing how to call displays. """
@@ -627,7 +627,7 @@ class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
     @classmethod
-    def display_settings(cls):
+    def display_settings(cls, *args, **kwargs):
         """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
         display_settings = super().display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
@@ -1005,7 +1005,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of Boolean indices with the logical operator into a simple boolean index.
+        Combine a list of Boolean indices with the logical operator into a simple Boolean index.
 
         :param booleans_lists: List of boolean indices
 

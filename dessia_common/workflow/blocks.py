@@ -1047,7 +1047,8 @@ class Archive(Block):
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+                *args, **kwargs):
         """ Serialize the block with custom logic. """
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
@@ -1057,7 +1058,8 @@ class Archive(Block):
     @classmethod
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
+                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
+                       *args, **kwargs):
         """ Custom dict_to_object method. """
         return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
                    name=dict_['name'], position=dict_.get('position'))

@@ -49,7 +49,8 @@ MAX_ERROR_BY_TYPE = {
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',
                                 'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
                                 'too-many-return-statements', 'import-outside-toplevel',
-                                'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
+                                'too-many-instance-attributes', 'broad-except', 'bare-except',
+                                "broad-exception-caught",
                                 'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
                                 'attribute-defined-outside-init']
 
