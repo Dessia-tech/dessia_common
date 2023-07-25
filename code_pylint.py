@@ -30,7 +30,7 @@ MAX_ERROR_BY_TYPE = {
     "arguments-differ": 1,
     "too-many-locals": 7,  # Reduce by dropping vectored objects
     "too-many-branches": 11,  # Huge refactor needed. Will be reduced by schema refactor
-    "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
+    "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 22,  # Huge refactor needed
     "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)

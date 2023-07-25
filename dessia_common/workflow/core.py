@@ -6,14 +6,11 @@ import ast
 import inspect
 import time
 import datetime
-import tempfile
-import json
 from functools import cached_property
 import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
 from copy import deepcopy
 import warnings
-import webbrowser
 
 import humanize
 import psutil
@@ -21,7 +18,6 @@ import networkx as nx
 
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
-from dessia_common.templates import workflow_template
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
     serialize_annotation, is_typing, SCHEMA_HEADER
@@ -270,14 +266,6 @@ class Block(DessiaObject):
         """
         return self.__class__.__name__ == other.__class__.__name__
 
-    def jointjs_data(self):
-        """ Deprecated HTML computation. """
-        data = {'block_class': self.__class__.__name__}
-        if self.name != '':
-            data['name'] = self.name
-        else:
-            data['name'] = self.__class__.__name__
-        return data
 
     def _docstring(self):
         """ Base function for sub model docstring computing. """
@@ -721,12 +709,11 @@ class Workflow(Block):
         # self.refresh_blocks_positions()
         dict_ = Block.to_dict(self, use_pointers=False)
         dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
-        blocks = [b.to_dict(use_pointers=False) for b in self.blocks]
-
-        pipes = [self.pipe_variable_indices(p) for p in self.pipes]
 
         output = self.variable_indices(self.output)
-        dict_.update({'blocks': blocks, 'pipes': pipes, 'output': output,
+        dict_.update({'blocks': [b.to_dict(use_pointers=False) for b in self.blocks],
+                      'pipes': [self.pipe_variable_indices(p) for p in self.pipes],
+                      'output': output,
                       'nonblock_variables': [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
                       'package_mix': self.package_mix()})
 
@@ -772,20 +759,18 @@ class Workflow(Block):
             if 'imposed_variable_values' in dict_:
                 # New format with a dict
                 for variable_index_str, serialized_value in dict_['imposed_variable_values'].items():
-                    variable_index = ast.literal_eval(variable_index_str)
                     value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                    variable = workflow.variable_from_index(variable_index)
+                    variable = workflow.variable_from_index(ast.literal_eval(variable_index_str))
                     imposed_variable_values[variable] = value
 
             if 'imposed_variable_indices' not in dict_ and 'imposed_variable_values' not in dict_:
                 imposed_variable_values = None
 
-        description = dict_.get("description", "")
-        documentation = dict_.get("documentation", "")
-
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
-                   imposed_variable_values=imposed_variable_values, description=description,
-                   documentation=documentation, name=dict_["name"])
+                   imposed_variable_values=imposed_variable_values,
+                   description=dict_.get("description", ""),
+                   documentation=dict_.get("documentation", ""),
+                   name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
@@ -1279,63 +1264,6 @@ class Workflow(Block):
                 coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
         return coordinates
 
-    def jointjs_data(self):
-        """ Compute the data needed for local plotting. """
-        coordinates = self.jointjs_layout()
-        blocks = []
-        for block in self.blocks:
-            # TOCHECK Is it necessary to add is_workflow_input/output for outputs/inputs ??
-            block_data = block.jointjs_data()
-            inputs = [{'name': i.name, 'is_workflow_input': i in self.inputs,
-                       'has_default_value': i.has_default_value} for i in block.inputs]
-            outputs = [{'name': o.name, 'is_workflow_output': o in self.outputs} for o in block.outputs]
-            block_data.update({'inputs': inputs, 'outputs': outputs, 'position': coordinates[block]})
-            blocks.append(block_data)
-
-        nonblock_variables = []
-        for variable in self.nonblock_variables:
-            is_input = variable in self.inputs
-            nonblock_variables.append({'name': variable.name, 'is_workflow_input': is_input,
-                                       'position': coordinates[variable]})
-        edges = []
-        for pipe in self.pipes:
-            input_index = self.variable_indices(pipe.input_variable)
-            if self.is_variable_nbv(pipe.input_variable):
-                node1 = input_index
-            else:
-                ib1, is1, ip1 = input_index
-                if is1:
-                    block = self.blocks[ib1]
-                    ip1 += len(block.inputs)
-
-                node1 = [ib1, ip1]
-
-            output_index = self.variable_indices(pipe.output_variable)
-            if self.is_variable_nbv(pipe.output_variable):
-                node2 = output_index
-            else:
-                ib2, is2, ip2 = output_index
-                if is2:
-                    block = self.blocks[ib2]
-                    ip2 += len(block.inputs)
-
-                node2 = [ib2, ip2]
-
-            edges.append([node1, node2])
-
-        data = Block.jointjs_data(self)
-        data.update({'blocks': blocks, 'nonblock_variables': nonblock_variables, 'edges': edges})
-        return data
-
-    def plot(self, reference_path: str = "#", **kwargs):
-        """ Display workflow in web browser. """
-        data = json.dumps(self.jointjs_data())
-        rendered_template = workflow_template.substitute(workflow_data=data)
-
-        temp_file = tempfile.mkstemp(suffix='.html')[1]
-        with open(temp_file, 'wb') as file:
-            file.write(rendered_template.encode('utf-8'))
-        webbrowser.open('file://' + temp_file)
 
     def is_valid(self, level: str = "error"):
         """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
@@ -1766,9 +1694,9 @@ class WorkflowState(DessiaObject):
 
         workflow = Workflow.dict_to_object(dict_=dict_['workflow'], global_dict=global_dict,
                                            pointers_memo=pointers_memo, path=f"{path}/workflow")
+
         if 'output_value' in dict_:
-            value = dict_['output_value']
-            output_value = deserialize(value, global_dict=global_dict,
+            output_value = deserialize(dict_['output_value'], global_dict=global_dict,
                                        pointers_memo=pointers_memo, path=f'{path}/output_value')
         else:
             output_value = None
