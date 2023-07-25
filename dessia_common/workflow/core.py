@@ -1422,12 +1422,14 @@ class ExecutionInfo(DessiaObject):
 
     @property
     def execution_time(self):
+        """ Computes execution time. May return None if end_time is. """
         if self.end_time is None:
             return None
         return self.end_time - self.start_time
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs):
+        """ Serialize the ExecutionInfo. """
         dict_ = {"start_time": self.start_time,
                  "end_time": self.end_time}
         block_indices = kwargs['block_indices']
@@ -1439,6 +1441,7 @@ class ExecutionInfo(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#', **kwargs):
+        """ Deserialize the ExecutionInfo. """
         index_to_block = kwargs['index_to_block']
         before_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["before_block_memory_usage"].items()}
         after_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["after_block_memory_usage"].items()}
@@ -1447,7 +1450,7 @@ class ExecutionInfo(DessiaObject):
                    after_block_memory_usage=after_block_memory_usage)
 
     def to_markdown(self, **kwargs):
-
+        """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         blocks = kwargs["blocks"]
         table_content = []
         for block in blocks:

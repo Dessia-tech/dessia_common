@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
+- Workflow: jointjs plot
 
 ### Chore
 
