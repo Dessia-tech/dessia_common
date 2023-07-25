@@ -2007,11 +2007,11 @@ class WorkflowState(DessiaObject):
         """ Render to markdown. """
         template = dessia_common.templates.workflow_state_markdown_template
 
-        table = self.execution_info.to_markdown(self.workflow.blocks)
+        execution_info = self.execution_info.to_markdown(self.workflow.blocks)
         return template.substitute(name=self.name, class_=self.__class__.__name__,
                                    progress=100 * self.progress,
                                    workflow_name=self.workflow.name,
-                                   table=table)
+                                   execution_info=execution_info)
 
 
 class WorkflowRun(WorkflowState):
@@ -2124,6 +2124,17 @@ class WorkflowRun(WorkflowState):
         schemas["run_again"].update({"classes": ["dessia_common.workflow.core.WorkflowRun"], "required": []})
         return schemas
 
+    def to_markdown(self, **kwargs) -> str:
+        """ Render to markdown the WorkflowRun. """
+        template = dessia_common.templates.workflow_run_markdown_template
+        writer = MarkdownWriter(print_limit=25, table_limit=None)
+        
+        output_table = writer.object_table(self.output_value)
+        execution_info = self.execution_info.to_markdown(blocks=self.workflow.blocks)
+        return template.substitute(name=self.name,
+                                   workflow_name=self.workflow.name,
+                                   output_table=output_table,
+                                   execution_info=execution_info)
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """

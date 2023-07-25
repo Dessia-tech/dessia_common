@@ -145,7 +145,7 @@ setup(
         "matplotlib",
         "mypy_extensions",
         "networkx",
-        "numpy<1.24.0",
+        "numpy",
         "orjson>=3.8.0",
         "openpyxl",
         "parameterized",

@@ -85,12 +85,26 @@ $table
 ''')
 
 
-workflow_state_markdown_template = Template('''# $class_ $name
+workflow_state_markdown_template = Template('''# WorkflowState $name
 
 progress $progress% on workflow $workflow_name
 
 # Execution informations
 
-$table
+$execution_info
+
+''')
+
+workflow_run_markdown_template = Template('''# WorkflowRun $name
+
+Run of workflow $workflow_name
+
+# Output
+
+$output_table
+
+# Execution informations
+
+$execution_info
 
 ''')
