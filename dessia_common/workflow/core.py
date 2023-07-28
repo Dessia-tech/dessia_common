@@ -1433,6 +1433,8 @@ class ExecutionInfo(DessiaObject):
         dict_ = {"start_time": self.start_time,
                  "end_time": self.end_time}
         block_indices = kwargs['block_indices']
+        print(self.before_block_memory_usage)
+        print(block_indices)
         dict_["before_block_memory_usage"] = {block_indices[b]: m for b, m in self.before_block_memory_usage.items()}
         dict_["after_block_memory_usage"] = {block_indices[b]: m for b, m in self.after_block_memory_usage.items()}
 

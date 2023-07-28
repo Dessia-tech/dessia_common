@@ -143,7 +143,6 @@ setup(
         "docx",
         "humanize",
         "matplotlib",
-        "mypy_extensions",
         "networkx",
         "numpy",
         "orjson>=3.8.0",
