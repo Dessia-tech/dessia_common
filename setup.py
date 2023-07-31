@@ -140,7 +140,7 @@ setup(
         "orjson>=3.8.0",
         "typeguard",
         "networkx",
-        "numpy",
+        "numpy<1.25.0",
         "pandas",
         "mypy_extensions",
         "scipy<1.10.1"
