@@ -142,6 +142,8 @@ setup(
         "typeguard",
         "networkx",
         "numpy<=1.24.0",
+        "pandas",
+        "mypy_extensions",
         "scipy<1.10.1",
         "pyDOE",
         "pyDOE2",
