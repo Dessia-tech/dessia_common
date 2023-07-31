@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - package_version is removed from serialization
-- License changed from GPL to Lesser GPL 
+- License changed from GPL to Lesser GPL
+- Add rotation speed in measures
 
 ### Fix
 - Workflow name correction: correct the name if it contains an apostrophe.
