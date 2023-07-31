@@ -518,7 +518,7 @@ class ClusteredDataset(Dataset):
         """
         Get successive Pareto sheets where each label is the index of a Pareto sheet put them in a `ClusteredDataset`.
 
-        A Pareto sheet is defined as the optimal points in a DOE for a pre-computed costs.
+        A Pareto sheet is defined as the optimal points in a DOE for already computed costs.
 
         :param h_list: The Dataset in which to pick optimal points.
         :type h_list: Dataset
@@ -529,8 +529,8 @@ class ClusteredDataset(Dataset):
         :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
-            pareto_sheet are labeled `n_sheets`
+        :return: a ClusteredDataset where each element is labeled with its Pareto sheet. Elements outside a
+            Pareto sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
         labels = []

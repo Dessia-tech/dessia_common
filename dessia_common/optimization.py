@@ -91,7 +91,7 @@ class DrivenModelOptimizer(Optimizer):
 
 
 class InstantiatingModelOptimizer(Optimizer):
-    """ Abstract class, to be subclassed by real class. Instantiate a new model at each point request. """
+    """ Abstract class, to be inherited by a real class. Instantiate a new model at each point request. """
 
     def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
                  name: str = ''):

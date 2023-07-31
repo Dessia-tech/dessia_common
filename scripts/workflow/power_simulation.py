@@ -49,7 +49,7 @@ print('progress: ', manual_run.progress)
 manual_run._displays()
 manual_run.to_dict(use_pointers=False)
 
-manual_run.jsonschema()
+manual_run.schema()
 manual_run.performance_analysis()
 
 # Testing that there is no pointer when use_pointers=False

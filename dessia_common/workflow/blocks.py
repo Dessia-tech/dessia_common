@@ -219,10 +219,17 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
-    def evaluate(self, values, **kwargs):
+    def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
-        return [getattr(values[self.inputs[0]], self.method_type.name)(**arguments), values[self.inputs[0]]]
+        method = getattr(values[self.inputs[0]], self.method_type.name)
+        try:
+            # Trying to inject progress callback to method
+            result = method(progress_callback=progress_callback, **arguments)
+        except TypeError:
+            result = method(**arguments)
+
+        return [result, values[self.inputs[0]]]
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
@@ -322,7 +329,7 @@ class WorkflowBlock(Block):
     Wrapper around workflow to put it in a block of another workflow.
 
     Even if a workflow is a block, it can't be used directly as it has a different behavior
-    than a Block in eq and hash which is problematic to handle in dicts for example.
+    than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
     :param name: Name of the block.
@@ -428,7 +435,7 @@ class ForEach(Block):
         return Block.equivalent(self, other) and wb_eq and input_eq
 
     def evaluate(self, values, **kwargs):
-        """ Loop on input list and run subworkflow on each. """
+        """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:

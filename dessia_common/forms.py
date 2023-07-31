@@ -6,7 +6,7 @@ It should be used as a repertory of rules and available typing.
 Some general rules :
 
 - Lists are homogeneous, IE, they should not contain several types of elements
-    ex : List[int], List[str], List[CustomClass], ...
+    ex : List[int], List[str], List[Class], ...
 - Tuples can, therefore, be used as heterogeneous sequences, thanks to the fact that they are immutable.
     ex : Tuple[str, int, CustomClass] is a tuple like this :
         t = ('tuple', 1, custom_class_object)
@@ -43,6 +43,8 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
+from dessia_common.decorators import plot_data_display, markdown_display, cad_display
+
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
     """
@@ -51,7 +53,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     :param distarg: A Distance with units
     :param floatarg: A float
     :param intarg: An integer
-    :param boolarg: A boolean
+    :param boolarg: A Boolean
     :param name: Object's name
     """
 
@@ -400,34 +402,7 @@ class StandaloneObject(MovingObject):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
                                             coords=[(0, 0), (300, 0)], name='Multiple Plot')
-
-        attribute_names = ['timestep', 'electric current']
-        tooltip = plot_data.Tooltip(attributes=attribute_names)
-        timesteps = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in timesteps]
-        elements1 = []
-        for timestep, current in zip(timesteps, current1):
-            elements1.append({'timestep': timestep, 'electric current': current})
-
-        # The previous line instantiates a dataset with limited arguments but several customizations are available
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
-
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
-                                           point_style=point_style, edge_style=edge_style)
-
-        # Now let's create another dataset for the purpose of this exercise
-        timesteps = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in timesteps]
-        elements2 = []
-        for timestep, current in zip(timesteps, current2):
-            elements2.append({'timestep': timestep, 'electric current': current})
-
-        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
-
-        graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    x_variable=attribute_names[0], y_variable=attribute_names[1])
-        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
+        return [primitives_group, scatterplot, parallelplot, multiplot]
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -518,6 +493,47 @@ class StandaloneObject(MovingObject):
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
+    
+    @plot_data_display('2DTest')
+    def plot_data_test(self):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
+
+        Should return a list of plot_data's objects.
+        """
+        attributes = ['timestep', 'electric current']
+        tooltip = plot_data.Tooltip(attributes=attributes)
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
+        elements1 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current1)]
+
+        # The previous line instantiates a dataset with limited arguments but some customization is available
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
+
+        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
+                                           point_style=point_style, edge_style=edge_style)
+
+        # Now let's create another dataset for the purpose of this exercise
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
+        elements2 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current2)]
+
+        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
+        return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
+    
+    @markdown_display(selector='MDTest', load_by_default=True)
+    def markdown_test(self):
+        """ Write a standard markdown of StandaloneObject. """
+        contents = " # Ceci est un markdown test"
+        contents += "\n## Attribute Table\n\n"
+        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
+        return contents
+
+    @cad_display
+    def cad_display_method(self):
+        """ Test CAD Display by decorator. """
+        return None
 
     def count_until(self, duration: float, raise_error: bool = False):
         """

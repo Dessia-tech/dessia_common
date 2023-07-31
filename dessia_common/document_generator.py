@@ -108,6 +108,33 @@ class Paragraph:
         return cls(text=markdown_text)
 
 
+class Table:
+    """ Represents a table in the document. """
+
+    def __init__(self, rows: List[List[str]]):
+        self.rows = rows
+
+    def add_to_document(self, document: docx.Document, style: str = "TableGrid"):
+        """
+        Add the table to the document.
+
+        :param document: The document to which the table will be added.
+        :param style: The table style to use. Default is "TableGrid". Other available styles include:
+                        - "LightShading": adds light shading to the table cells.
+                        - "LightGrid": similar to "TableGrid", but with lighter grid lines.
+                        - "MediumShading1", "MediumShading2": adds medium-level shading to the table cells,
+                        with different levels of intensity.
+                        - "DarkList": displays the table as a numbered list, with a dark background color for each item.
+                        - "ColorfulGrid": uses bright, contrasting colors for the table borders and cell backgrounds.
+                        - "LightList": displays the table as a bulleted list, with a light background color for each
+                        item.
+        """
+        table = document.add_table(rows=len(self.rows), cols=len(self.rows[0]), style=style)
+        for i, row in enumerate(self.rows):
+            for j, cell in enumerate(row):
+                table.cell(i, j).text = cell
+
+
 class Section:
     """
     Represents a section in the document.
@@ -139,7 +166,7 @@ class DocxWriter:
     """ Write a Document file. """
 
     def __init__(self, paragraphs: List[Paragraph] = None, section: Section = None, filename: str = "document.docx",
-                 headings: List[Heading] = None):
+                 headings: List[Heading] = None, tables: List[Table] = None):
         self.filename = filename
         if headings is None:
             headings = []
@@ -148,6 +175,7 @@ class DocxWriter:
         if paragraphs is None:
             paragraphs = []
         self.paragraphs = paragraphs
+        self.tables = tables
         self.document = docx.Document()
 
         if self.section:
@@ -185,18 +213,14 @@ class DocxWriter:
         for _ in range(num_page_breaks):
             self.document.add_page_break()
 
-    def add_table(self, rows: List[List[str]]) -> 'DocxWriter':
-        """ Add table to the document. """
-        table = self.document.add_table(rows=1, cols=len(rows[0]), style="TableGrid")
-        for i, cell in enumerate(table.rows[0].cells):
-            cell.text = rows[0][i]
-        for row in rows[1:]:
-            row_cells = table.add_row().cells
-            for i, cell in enumerate(row_cells):
-                if i < len(row):
-                    cell.text = row[i]
-                else:
-                    cell.text = ""
+    def add_table(self, add_all_tables: bool = False, table_index: int = 0) -> 'DocxWriter':
+        """ Add tables to the document. """
+        if add_all_tables:
+            for table in self.tables:
+                table.add_to_document(self.document)
+                self.document.add_paragraph()
+        else:
+            self.tables[table_index].add_to_document(self.document)
         return self
 
     def add_list_items(self, items: List[str], style: str = 'List Bullet'):
@@ -252,11 +276,11 @@ class DocxWriter:
                 elif table_pattern.match(line) and not horizontal_line_pattern.match(line):
                     row = line.strip('|').split('|')
                     if '---' not in line:
-                        elements.append(row)
+                        elements.append(Table(rows=[row]))
 
                 else:
                     if '---' not in line:
-                        elements.append(Paragraph(text=line))
+                        elements.append(Paragraph.from_markdown(markdown_text=line))
         return headings, elements
 
     @classmethod
@@ -272,8 +296,9 @@ class DocxWriter:
                     docx_writer.add_paragraph_as_heading(text=item.text.strip(' # '))
                 else:
                     docx_writer.add_paragraphs(add_heading=False)
-            if isinstance(item, list):
-                docx_writer.add_table([item])
+            if isinstance(item, Table):
+                docx_writer.tables = [item]
+                docx_writer.add_table()
         return docx_writer
 
     def save_file(self):
