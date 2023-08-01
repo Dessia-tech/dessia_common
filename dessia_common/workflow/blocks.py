@@ -695,7 +695,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [[multiplot.to_dict()]]
+        return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """

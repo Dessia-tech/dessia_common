@@ -368,6 +368,8 @@ class DessiaObject(SerializableObject):
 
         Should return a list of plot_data's objects.
         """
+        warnings.warn("Function 'plot_data' is deprecated and should not be used to compute graphs and 2D displays,"
+                      "anymore. Please use Display Decorators, instead", DeprecationWarning)
         return []
 
     def plot(self, reference_path: str = "#", **kwargs):
@@ -403,8 +405,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
-                    DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
         settings.extend(cls._display_settings_from_decorators())
         return settings
     

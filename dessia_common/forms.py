@@ -43,7 +43,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_display, markdown_display, cad_display
+from dessia_common.decorators import plot_data_view, markdown_view, cad_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -372,37 +372,35 @@ class StandaloneObject(MovingObject):
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
-    @staticmethod
-    def scatter_plot():
+    @plot_data_view("2D View")
+    def primitives(self):
+        contour = self.standalone_subobject.contour().plot_data()
+        return plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
+
+    @plot_data_view("Scatter Plot")
+    def scatter_plot(self):
         """ Test scatter plots. """
         attributes = ['cx', 'cy']
         tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
         return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name='Scatter Plot')
 
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """ Full plot data definition with lots of graphs and 2Ds. For frontend testing purpose. """
-        # Contour
-        contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
-
+    @plot_data_view("Parallel Plot")
+    def parallel_plot(self):
         rand = random.randint
         samples = [plot_data.Sample(values={"cx": rand(0, 600) / 100, "cy": rand(100, 2000) / 100}, name=f"Point{i}")
                    for i in range(500)]
+        return plot_data.ParallelPlot(elements=samples, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
+                                      name='Parallel Plot')
 
-        # Scatter Plot
-        scatterplot = self.scatter_plot()
-
-        # Parallel Plot
-        parallelplot = plot_data.ParallelPlot(elements=samples, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
-                                              name='Parallel Plot')
-
-        # Multi Plot
-        objects = [scatterplot, parallelplot]
+    @plot_data_view("Multiplot", load_by_default=True)
+    def multiplot(self):
+        scatter_plot = self.scatter_plot()
+        parallel_plot = self.parallel_plot()
+        objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
-                                            coords=[(0, 0), (300, 0)], name='Multiple Plot')
-        return [primitives_group, scatterplot, parallelplot, multiplot]
+        return plot_data.MultiplePlots(elements=parallel_plot.elements, plots=objects, sizes=sizes,
+                                       coords=[(0, 0), (300, 0)], name='Multiple Plot')
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -494,8 +492,8 @@ class StandaloneObject(MovingObject):
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
     
-    @plot_data_display('2DTest')
-    def plot_data_test(self):
+    @plot_data_view("Graph 2D")
+    def graph(self):
         """
         Base plot_data method. Overwrite this to display 2D or graphs on platform.
 
@@ -522,7 +520,7 @@ class StandaloneObject(MovingObject):
         dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
         return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
     
-    @markdown_display(selector='MDTest', load_by_default=True)
+    @markdown_view(selector='Mardown', load_by_default=True)
     def markdown_test(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = " # Ceci est un markdown test"
@@ -530,10 +528,11 @@ class StandaloneObject(MovingObject):
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
 
-    @cad_display
-    def cad_display_method(self):
+    @cad_view
+    def cad_view_method(self):
         """ Test CAD Display by decorator. """
-        return None
+        a = 1
+        return a
 
     def count_until(self, duration: float, raise_error: bool = False):
         """

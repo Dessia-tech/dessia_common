@@ -6,7 +6,7 @@ import ast
 import textwrap
 
 
-DISPLAY_DECORATORS = ["plot_data_display", "markdown_display", "cad_display"]
+DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -39,7 +39,7 @@ def get_decorated_methods(class_: Type, decorator_name: str):
     return [getattr(class_, n) for n in method_names]
 
 
-def plot_data_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def plot_data_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
     """ Decorator to plot data."""
     def decorator(function):
         """ Decorator to plot data."""
@@ -49,7 +49,7 @@ def plot_data_display(selector: str = None, load_by_default: bool = False, seria
     return decorator
 
 
-def markdown_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = False):
+def markdown_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
@@ -59,7 +59,7 @@ def markdown_display(selector: str = None, load_by_default: bool = False, serial
     return decorator
 
 
-def cad_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def cad_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
