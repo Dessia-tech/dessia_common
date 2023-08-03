@@ -60,7 +60,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     _standalone_in_db = False
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
-                 boolarg: bool, name: str = 'Standalone Subobject'):
+                 boolarg: bool, name: str = "Standalone Subobject"):
         self.distarg = distarg
         self.floatarg = floatarg
         self.intarg = intarg
@@ -75,7 +75,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         distarg = Distance(1.7 * floatarg * seed)
         intarg = seed
         boolarg = bool(seed % 2)
-        name = 'EmbeddedSubobject' + str(seed)
+        name = f"EmbeddedSubobject{seed}"
         return cls(distarg=distarg, floatarg=floatarg, intarg=intarg, boolarg=boolarg, name=name)
 
     @classmethod
@@ -118,7 +118,7 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
     _standalone_in_db = True
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
-                 boolarg: bool, name: str = 'Standalone Subobject'):
+                 boolarg: bool, name: str = "Standalone Subobject"):
 
         EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
                                            intarg=intarg, boolarg=boolarg, name=name)
@@ -136,7 +136,7 @@ DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
-    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+    def __init__(self, floatarg: Distance, name: str = "Standalone Subobject"):
         StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
                                              boolarg=floatarg.is_integer(), name=name)
 
@@ -155,7 +155,7 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool,
-                 name: str = 'Inheriting Standalone Subobject'):
+                 name: str = "Inheriting Standalone Subobject"):
         self.strarg = name
 
         StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
@@ -168,7 +168,7 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
         floatarg = 0.1 * seed
         intarg = seed * 3
         boolarg = bool(intarg % 2)
-        name = 'Inheriting Standalone Subobject' + str(seed)
+        name = "Inheriting Standalone Subobject" + str(seed)
         return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, name=name)
 
 
@@ -178,7 +178,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 class EmbeddedSubobject(DessiaObject):
     """ EmbeddedSubobject, in order to test non standalone features. """
 
-    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = "Embedded Subobject"):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -193,7 +193,7 @@ class EmbeddedSubobject(DessiaObject):
             embedded_list = list(range(int(seed / 2)))
         else:
             embedded_list = None
-        name = 'Embedded Subobject' + str(seed)
+        name = "Embedded Subobject" + str(seed)
         return cls(embedded_list=embedded_list, name=name)
 
     @classmethod
@@ -206,7 +206,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
-                 name: str = 'Enhanced Embedded Subobject'):
+                 name: str = "Enhanced Embedded Subobject"):
         self.embedded_array = embedded_array
 
         EmbeddedSubobject.__init__(self, embedded_list=embedded_list, name=name)
@@ -261,14 +261,21 @@ class StandaloneObject(MovingObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
+        self.samples = []
+        for i in range(500):
+            sample = {"cx": random.randint(0, 600) / 100,
+                      "cy": random.randint(100, 2000) / 100,
+                      "label": f"label{i % 5}"}
+            self.samples.append(plot_data.Sample(values=sample, name=f"Point{i}"))
+
         MovingObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int, name: str = "Standalone Object Demo") -> 'StandaloneObject':
         """ Generate an object with default values computed from a seed. """
-        dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
-        float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
-        string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
+        dynamic_dict = {f"n{i}": bool(seed % 2) for i in range(seed)}
+        float_dict = {f"k{i}": seed * 1.09 for i in range(seed)}
+        string_dict = {f"key{i}": f"value{i}" for i in range(seed)}
         builtin_list = [seed] * seed
         array_arg = [builtin_list] * 3
         union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
@@ -279,7 +286,7 @@ class StandaloneObject(MovingObject):
         return cls(standalone_subobject=StandaloneBuiltinsSubobject.generate(seed),
                    embedded_subobject=EmbeddedSubobject.generate(seed),
                    dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
-                   tuple_arg=('value', seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
+                   tuple_arg=("value", seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
                    subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
                    subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
@@ -295,7 +302,7 @@ class StandaloneObject(MovingObject):
     def generate_from_bin(cls, stream: BinaryFile):
         """ Generate an object from bin file in order to test frontend forms and backend streams. """
         # User need to decode the binary as he see fit
-        my_string = stream.read().decode('utf8')
+        my_string = stream.read().decode("utf8")
         my_file_name = stream.filename
         _, raw_seed = my_string.split(",")
         seed = int(raw_seed.strip())
@@ -375,23 +382,20 @@ class StandaloneObject(MovingObject):
     @plot_data_view("2D View")
     def primitives(self):
         contour = self.standalone_subobject.contour().plot_data()
-        return plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
+        return plot_data.PrimitiveGroup(primitives=[contour], name="Contour")
 
     @plot_data_view("Scatter Plot")
     def scatter_plot(self):
         """ Test scatter plots. """
-        attributes = ['cx', 'cy']
-        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
-                                 y_variable=attributes[1], name='Scatter Plot')
+        attributes = ["cx", "cy"]
+        tooltip = plot_data.Tooltip(attributes=attributes, name="Tooltips")
+
+        return plot_data.Scatter(elements=self.samples, tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name="Scatter Plot")
 
     @plot_data_view("Parallel Plot")
     def parallel_plot(self):
-        rand = random.randint
-        samples = [plot_data.Sample(values={"cx": rand(0, 600) / 100, "cy": rand(100, 2000) / 100}, name=f"Point{i}")
-                   for i in range(500)]
-        return plot_data.ParallelPlot(elements=samples, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
-                                      name='Parallel Plot')
+        return plot_data.ParallelPlot(elements=self.samples, axes=["cx", "cy", "label"], name="Parallel Plot")
 
     @plot_data_view("Multiplot", load_by_default=True)
     def multiplot(self):
@@ -400,7 +404,7 @@ class StandaloneObject(MovingObject):
         objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         return plot_data.MultiplePlots(elements=parallel_plot.elements, plots=objects, sizes=sizes,
-                                       coords=[(0, 0), (300, 0)], name='Multiple Plot')
+                                       coords=[(0, 0), (300, 0)], name="Multiple Plot")
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -410,7 +414,7 @@ class StandaloneObject(MovingObject):
         self.maldefined_attr = nok_string
         self._ok_attribute = ok_string
 
-        computation = nok_string + 'or' + ok_string
+        computation = f"{nok_string} or {ok_string}"
 
         return computation
         
@@ -499,7 +503,7 @@ class StandaloneObject(MovingObject):
 
         Should return a list of plot_data's objects.
         """
-        attributes = ['timestep', 'electric current']
+        attributes = ["timestep", "electric current"]
         tooltip = plot_data.Tooltip(attributes=attributes)
         timesteps = linspace(0, 20, 20)
         current1 = [t ** 2 for t in timesteps]
@@ -509,7 +513,7 @@ class StandaloneObject(MovingObject):
         point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
 
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
+        custom_dataset = plot_data.Dataset(elements=elements1, name="I = f(t)", tooltip=tooltip,
                                            point_style=point_style, edge_style=edge_style)
 
         # Now let's create another dataset for the purpose of this exercise
@@ -517,10 +521,10 @@ class StandaloneObject(MovingObject):
         current2 = [100 * (1 + cos(t)) for t in timesteps]
         elements2 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current2)]
 
-        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
+        dataset2 = plot_data.Dataset(elements=elements2, name="I2 = f(t)")
         return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
     
-    @markdown_view(selector='Mardown', load_by_default=True)
+    @markdown_view(selector="Markdown", load_by_default=True)
     def markdown_test(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = " # Ceci est un markdown test"
@@ -561,7 +565,7 @@ DEF_SO = StandaloneObject.generate(1)
 class StandaloneObjectWithDefaultValues(StandaloneObject):
     """ Overwrite StandaloneObject to set default values to it. For frontend forms testing purpose. """
 
-    _non_editable_attributes = ['intarg', 'strarg']
+    _non_editable_attributes = ["intarg", "strarg"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject = DEF_SBS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
@@ -575,7 +579,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  union_arg: List[UnionArg] = None,
                  subclass_arg: InstanceOf[StandaloneBuiltinsSubobject] = DEF_ISS,
                  array_arg: List[List[float]] = None,
-                 name: str = 'Standalone Object Demo'):
+                 name: str = "Standalone Object Demo"):
         if dynamic_dict is None:
             dynamic_dict = {}
         if float_dict is None:
