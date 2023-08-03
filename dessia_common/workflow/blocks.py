@@ -8,6 +8,7 @@ from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Option
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.decorators import CadViewSelector
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
@@ -18,7 +19,6 @@ from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
     set_block_variable_names_from_dict, Workflow
 from dessia_common.workflow.utils import ToScriptElement
-
 
 T = TypeVar("T")
 
@@ -712,6 +712,19 @@ class CadView(Display):
     """
 
     def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "cad",
+                 type_: str = "babylon_data", position: Tuple[float, float] = None):
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         type_=type_, name=name, position=position)
+
+
+class CadViewFromDecorator(Display):
+    """
+    Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...).
+
+    """
+
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: CadViewSelector[Type] = "cad",
                  type_: str = "babylon_data", position: Tuple[float, float] = None):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,

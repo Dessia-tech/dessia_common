@@ -11,6 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
+from dessia_common.decorators import CadViewSelector, get_decorated_methods
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType
 from dessia_common.measures import Measure
@@ -1158,6 +1159,67 @@ class AttributeTypeProperty(TypingProperty):
         return CheckList([])
 
 
+class SelectorProperty(TypingProperty):
+    """
+    Schema class for AttributeType and ClassAttributeType type hints.
+
+    A specifically instantiated AttributeType validated against this type.
+    """
+
+    def __init__(self, annotation: Type[AttributeType], attribute: str, definition_default: AttributeType = None):
+        super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
+
+        self.class_ = self.args[0]
+        self.class_schema = get_schema(annotation=self.class_, attribute=attribute,
+                                       definition_default=definition_default)
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str):
+        """ Deserialize Attribute annotation. Support Class and Instance attributes. """
+        type_ = TypingProperty.type_from_serialized(serialized)
+        if type_ == "CadViewSelector":
+            return CadViewSelector[TypingProperty._args_from_serialized(serialized)]
+        raise NotImplementedError("Other Display than CadView not implemented yet")
+
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write AttributeType as a Dict. """
+        chunk = super().to_dict(title=title, editable=editable, description=description)
+        methods = get_decorated_methods(class_=self.class_, decorator_name="plot_data_view")
+        print(methods)
+        chunk.update({
+            "type": "object", "is_selector": True,
+            "methods": methods,
+            "properties": {
+                "class_": self.class_schema.to_dict(title=title, editable=editable, description=description),
+                "name": {
+                    "type": "string"
+                }
+            }
+        })
+        return chunk
+
+    def default_value(self):
+        """ Sets AttributeType object_class and argument class_ if it is different than Type. """
+        if self.definition_default:
+            return self.definition_default.to_dict()
+
+        if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
+            classname = full_classname(object_=self.class_, compute_for="class")
+        else:
+            classname = None
+        return {"object_class": full_classname(object_=self.origin, compute_for="class"),
+                "class_": classname, "name": None}
+
+    def check_list(self) -> CheckList:
+        """
+        Check validity of MethodType Type Hint.
+
+        Checks performed :
+        - Class has method TODO
+        """
+        return CheckList([])
+
+
 Class = TypeVar("Class", bound=type)
 
 
@@ -1297,7 +1359,8 @@ ORIGIN_TO_SCHEMA_CLASS = {
     collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
     dict: DynamicDict, InstanceOf: InstanceOfProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
-    type: ClassProperty, AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty
+    type: ClassProperty, AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty,
+    CadViewSelector: SelectorProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {

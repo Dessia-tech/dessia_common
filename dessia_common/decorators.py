@@ -1,6 +1,7 @@
 """ Provides decorators that work as 'flags' for display settings. """
 
-from typing import Type, List
+from typing import Type, List, TypeVar, Generic, Dict, Any, Tuple
+from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 import inspect
 import ast
 import textwrap
@@ -76,3 +77,33 @@ def set_decorated_function_metadata(function, type_: str, selector: str = None,
     setattr(function, "selector", selector)
     setattr(function, "serialize_data", serialize_data)
     setattr(function, "load_by_default", load_by_default)
+
+
+T = TypeVar("T")
+
+
+class CadViewSelector(Generic[T]):
+    """ Typing that denotes a method of class T. """
+
+    def __init__(self, class_: T, name: str):
+        self.class_ = class_
+        self.name = name
+
+    def __deepcopy__(self, memo=None):
+        return CadViewSelector(self.class_, self.name)
+
+    def get_method(self):
+        """ Helper to get real method from class_ and method name. """
+        return getattr(self.class_, self.name)
+
+    def to_dict(self):
+        """ Write Method Type as a dictionary. """
+        classname = full_classname(object_=self.class_, compute_for='class')
+        method_type_classname = full_classname(object_=self.__class__, compute_for="class")
+        return {"class_": classname, "name": self.name, "object_class": method_type_classname}
+
+    @classmethod
+    def dict_to_object(cls, dict_) -> 'CadViewSelector':
+        """ Deserialize dictionary as a Method Type. """
+        class_ = get_python_class_from_class_name(dict_["class_"])
+        return cls(class_=class_, name=dict_["name"])
