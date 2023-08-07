@@ -408,11 +408,10 @@ class DessiaObject(SerializableObject):
         settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
         settings.extend(cls._display_settings_from_decorators())
         return settings
-    
+
     @classmethod
-    def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
-        """ Return a list, computed from decorated functions, of objects describing how to call displays. """
-        methods = [m for d in DISPLAY_DECORATORS for m in get_decorated_methods(class_=cls, decorator_name=d)]
+    def _display_settings_from_decorator_name(cls, decorator_name: str):
+        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
         settings = []
         for method in methods:
             name = method.__name__
@@ -425,6 +424,11 @@ class DessiaObject(SerializableObject):
             settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
                                            serialize_data=serialize_data, load_by_default=load_by_default))
         return settings
+    
+    @classmethod
+    def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
+        """ Return a list, computed from decorated functions, of objects describing how to call displays. """
+        return [s for d in DISPLAY_DECORATORS for s in cls._display_settings_from_decorator_name(d)]
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
