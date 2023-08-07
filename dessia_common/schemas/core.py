@@ -1067,11 +1067,13 @@ class AttributeTypeProperty(TypingProperty):
         """ Write AttributeType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         if self.origin is ClassAttributeType:
-            attribute_type = "class_attribute"
+            attribute_type = "class_attributes"
         else:
-            attribute_type = "attribute"
+            attribute_type = "attributes"
+        classname = full_classname(self.origin, compute_for="class")
         chunk.update({
-            "type": "object", "is_attribute": True, "attribute_type": attribute_type,
+            "type": "object", "object_class": classname, "is_attribute": True,
+            "attribute_type": attribute_type,
             "properties": {
                 "class_": self.class_schema.to_dict(title=title, editable=editable, description=description),
                 "name": {
@@ -1125,9 +1127,9 @@ class MethodTypeProperty(AttributeTypeProperty):
         """ Write MethodType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         if self.origin is ClassMethodType:
-            attribute_type = "classmethod"
+            attribute_type = "class_methods"
         else:
-            attribute_type = "method"
+            attribute_type = "methods"
         chunk["attribute_type"] = attribute_type
         return chunk
 
@@ -1153,7 +1155,7 @@ class SelectorProperty(AttributeTypeProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write AttributeType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk["attribute_type"] = "cad_view_selector"
+        chunk["attribute_type"] = "view_selectors"
         return chunk
 
 
