@@ -79,6 +79,35 @@ class ClassAttributeType(AttributeType[T]):
         AttributeType.__init__(self, class_=class_, name=name)
 
 
+class ViewType(AttributeType[T]):
+    """ Typing that denotes a Display Settings. """
+
+    decorator = None
+
+    def get_method(self):
+        """ Helper to get real method from class_ and method name. """
+        settings = self.class_._display_settings_from_selector(self.name)
+        return getattr(self.class_, settings.method)
+
+
+class CadViewType(ViewType[T]):
+    """ Typing that denotes a CAD Display Settings. """
+
+    decorator = "cad_view"
+
+
+class MarkdownType(ViewType[T]):
+    """ Typing that denotes a CAD Display Settings. """
+
+    decorator = "markdown_view"
+
+
+class PlotDataType(ViewType[T]):
+    """ Typing that denotes a CAD Display Settings. """
+
+    decorator = "plot_data_view"
+
+
 # Types Aliases
 JsonSerializable = Dict[str, Any]
 RGBColor = Tuple[float, float, float]

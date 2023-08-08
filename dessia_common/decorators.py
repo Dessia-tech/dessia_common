@@ -1,7 +1,6 @@
 """ Provides decorators that work as 'flags' for display settings. """
 
-from typing import Type, List, TypeVar, Generic, Dict, Any, Tuple
-from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
+from typing import Type, List, TypeVar
 import inspect
 import ast
 import textwrap
@@ -50,7 +49,7 @@ def plot_data_view(selector: str = None, load_by_default: bool = False, serializ
     return decorator
 
 
-def markdown_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = False):
+def markdown_view(selector: str, load_by_default: bool = False, serialize_data: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
@@ -60,7 +59,7 @@ def markdown_view(selector: str = None, load_by_default: bool = False, serialize
     return decorator
 
 
-def cad_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def cad_view(selector: str, load_by_default: bool = False, serialize_data: bool = True):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
@@ -80,30 +79,3 @@ def set_decorated_function_metadata(function, type_: str, selector: str = None,
 
 
 T = TypeVar("T")
-
-
-class CadViewSelector(Generic[T]):
-    """ Typing that denotes a method of class T. """
-
-    def __init__(self, class_: T, name: str):
-        self.class_ = class_
-        self.name = name
-
-    def __deepcopy__(self, memo=None):
-        return CadViewSelector(self.class_, self.name)
-
-    def get_method(self):
-        """ Helper to get real method from class_ and method name. """
-        return getattr(self.class_, self.name)
-
-    def to_dict(self):
-        """ Write Method Type as a dictionary. """
-        classname = full_classname(object_=self.class_, compute_for='class')
-        method_type_classname = full_classname(object_=self.__class__, compute_for="class")
-        return {"class_": classname, "name": self.name, "object_class": method_type_classname}
-
-    @classmethod
-    def dict_to_object(cls, dict_) -> 'CadViewSelector':
-        """ Deserialize dictionary as a Method Type. """
-        class_ = get_python_class_from_class_name(dict_["class_"])
-        return cls(class_=class_, name=dict_["name"])

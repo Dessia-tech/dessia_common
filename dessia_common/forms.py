@@ -532,12 +532,6 @@ class StandaloneObject(MovingObject):
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
 
-    @cad_view
-    def cad_view_method(self):
-        """ Test CAD Display by decorator. """
-        a = 1
-        return a
-
     def count_until(self, duration: float, raise_error: bool = False):
         """
         Test long execution with a user-input duration.

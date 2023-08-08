@@ -11,9 +11,9 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.decorators import CadViewSelector, get_decorated_methods
 from dessia_common.files import BinaryFile, StringFile
-from dessia_common.typings import MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType
+from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
+                                   CadViewType, PlotDataType, MarkdownType, ViewType)
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
@@ -1141,21 +1141,25 @@ class SelectorProperty(AttributeTypeProperty):
     A specifically instantiated AttributeType validated against this type.
     """
 
-    def __init__(self, annotation: Type[AttributeType], attribute: str, definition_default: AttributeType = None):
+    def __init__(self, annotation: Type[ViewType], attribute: str, definition_default: AttributeType = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Attribute annotation. Support Class and Instance attributes. """
         type_ = TypingProperty.type_from_serialized(serialized)
-        if type_ == "CadViewSelector":
-            return CadViewSelector[TypingProperty._args_from_serialized(serialized)]
+        if type_ == "CadViewType":
+            return CadViewType[TypingProperty._args_from_serialized(serialized)]
+        if type_ == "MarkdownType":
+            return MarkdownType[TypingProperty._args_from_serialized(serialized)]
+        if type_ == "PlotDataType":
+            return PlotDataType[TypingProperty._args_from_serialized(serialized)]
         raise NotImplementedError("Other Display than CadView not implemented yet")
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write AttributeType as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk["attribute_type"] = "view_selectors"
+        chunk.update({"attribute_type": "view_selectors", "decorator": self.annotation.decorator})
         return chunk
 
 
@@ -1297,9 +1301,10 @@ ORIGIN_TO_SCHEMA_CLASS = {
     tuple: HeterogeneousSequence, list: HomogeneousSequence,
     collections.abc.Iterator: HomogeneousSequence, Union: UnionProperty,
     dict: DynamicDict, InstanceOf: InstanceOfProperty,
-    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty, 
-    type: ClassProperty, AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty,
-    CadViewSelector: SelectorProperty
+    type: ClassProperty,
+    MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty,
+    AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty,
+    CadViewType: SelectorProperty, PlotDataType: SelectorProperty, MarkdownType: SelectorProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
