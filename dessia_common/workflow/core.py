@@ -37,7 +37,7 @@ from dessia_common.exports import ExportFormat
 from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
     serialize_dict, add_references, deserialize_argument
 
-from dessia_common.workflow.utils import ToScriptElement
+from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
 class Variable(DessiaObject):
@@ -1367,45 +1367,17 @@ class Workflow(Block):
         if workflow_output_index is None:
             raise ValueError("A workflow output must be set")
 
-        # --- Blocks ---
-        blocks_str = ""
         imports = []
         imports_as_is = []
-        for iblock, block in enumerate(self.blocks):
-            block_script = block._to_script(prefix)
-            imports.extend(block_script.imports)
-            if block_script.before_declaration is not None:
-                blocks_str += f"{block_script.before_declaration}\n"
-            blocks_str += f'{prefix}block_{iblock} = {block_script.declaration}\n'
-        blocks_str += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(self.blocks))])}]\n"
+        # --- Blocks ---
+        blocks_str = blocks_to_script(blocks=self.blocks, prefix=prefix, imports=imports)
 
         # --- NBVs ---
-        nbvs_str = ""
-        for nbv_index, nbv in enumerate(self.nonblock_variables):
-            nbv_script = nbv._to_script()
-            imports.extend(nbv_script.imports)
-            imports_as_is.extend(nbv_script.imports_as_is)
-            nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
+        nbvs_str = nonblock_variables_to_script(nonblock_variables=self.nonblock_variables, prefix=prefix,
+                                                imports=imports, imports_as_is=imports_as_is)
 
         # --- Pipes ---
-        if len(self.pipes) > 0:
-            imports.append(self.pipes[0].full_classname)
-
-        pipes_str = ""
-        for ipipe, pipe in enumerate(self.pipes):
-            input_index = self.variable_indices(pipe.input_variable)
-            if self.is_variable_nbv(pipe.input_variable):  # NBV handling
-                input_name = f'{prefix}variable_{input_index}'
-            else:
-                input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
-
-            output_index = self.variable_indices(pipe.output_variable)
-            if self.is_variable_nbv(pipe.output_variable):  # NBV handling
-                output_name = f'{prefix}variable_{output_index}'
-            else:
-                output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
-            pipes_str += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
-        pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+        pipes_str = self.pipes_to_script(prefix=prefix, imports=imports)
 
         # --- Building script ---
         output_name = f"{prefix}block_{workflow_output_index[0]}.outputs[{workflow_output_index[2]}]"
@@ -1439,6 +1411,27 @@ class Workflow(Block):
 
         return f"{script_imports}\n" \
                f"{self_script.declaration}"
+
+    def pipes_to_script(self, prefix, imports):
+        if len(self.pipes) > 0:
+            imports.append(self.pipes[0].full_classname)
+
+        pipes_str = ""
+        for ipipe, pipe in enumerate(self.pipes):
+            input_index = self.variable_indices(pipe.input_variable)
+            if self.is_variable_nbv(pipe.input_variable):  # NBV handling
+                input_name = f'{prefix}variable_{input_index}'
+            else:
+                input_name = f"{prefix}block_{input_index[0]}.outputs[{input_index[2]}]"
+
+            output_index = self.variable_indices(pipe.output_variable)
+            if self.is_variable_nbv(pipe.output_variable):  # NBV handling
+                output_name = f'{prefix}variable_{output_index}'
+            else:
+                output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
+            pipes_str += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
+        pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+        return pipes_str
 
     def save_script_to_stream(self, stream: io.StringIO):
         """ Save the workflow to a python script to a stream. """
@@ -1591,12 +1584,12 @@ class WorkflowState(DessiaObject):
         for input_number, value in self.input_values.items():
             if self.workflow.inputs[input_number] not in self.workflow.file_inputs:
                 if use_pointers:
-                    serialized_v, memo = serialize_with_pointers(value=value, memo=memo,
-                                                                 path=f"{path}/input_values/{input_number}",
-                                                                 id_memo=id_memo)
+                    serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                     path=f"{path}/input_values/{input_number}",
+                                                                     id_memo=id_memo)
                 else:
-                    serialized_v = serialize(value)
-                input_values[str(input_number)] = serialized_v
+                    serialized_value = serialize(value)
+                input_values[str(input_number)] = serialized_value
 
         dict_['input_values'] = input_values
 
@@ -1642,41 +1635,6 @@ class WorkflowState(DessiaObject):
             add_references(dict_, memo, id_memo)
         return dict_
 
-    def state_display(self):
-        """
-        Compute display.
-
-        TODO This doesn't compute display at all. It probably was the reason of display failure. Copy/Paste problem ?
-        """
-        memo = {}
-
-        workflow_dict = self.workflow.to_dict(path='#/workflow', memo=memo)
-
-        dict_ = self.base_dict()
-        # Force migrating from dessia_common.workflow
-        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
-
-        dict_['workflow'] = workflow_dict
-
-        dict_['filled_inputs'] = list(sorted(self.input_values.keys()))
-
-        # Output value: priority for reference before values
-        if self.output_value is not None:
-            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path='#/output_value')
-            dict_['output_value'] = serialized_output_value
-
-        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
-                                             if b in self.activated_items and self.activated_items[b]]
-
-        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
-                                            if p in self.activated_items and self.activated_items[p]]
-
-        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
-                                                if v in self.activated_items and self.activated_items[v]]
-
-        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
-        return dict_
-
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowState':
@@ -1717,6 +1675,41 @@ class WorkflowState(DessiaObject):
         return cls(workflow=workflow, input_values=input_values, activated_items=activated_items,
                    values=values, start_time=dict_['start_time'], end_time=dict_['end_time'],
                    output_value=output_value, log=dict_['log'], name=dict_['name'])
+
+    def state_display(self):
+        """
+        Compute display.
+
+        TODO This doesn't compute display at all. It probably was the reason of display failure. Copy/Paste problem ?
+        """
+        memo = {}
+
+        workflow_dict = self.workflow.to_dict(path='#/workflow', memo=memo)
+
+        dict_ = self.base_dict()
+        # Force migrating from dessia_common.workflow
+        dict_['object_class'] = 'dessia_common.workflow.core.WorkflowState'
+
+        dict_['workflow'] = workflow_dict
+
+        dict_['filled_inputs'] = list(sorted(self.input_values.keys()))
+
+        # Output value: priority for reference before values
+        if self.output_value is not None:
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path='#/output_value')
+            dict_['output_value'] = serialized_output_value
+
+        dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
+                                             if b in self.activated_items and self.activated_items[b]]
+
+        dict_['evaluated_pipes_indices'] = [i for i, p in enumerate(self.workflow.pipes)
+                                            if p in self.activated_items and self.activated_items[p]]
+
+        dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
+                                                if v in self.activated_items and self.activated_items[v]]
+
+        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        return dict_
 
     def add_input_value(self, input_index: int, value):
         """ Add a value for given input. """

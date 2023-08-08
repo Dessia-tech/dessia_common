@@ -41,3 +41,25 @@ class ToScriptElement:
                     imports_dict[module].append(class_)
 
         return imports_dict
+
+
+def blocks_to_script(blocks, prefix: str, imports):
+    blocks_str = ""
+    for iblock, block in enumerate(blocks):
+        block_script = block._to_script(prefix)
+        imports.extend(block_script.imports)
+        if block_script.before_declaration is not None:
+            blocks_str += f"{block_script.before_declaration}\n"
+        blocks_str += f'{prefix}block_{iblock} = {block_script.declaration}\n'
+    blocks_str += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(blocks))])}]\n"
+    return blocks_str
+
+
+def nonblock_variables_to_script(nonblock_variables, prefix, imports, imports_as_is):
+    nbvs_str = ""
+    for nbv_index, nbv in enumerate(nonblock_variables):
+        nbv_script = nbv._to_script()
+        imports.extend(nbv_script.imports)
+        imports_as_is.extend(nbv_script.imports_as_is)
+        nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
+    return nbvs_str

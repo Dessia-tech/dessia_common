@@ -1,5 +1,4 @@
 """ Displays for dessia_common. """
-import warnings
 import webbrowser
 import os
 import tempfile
@@ -11,7 +10,6 @@ from typing import Union, List, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
-from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:

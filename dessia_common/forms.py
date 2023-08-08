@@ -43,7 +43,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_view, markdown_view, cad_view
+from dessia_common.decorators import plot_data_view, markdown_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -301,7 +301,7 @@ class StandaloneObject(MovingObject):
     @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
         """ Generate an object from bin file in order to test frontend forms and backend streams. """
-        # User need to decode the binary as he see fit
+        # User need to decode the binary as he sees fit
         my_string = stream.read().decode("utf8")
         my_file_name = stream.filename
         _, raw_seed = my_string.split(",")
@@ -324,14 +324,6 @@ class StandaloneObject(MovingObject):
         It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.object_list.append(object_)
-
-    def add_embedded_object(self, object_: EmbeddedSubobject):
-        """
-        Add an embedded object to subobject_list.
-
-        It doesn't return anything, hence, API will update object when computing from frontend.
-        """
-        self.subobject_list.append(object_)
 
     def add_float(self, value: float = 1) -> StandaloneBuiltinsSubobject:
         """
