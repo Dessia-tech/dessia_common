@@ -1388,14 +1388,7 @@ class Workflow(Block):
                       f"{prefix}workflow = " \
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
 
-        for key, value in self.imposed_variable_values.items():
-            variable_indice = self.variable_indices(key)
-            if self.is_variable_nbv(key):
-                variable_str = variable_indice
-            else:
-                [block_index, _, variable_index] = variable_indice
-                variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
-            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
+        self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
@@ -1432,6 +1425,16 @@ class Workflow(Block):
             pipes_str += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
         pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
         return pipes_str
+
+    def imposed_variables_to_script(self, prefix, full_script):
+        for key, value in self.imposed_variable_values.items():
+            variable_indice = self.variable_indices(key)
+            if self.is_variable_nbv(key):
+                variable_str = variable_indice
+            else:
+                [block_index, _, variable_index] = variable_indice
+                variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
+            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
 
     def save_script_to_stream(self, stream: io.StringIO):
         """ Save the workflow to a python script to a stream. """
