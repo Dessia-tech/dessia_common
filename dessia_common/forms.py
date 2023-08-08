@@ -373,12 +373,13 @@ class StandaloneObject(MovingObject):
 
     @plot_data_view("2D View")
     def primitives(self):
+        """ Test plot data decorator for primitives. """
         contour = self.standalone_subobject.contour().plot_data()
         return plot_data.PrimitiveGroup(primitives=[contour], name="Contour")
 
     @plot_data_view("Scatter Plot")
     def scatter_plot(self):
-        """ Test scatter plots. """
+        """ Test plot data decorator for scatter plots. """
         attributes = ["cx", "cy"]
         tooltip = plot_data.Tooltip(attributes=attributes, name="Tooltips")
 
@@ -387,10 +388,12 @@ class StandaloneObject(MovingObject):
 
     @plot_data_view("Parallel Plot")
     def parallel_plot(self):
+        """ Test plot data decorator for parallel plots. """
         return plot_data.ParallelPlot(elements=self.samples, axes=["cx", "cy", "label"], name="Parallel Plot")
 
     @plot_data_view("Multiplot", load_by_default=True)
     def multiplot(self):
+        """ Test plot data decorator for multiplots. """
         scatter_plot = self.scatter_plot()
         parallel_plot = self.parallel_plot()
         objects = [scatter_plot, parallel_plot]

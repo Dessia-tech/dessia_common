@@ -1406,6 +1406,7 @@ class Workflow(Block):
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):
+        """ Set pipes to script. """
         if len(self.pipes) > 0:
             imports.append(self.pipes[0].full_classname)
 
@@ -1427,6 +1428,7 @@ class Workflow(Block):
         return pipes_str
 
     def imposed_variables_to_script(self, prefix, full_script):
+        """ Set imposed variable values to script. """
         for key, value in self.imposed_variable_values.items():
             variable_indice = self.variable_indices(key)
             if self.is_variable_nbv(key):

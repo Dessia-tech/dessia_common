@@ -737,6 +737,7 @@ class CadView(Display):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "cad")
         if isinstance(selector, str):
             return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
@@ -783,6 +784,7 @@ class Markdown(Display):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
             return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
@@ -830,6 +832,7 @@ class PlotData(Display):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
             return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
