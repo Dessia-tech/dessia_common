@@ -551,6 +551,10 @@ class StandaloneObject(MovingObject):
 DEF_SO = StandaloneObject.generate(1)
 
 
+class MyCustomClass:
+    pass
+
+
 class StandaloneObjectWithDefaultValues(StandaloneObject):
     """ Overwrite StandaloneObject to set default values to it. For frontend forms testing purpose. """
 

@@ -2,15 +2,24 @@
 
 from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import ClassMethod, PlotData, CadView, Markdown
-from dessia_common.typings import ClassMethodType
-from dessia_common.forms import StandaloneObject
+
+
+from dessia_common.forms import StandaloneObject, MyCustomClass
+from dessia_common.typings import ClassMethodType, CadViewType, PlotDataType, MarkdownType
+
+cadview_selector = CadViewType(class_=StandaloneObject, name="some_cad_selector")
+cadview = CadView(selector=cadview_selector, name="3D")
+
+plotdata_selector = PlotDataType(class_=MyCustomClass, name="Scatter Plot")
+plotdata = PlotData(selector=plotdata_selector, name="2D", load_by_default=True)
+
+markdown_selector = MarkdownType(class_=MyCustomClass, name="My Markdown Selector")
+markdown = Markdown(selector=markdown_selector, name="MD", load_by_default=False)
 
 cmt = ClassMethodType(class_=StandaloneObject, name="generate")
 cmb = ClassMethod(method_type=cmt, name="Generator")
 
-cadview = CadView("3D")
-plotdata = PlotData("2D")
-markdown = Markdown("MD")
+
 plotdatatest = PlotData(name="2DTest", selector="2DTest")
 markdowntest = Markdown(name="MDTest", selector="MDTest")
 
