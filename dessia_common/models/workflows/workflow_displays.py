@@ -2,9 +2,7 @@
 
 from dessia_common.workflow.core import Workflow, Pipe
 from dessia_common.workflow.blocks import ClassMethod, PlotData, CadView, Markdown
-
-
-from dessia_common.forms import StandaloneObject, MyCustomClass
+from dessia_common.forms import StandaloneObject
 from dessia_common.typings import ClassMethodType, CadViewType, PlotDataType, MarkdownType
 
 cadview_selector = CadViewType(class_=StandaloneObject, name="some_cad_selector")
