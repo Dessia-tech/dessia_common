@@ -393,7 +393,7 @@ class StandaloneObject(MovingObject):
 
     @plot_data_view("Multiplot", load_by_default=True)
     def multiplot(self):
-        """ Test plot data decorator for multiplots. """
+        """ Test plot data decorator for multiple plots. """
         scatter_plot = self.scatter_plot()
         parallel_plot = self.parallel_plot()
         objects = [scatter_plot, parallel_plot]
@@ -549,10 +549,6 @@ class StandaloneObject(MovingObject):
 
 
 DEF_SO = StandaloneObject.generate(1)
-
-
-class MyCustomClass:
-    pass
 
 
 class StandaloneObjectWithDefaultValues(StandaloneObject):

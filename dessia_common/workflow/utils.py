@@ -44,7 +44,7 @@ class ToScriptElement:
 
 
 def blocks_to_script(blocks, prefix: str, imports):
-    """ Set blocks to script. """
+    """ Set B locks to script. """
     blocks_str = ""
     for iblock, block in enumerate(blocks):
         block_script = block._to_script(prefix)
@@ -57,7 +57,7 @@ def blocks_to_script(blocks, prefix: str, imports):
 
 
 def nonblock_variables_to_script(nonblock_variables, prefix, imports, imports_as_is):
-    """ Set nbvs to script. """
+    """ Set Non Block Variables to script. """
     nbvs_str = ""
     for nbv_index, nbv in enumerate(nonblock_variables):
         nbv_script = nbv._to_script()
