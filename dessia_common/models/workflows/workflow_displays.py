@@ -8,10 +8,10 @@ from dessia_common.typings import ClassMethodType, CadViewType, PlotDataType, Ma
 cadview_selector = CadViewType(class_=StandaloneObject, name="some_cad_selector")
 cadview = CadView(selector=cadview_selector, name="3D")
 
-plotdata_selector = PlotDataType(class_=MyCustomClass, name="Scatter Plot")
+plotdata_selector = PlotDataType(class_=StandaloneObject, name="Scatter Plot")
 plotdata = PlotData(selector=plotdata_selector, name="2D", load_by_default=True)
 
-markdown_selector = MarkdownType(class_=MyCustomClass, name="My Markdown Selector")
+markdown_selector = MarkdownType(class_=StandaloneObject, name="My Markdown Selector")
 markdown = Markdown(selector=markdown_selector, name="MD", load_by_default=False)
 
 cmt = ClassMethodType(class_=StandaloneObject, name="generate")
