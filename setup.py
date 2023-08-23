@@ -137,14 +137,14 @@ setup(
         "dessia_common.datatools",
         "dessia_common.schemas"
     ],
-    install_requires=[
+    install_requires=[ #  Keep the list with alphabetical order
         "cma",
         "dectree",
         "docx",
         "humanize",
         "matplotlib",
         "networkx",
-        "numpy",
+        "numpy<=1.24.0",
         "orjson>=3.8.0",
         "openpyxl",
         "parameterized",
@@ -153,7 +153,7 @@ setup(
         "pyDOE",
         "pyDOE2",
         "python-docx",
-        "scipy<1.11",
+        "scipy",
         "scikit-learn>=1.2.0",
         "typeguard",
     ],
