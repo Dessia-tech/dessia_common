@@ -34,7 +34,6 @@ try:
     import plot_data.colors
 except ImportError as err:
     print("Couldn't import plot_data or volmdlr due to the following exception : ", err)
-    pass
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
 from dessia_common.typings import InstanceOf

@@ -1,9 +1,9 @@
 """ A workflow that has 2D, 3D and MD displays. """
 
 from dessia_common.workflow.core import Workflow, Pipe
-from dessia_common.workflow.blocks import ClassMethod, PlotData, CadView, Markdown
+from dessia_common.workflow.blocks import ClassMethod, PlotData, Markdown
 from dessia_common.forms import StandaloneObject
-from dessia_common.typings import ClassMethodType, CadViewType, PlotDataType, MarkdownType
+from dessia_common.typings import ClassMethodType, PlotDataType, MarkdownType
 
 plotdata_selector = PlotDataType(class_=StandaloneObject, name="Scatter Plot")
 plotdata = PlotData(selector=plotdata_selector, name="2D", load_by_default=True)
