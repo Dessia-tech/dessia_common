@@ -264,8 +264,9 @@ class StandaloneObject(MovingObject):
 
         self.samples = []
         for i in range(500):
-            sample = {"cx": random.randint(0, 600) / 100,
-                      "cy": random.randint(100, 2000) / 100,
+            abscissa = round((i % 17) / 2.3, 3)
+            sample = {"cx": abscissa,
+                      "cy": 100 + abscissa * i / 100,
                       "label": f"label{i % 5}"}
             self.samples.append(plot_data.Sample(values=sample, name=f"Point{i}"))
 
