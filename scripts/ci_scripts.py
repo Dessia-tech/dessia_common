@@ -11,7 +11,6 @@ scripts = [
     "dataset.py",
     "dataset_pareto.py",
     "filters.py",
-    "moving_object.py",
     "optimization.py",
     "graph.py",
     "sampling.py",

@@ -33,7 +33,8 @@ try:
     from volmdlr import primitives3d as p3d
     import plot_data
     import plot_data.colors
-except ImportError:
+except ImportError as err:
+    print("Couldn't import plot_data or volmdlr due to the following exception : ", err)
     pass
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
