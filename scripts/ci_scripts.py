@@ -20,7 +20,6 @@ scripts = [
     "markdown_to_docx.py",
 
     # Workflows
-    "workflow/blocks.py",
     "workflow/workflow_with_models.py",
     "workflow/power_simulation.py",
     "workflow/forms_simulation.py",
