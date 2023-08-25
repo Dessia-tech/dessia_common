@@ -568,6 +568,7 @@ class Workflow(Block):
                 for p in self.pipes]
 
     def block_selector(self, block: Block) -> str:
+        """ Get or create a generic selector for given block. """
         if block in self.display_blocks and block.selector:
             return block.selector.name
         return f"{self.selector_name(block)} ({self.blocks.index(block)})"
