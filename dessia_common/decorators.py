@@ -39,32 +39,32 @@ def get_decorated_methods(class_: Type, decorator_name: str):
     return [getattr(class_, n) for n in method_names]
 
 
-def plot_data_view(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def plot_data_view(selector: str = None, load_by_default: bool = False):
     """ Decorator to plot data."""
     def decorator(function):
         """ Decorator to plot data."""
         set_decorated_function_metadata(function=function, type_="plot_data", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
 
 
-def markdown_view(selector: str, load_by_default: bool = False, serialize_data: bool = False):
+def markdown_view(selector: str, load_by_default: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
         set_decorated_function_metadata(function=function, type_="markdown", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=False, load_by_default=load_by_default)
         return function
     return decorator
 
 
-def cad_view(selector: str, load_by_default: bool = False, serialize_data: bool = True):
+def cad_view(selector: str, load_by_default: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
         set_decorated_function_metadata(function=function, type_="cad", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
 

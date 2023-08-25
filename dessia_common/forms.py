@@ -24,7 +24,6 @@ coding/naming style & convention.
 from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any
 import time
-import random
 from numpy import linspace
 
 try:
@@ -240,7 +239,7 @@ class StandaloneObject(MovingObject):
 
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ["add_standalone_object", "add_embedded_object", "count_until", "add_float",
+    _allowed_methods = ["add_standalone_object", "count_until", "add_float",
                         "generate_from_text", "generate_from_bin", "method_without_arg", "ill_defined_method"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,

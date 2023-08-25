@@ -17,8 +17,7 @@ from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow
+from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue, Workflow
 from dessia_common.workflow.utils import ToScriptElement
 
 T = TypeVar("T")
@@ -55,6 +54,21 @@ def output_from_function(function, name: str = "result output"):
         type_ = type_from_annotation(annotations['return'], function.__module__)
         return TypedVariable(type_=type_, name=name)
     return Variable(name=name)
+
+
+def set_block_variable_names_from_dict(func):
+    """ Inspect function arguments to compute black variable names. """
+    def func_wrapper(cls, dict_):
+        obj = func(cls, dict_)
+        if 'input_names' in dict_:
+            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
+                input_.name = input_name
+        if 'output_names' in dict_:
+            output_items = zip(dict_['output_names'], obj.outputs)
+            for output_name, output_ in output_items:
+                output_.name = output_name
+        return obj
+    return func_wrapper
 
 
 class BlockError(Exception):
@@ -605,6 +619,7 @@ class Display(Block):
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
     _type = None
+    serialize = False
 
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
                  selector: Optional[ViewType] = None, position: Tuple[float, float] = None):
@@ -613,7 +628,6 @@ class Display(Block):
 
         self.load_by_default = load_by_default
         self.selector = selector
-        self.serialize = False
 
     @property
     def type_(self) -> str:
@@ -625,13 +639,14 @@ class Display(Block):
     def _display_settings(self, block_index: int, reference_path: str = "#") -> DisplaySetting:
         """ Compute block's display settings. """
         arguments = {"block_index": block_index, "reference_path": reference_path}
-        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=self.serialize,
-                              arguments=arguments, load_by_default=self.load_by_default)
+        return DisplaySetting(selector=self.selector.name, type_=self.type_, method="block_display",
+                              serialize_data=self.serialize, arguments=arguments,
+                              load_by_default=self.load_by_default)
 
     def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
-        settings = object_._display_settings_from_selector(self.selector)
+        settings = object_._display_settings_from_selector(self.selector.name)
         return [attrmethod_getter(object_, settings.method)()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -651,6 +666,7 @@ class MultiPlot(Display):
     """
 
     _type = "plot_data"
+    serialize = True
 
     def __init__(self, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
@@ -658,7 +674,6 @@ class MultiPlot(Display):
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
                          name=name, position=position)
         self.inputs[0].name = "Input List"
-        self.serialize = True
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -770,7 +785,7 @@ class DeprecatedMarkdown(Display):
 class Markdown(Display):
     """ Generate a Markdown representation of an object. """
 
-    _type = "babylon_data"
+    _type = "markdown"
 
     def __init__(self, selector: MarkdownType[Type], name: str = "", load_by_default: bool = False,
                  position: Tuple[float, float] = None):
@@ -804,6 +819,7 @@ class DeprecatedPlotData(Display):
     """
 
     _type = "plot_data"
+    serialize = True
 
     def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
                  position: Tuple[float, float] = None):
@@ -812,13 +828,13 @@ class DeprecatedPlotData(Display):
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
                          selector=selector, position=position)
-        self.serialize = True
 
 
 class PlotData(Display):
     """ Generate a PlotData representation of an object. """
 
-    _type = "babylon_data"
+    _type = "plot_data"
+    serialize = True
 
     def __init__(self, selector: PlotDataType[Type], name: str = "", load_by_default: bool = False,
                  position: Tuple[float, float] = None):

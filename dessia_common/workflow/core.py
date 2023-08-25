@@ -213,21 +213,6 @@ class TypedVariableWithDefaultValue(TypedVariable):
 NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
-def set_block_variable_names_from_dict(func):
-    """ Inspect function arguments to compute black variable names. """
-    def func_wrapper(cls, dict_):
-        obj = func(cls, dict_)
-        if 'input_names' in dict_:
-            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
-                input_.name = input_name
-        if 'output_names' in dict_:
-            output_items = zip(dict_['output_names'], obj.outputs)
-            for output_name, output_ in output_items:
-                output_.name = output_name
-        return obj
-    return func_wrapper
-
-
 class Block(DessiaObject):
     """ An Abstract block. Do not instantiate alone. """
 
@@ -354,7 +339,7 @@ class Workflow(Block):
     _standalone_in_db = True
     _eq_is_data_eq = True
     _allowed_methods = ["run", "start_run"]
-    _non_serializable_attributes = ["block_selectors", "branch_by_display_selector", "branch_by_export_format",
+    _non_serializable_attributes = ["branch_by_display_selector", "branch_by_export_format",
                                     "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
@@ -397,8 +382,6 @@ class Workflow(Block):
         self._find_name()
 
         Block.__init__(self, inputs=inputs, outputs=outputs, name=name)
-
-        self.block_selectors = {b: f"{self.selector_name(b)} ({i})" for i, b in enumerate(self.blocks)}
 
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
@@ -584,6 +567,11 @@ class Workflow(Block):
                 else self.copy_pipe(copied_workflow=copied_workflow, pipe=p)
                 for p in self.pipes]
 
+    def block_selector(self, block: Block) -> str:
+        if block in self.display_blocks and block.selector:
+            return block.selector.name
+        return f"{self.selector_name(block)} ({self.blocks.index(block)})"
+
     def selector_name(self, block: Block) -> str:
         """ Compute name for selector. """
         name = block.name
@@ -600,7 +588,7 @@ class Workflow(Block):
         selector_branches = {}
         for block in blocks:
             branch = self.secondary_branch_blocks(block)
-            selector = self.block_selectors[block]
+            selector = self.block_selector(block)
             selector_branches[selector] = branch
         return selector_branches
 
@@ -622,7 +610,7 @@ class Workflow(Block):
             block_index = self.blocks.index(block)
             settings = block._display_settings(block_index=block_index, reference_path=reference_path)
             if settings is not None:
-                settings.selector = self.block_selectors[block]
+                settings.selector = self.block_selector(block)
                 display_settings.append(settings)
         return display_settings
 
@@ -646,7 +634,7 @@ class Workflow(Block):
             block_index = self.blocks.index(block)
             format_ = block._export_format(block_index)
             if format_ is not None:
-                format_.selector = self.block_selectors[block]
+                format_.selector = self.block_selector(block)
                 export_formats.append(format_)
         return export_formats
 
@@ -1755,7 +1743,7 @@ class WorkflowState(DessiaObject):
         self.activate_inputs()
         block = self.workflow.blocks[block_index]
 
-        selector = self.workflow.block_selectors[block]
+        selector = self.workflow.block_selector(block)
         branch = self.workflow.branch_by_display_selector[selector]
         block_args = {}
         for branch_block in branch:
@@ -1970,7 +1958,7 @@ class WorkflowState(DessiaObject):
     def export(self, stream: Union[BinaryFile, StringFile], block_index: int):
         """ Perform export. """
         block = self.workflow.blocks[block_index]
-        selector = self.workflow.block_selectors[block]
+        selector = self.workflow.block_selector(block)
         branch = self.workflow.branch_by_export_format[selector]
         block_args = {b: {} for b in branch}
         evaluated_blocks = self.evaluate_branch(blocks=branch, block_args=block_args)
