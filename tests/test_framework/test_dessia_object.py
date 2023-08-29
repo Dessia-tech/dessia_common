@@ -34,7 +34,7 @@ class TestFeatures(unittest.TestCase):
         (DEF_SOWDV, "dessia_common.forms.StandaloneObjectWithDefaultValues")
     ])
     def test_object_classnames(self, object_, expected_name):
-        classname = full_classname(object_=object_, compute_for='object_')
+        classname = full_classname(object_=object_, compute_for='instance')
         self.assertEqual(classname, expected_name)
 
     def test_serialization(self):

@@ -7,10 +7,7 @@ import unittest
 from parameterized import parameterized
 
 
-class TestComputedSchemas(unittest.TestCase):
-    def setUp(self) -> None:
-        pass
-
+class TestTypeMatches(unittest.TestCase):
     @parameterized.expand([
         # TRIVIAL AND SPECIFIC
         (DessiaObject, Any),
@@ -22,7 +19,7 @@ class TestComputedSchemas(unittest.TestCase):
 
         # Lists
         (List[int], List[int]),
-        (List[Measure], List[int]),
+        (List[Measure], List[float]),
         (List[StandaloneObjectWithDefaultValues], List[DessiaObject]),
         (List[StandaloneObjectWithDefaultValues], List[StandaloneObject]),
 
@@ -69,7 +66,7 @@ class TestComputedSchemas(unittest.TestCase):
         (Union[DessiaObject, int], DessiaObject),
 
         # UNEQUAL COMPLEX
-        typematch(List[int], Tuple[int])
+        (List[int], Tuple[int])
     ])
     def test_negative_matches(self, type_, match_against):
         self.assertFalse(typematch(type_, match_against))

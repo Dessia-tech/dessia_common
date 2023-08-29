@@ -3,7 +3,7 @@ import unittest
 from parameterized import parameterized
 
 
-class TestMovindObject(unittest.TestCase):
+class TestMovingObject(unittest.TestCase):
     def setUp(self) -> None:
         self.mso = MovingStandaloneObject(origin=0, name="Moving Test")
         self.displays = self.mso._displays()
@@ -19,5 +19,4 @@ class TestMovindObject(unittest.TestCase):
         (1, "babylon_data"),
     ])
     def test_decorators(self, index, expected_type):
-        display = self.displays[index]
-        self.assertEqual(display[index]["type"], expected_type)
+        self.assertEqual(self.displays[index]["type_"], expected_type)
