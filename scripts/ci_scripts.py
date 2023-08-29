@@ -43,7 +43,6 @@ scripts = [
     "utils/serialization.py",
     "utils/helpers.py",
     "utils/diff.py",
-    "type_matching.py",
 
     # Data structures
     "data-structures/1.py"
