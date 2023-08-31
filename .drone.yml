@@ -74,7 +74,7 @@ steps:
 
 
 - name: install, run scripts and build doc
-  image: python:3.8
+  image: python:3.9
   commands:
   - git fetch --tags
   - python setup.py install
