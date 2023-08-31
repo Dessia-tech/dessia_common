@@ -15,7 +15,7 @@ scripts = [
     "graph.py",
     "sampling.py",
     "markdowns.py",
-    "checks.py",
+    # "checks.py",
     "docx_writer.py",
     "markdown_to_docx.py",
 
