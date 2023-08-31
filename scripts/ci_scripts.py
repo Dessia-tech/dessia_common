@@ -16,7 +16,7 @@ scripts = [
     "sampling.py",
     "markdowns.py",
     # "checks.py",
-    "docx_writer.py",
+    # "docx_writer.py",
     "markdown_to_docx.py",
 
     # Workflows
