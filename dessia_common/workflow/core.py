@@ -1980,7 +1980,7 @@ class WorkflowRun(WorkflowState):
     """ Completed state of a workflow. """
 
     _standalone_in_db = True
-    _allowed_methods = ['run_again']
+    _allowed_methods = []
     _eq_is_data_eq = True
 
     def __init__(self, workflow: Workflow, input_values, output_value, values,
@@ -2060,6 +2060,7 @@ class WorkflowRun(WorkflowState):
 
     def method_dict(self, method_name: str = None, method_jsonschema=None):
         """ Get run again default dict. """
+        warnings.warn("WorkflowRun's method 'method_dict' is not supported anymore.", DeprecationWarning)
         if method_jsonschema is not None:
             warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
                           " Please remove it from your function call. Method name is sufficient to get schema",
@@ -2076,15 +2077,13 @@ class WorkflowRun(WorkflowState):
     @property
     def _method_jsonschemas(self):
         """ Compute the run jsonschema (had to be overloaded). """
-        # TODO This is outdated now that WorkflowRun inherits from WorkflowState and has already broke once.
-        #  We should outsource the "run" jsonschema computation from workflow in order to mutualize it with run_again,
-        #  and have WorkflowRun have its inheritances from WorkflowState _method_jsonschema method
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
     @property
     def method_schemas(self):
         """ Copy old method_jsonschema behavior. Probably to be refactored. """
+        warnings.warn("WorkflowRun's method 'method_schemas' is not supported anymore.", DeprecationWarning)
         schemas = {"run_again": self.workflow.method_schemas.pop('run')}
         schemas["run_again"].update({"classes": ["dessia_common.workflow.core.WorkflowRun"], "required": []})
         return schemas
