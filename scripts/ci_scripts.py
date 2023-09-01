@@ -22,7 +22,6 @@ scripts = [
     # Workflows
     "workflow/workflow_with_models.py",
     "workflow/power_simulation.py",
-    "workflow/forms_simulation.py",
     "workflow/pipes.py",
     "workflow/workflow_state_equalities.py",
     "workflow/workflow_diverge_converge.py",
