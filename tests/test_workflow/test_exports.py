@@ -99,3 +99,4 @@ class TestWorkflowExports(unittest.TestCase):
         block_index = format_.args["block_index"]
         stream = file_type()
         workflow_export_run.export(stream, block_index)
+        self.assertNotEquals(stream.getvalue(), "")
