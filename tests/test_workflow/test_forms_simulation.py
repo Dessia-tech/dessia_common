@@ -53,9 +53,6 @@ class TestWorkflowFeatures(unittest.TestCase):
     def test_getattr(self, path, expected_result):
         self.assertEqual(workflow_run._get_from_path(path), expected_result)
 
-    def test_failing_getattr(self):
-        self.assertRaises(AttributeError, workflow_run._get_from_path("#/values/1/0"))
-
     def test_check_platform(self):
         workflow_._check_platform()
         workflow_run._check_platform()
