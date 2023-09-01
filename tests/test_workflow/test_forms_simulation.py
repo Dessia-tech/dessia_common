@@ -42,7 +42,7 @@ class TestWorkflowFeatures(unittest.TestCase):
         ('1', ['(0, 0, 3)', '(3, 0, 1)']),
     ])
     def test_variables_match(self, variable, expected_match):
-        variables_match = workflow_.match_variables()
+        variables_match = workflow_.match_variables(True)
         self.assertIn(variable, variables_match)
         self.assertEqual(variables_match[variable], expected_match)
 
