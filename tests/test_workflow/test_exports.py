@@ -1,4 +1,4 @@
-from dessia_common.models.workflows.wokflow_exports import workflow_export_run
+from dessia_common.models.workflows.workflow_exports import workflow_export_run
 from dessia_common.files import StringFile, BinaryFile
 import unittest
 from parameterized import parameterized
@@ -92,7 +92,7 @@ class TestWorkflowExports(unittest.TestCase):
     @parameterized.expand([
         (4, StringFile),
         (5, BinaryFile),
-        # (6, BinaryFile)
+        (6, BinaryFile)
     ])
     def test_export(self, index, file_type):
         format_ = self.export_formats[index]

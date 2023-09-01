@@ -1,4 +1,4 @@
-from dessia_common.models.workflows.wokflow_exports import workflow_export
+from dessia_common.models.workflows.workflow_exports import workflow_export
 
 
 print("============== Blank Start ==============")
