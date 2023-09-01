@@ -91,8 +91,8 @@ class TestWorkflowExports(unittest.TestCase):
 
     @parameterized.expand([
         (4, StringFile),
-        # (5, BinaryFile),
-        # (6, BinaryFile)
+        (5, BinaryFile),
+        (6, BinaryFile)
     ])
     def test_export(self, index, file_type):
         format_ = self.export_formats[index]

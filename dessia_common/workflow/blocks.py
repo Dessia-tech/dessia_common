@@ -1178,7 +1178,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                archive = generate_archive(zip_archive, value)
+                generate_archive(zip_archive, value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:
