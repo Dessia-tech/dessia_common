@@ -50,3 +50,6 @@ class ElectricChar2(DessiaObject):
         self.model = model
         self.price = price
         self.autonomy = autonomy
+
+
+print("script 'checks.py' has passed")

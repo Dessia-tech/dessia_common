@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Blocks : add GetModelAttribute which will replace ModelAttribute in few release
-- Blocks : display blocks are now more configurable (custom selector and type)
-- DessiaObject: add type to load_from_file method
+- Blocks : Display blocks are now more configurable (Custom selector)
+- DessiaObject: Add type to load_from_file method
 - Displays: Displays can now be defined with decorators
 - Document generator: add new class Table
 - Files: .doc & .docx files typings
@@ -20,13 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: add a json export to method schemas for low-code implementations
 - Schemas refactor: add default value to method types
 - Schemas refactor: add standalone in db property
-- Typings : add AttributeType and ClassAttributeType
+- Schemas refactor: Add support for Display View Types
+- Schemas refactor: Mutualize Display View Types and Attribute Types
+- Typings : add AttributeType, ClassAttributeType and View Types
 - Workflow : add Tasks display
 
 
 ### Changed
  
-- Blocks : add the possibility to have TypedValue in SetModelAttribute
+- Blocks: Add the possibility to have TypedValue in SetModelAttribute
+- Blocks: ! Display blocks definition have changed to adapt to new View Decorator paradigm
 - DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
 - Document generator: add new module to write in docx file
 - Export: export all 3d formats in zip file

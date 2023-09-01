@@ -2,7 +2,7 @@
 Tests for document generator
 """
 
-from dessia_common.document_generator import DocxWriter, Paragraph, Heading, Header, Footer, Section, Table
+from dessia_common.document_generator import DocxWriter, Paragraph, Heading, Footer, Section, Table
 
 paragraph_1 = Paragraph(text="This is the first paragraph.")
 paragraph_2 = Paragraph(text="The second paragraph is here.")

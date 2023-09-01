@@ -1,12 +1,12 @@
 """ Provides decorators that work as 'flags' for display settings. """
 
-from typing import Type, List
+from typing import Type, List, TypeVar
 import inspect
 import ast
 import textwrap
 
 
-DISPLAY_DECORATORS = ["plot_data_display", "markdown_display", "cad_display"]
+DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -39,32 +39,32 @@ def get_decorated_methods(class_: Type, decorator_name: str):
     return [getattr(class_, n) for n in method_names]
 
 
-def plot_data_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def plot_data_view(selector: str = None, load_by_default: bool = False):
     """ Decorator to plot data."""
     def decorator(function):
         """ Decorator to plot data."""
         set_decorated_function_metadata(function=function, type_="plot_data", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
 
 
-def markdown_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = False):
+def markdown_view(selector: str, load_by_default: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
         set_decorated_function_metadata(function=function, type_="markdown", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=False, load_by_default=load_by_default)
         return function
     return decorator
 
 
-def cad_display(selector: str = None, load_by_default: bool = False, serialize_data: bool = True):
+def cad_view(selector: str, load_by_default: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
         set_decorated_function_metadata(function=function, type_="cad", selector=selector,
-                                        serialize_data=serialize_data, load_by_default=load_by_default)
+                                        serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
 
@@ -76,3 +76,6 @@ def set_decorated_function_metadata(function, type_: str, selector: str = None,
     setattr(function, "selector", selector)
     setattr(function, "serialize_data", serialize_data)
     setattr(function, "load_by_default", load_by_default)
+
+
+T = TypeVar("T")
