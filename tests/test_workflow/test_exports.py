@@ -82,12 +82,12 @@ class TestWorkflowExports(unittest.TestCase):
         (2, {}),
         (3, {}),
         (4, {"block_index": 6}),
-        (5, {"block_index": 6}),
-        (6, {"block_index": 6})
+        (5, {"block_index": 7}),
+        (6, {"block_index": 8})
     ])
     def test_args(self, index, expected_args):
         format_ = self.export_formats[index]
-        self.assertEqual(format_.args, expected_args)
+        self.assertDictEqual(format_.args, expected_args)
 
     @parameterized.expand([
         (4, StringFile),
