@@ -668,11 +668,11 @@ class MultiPlot(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, attributes: List[str], load_by_default: bool = True,
+    def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, position=position)
+                         name=name, selector=selector, position=position)
         self.inputs[0].name = "Input List"
 
     def equivalent(self, other):

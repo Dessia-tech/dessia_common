@@ -1,6 +1,15 @@
-from scripts.workflow.forms_simulation import workflow_run, workflow_
+from dessia_common.models.workflows import workflow_
 import unittest
 from parameterized import parameterized
+
+parameter_input = workflow_.blocks[0].inputs[0]
+integer_input = workflow_.nonblock_variables[0]
+string_input = workflow_.nonblock_variables[1]
+n_solutions = 100
+input_values = {workflow_.input_index(parameter_input): 5,
+                workflow_.input_index(integer_input): n_solutions,
+                workflow_.input_index(string_input): "Test"}
+workflow_run = workflow_.run(input_values=input_values, verbose=True, name='Dev Objects')
 
 
 class TestWorkflowFeatures(unittest.TestCase):
@@ -39,7 +48,7 @@ class TestWorkflowFeatures(unittest.TestCase):
 
     @parameterized.expand([
         ("#/values/1", "Test"),
-        ("#/values/0", 100),
+        ("#/values/0", n_solutions),
         ("#/values/1/0", None)
     ])
     def test_getattr(self, path, expected_result):
@@ -54,3 +63,7 @@ class TestWorkflowFeatures(unittest.TestCase):
 
         copied_workflow_run = workflow_run.copy()
         copied_workflow_run._check_platform()
+
+    def test_arguments(self):
+        arguments = workflow_.dict_to_arguments(input_values)
+        self.assertDictEqual(arguments, {'input_values': {0: 5, 1: None, 2: 3, 3: 100, 4: 'Test'}, 'name': None})
