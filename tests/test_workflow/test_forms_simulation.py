@@ -48,14 +48,13 @@ class TestWorkflowFeatures(unittest.TestCase):
 
     @parameterized.expand([
         ("#/values/1", "Test"),
-        ("#/values/0", n_solutions),
-        ("#/values/1/0", None)
+        ("#/values/0", n_solutions)
     ])
     def test_getattr(self, path, expected_result):
-        if expected_result is not None:
-            self.assertEqual(workflow_run._get_from_path(path), expected_result)
-        else:
-            self.assertRaises(AttributeError, workflow_run._get_from_path(path))
+        self.assertEqual(workflow_run._get_from_path(path), expected_result)
+
+    def test_failing_getattr(self):
+        self.assertRaises(AttributeError, workflow_run._get_from_path("#/values/1/0"))
 
     def test_check_platform(self):
         workflow_._check_platform()
@@ -65,5 +64,5 @@ class TestWorkflowFeatures(unittest.TestCase):
         copied_workflow_run._check_platform()
 
     def test_arguments(self):
-        arguments = workflow_.dict_to_arguments(input_values)
+        arguments = workflow_.dict_to_arguments(input_values, "run")
         self.assertDictEqual(arguments, {'input_values': {0: 5, 1: None, 2: 3, 3: 100, 4: 'Test'}, 'name': None})
