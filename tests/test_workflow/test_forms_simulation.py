@@ -44,7 +44,7 @@ class TestWorkflowFeatures(unittest.TestCase):
     def test_variables_match(self, variable, expected_match):
         variables_match = workflow_.match_variables(True)
         self.assertIn(variable, variables_match)
-        self.assertEqual(variables_match[variable], expected_match)
+        self.assertListEqual(variables_match[variable], expected_match)
 
     @parameterized.expand([
         ("#/values/1", "Test"),

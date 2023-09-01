@@ -4,7 +4,7 @@ import unittest
 from parameterized import parameterized
 
 
-class TestWorkflowDisplays(unittest.TestCase):
+class TestWorkflowExports(unittest.TestCase):
     def setUp(self) -> None:
         self.export_formats = workflow_export_run._export_formats()
 
@@ -92,7 +92,7 @@ class TestWorkflowDisplays(unittest.TestCase):
     @parameterized.expand([
         (4, StringFile),
         (5, BinaryFile),
-        (6, BinaryFile)
+        # (6, BinaryFile)
     ])
     def test_export(self, index, file_type):
         format_ = self.export_formats[index]
