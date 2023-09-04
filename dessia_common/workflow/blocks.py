@@ -673,6 +673,65 @@ class Display(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+class DeprecatedMultiPlot(Display):
+    """
+    Generate a Multi plot which axes will be the given attributes.
+
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
+        Can be deep attributes with the '/' separator.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    type_ = "plot_data"
+
+    def __init__(self, attributes: List[str], load_by_default: bool = True,
+                 name: str = "", position: Tuple[float, float] = None):
+        self.attributes = attributes
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, position=position)
+        self.inputs[0].name = "Input List"
+        self.serialize = True
+
+    def equivalent(self, other):
+        """ Return whether if the block is equivalent to the other given. """
+        same_attributes = self.attributes == other.attributes
+        return Block.equivalent(self, other) and same_attributes
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return sum(len(a) for a in self.attributes)
+
+    def evaluate(self, values, **kwargs):
+        """ Create MultiPlot from block configuration. Handle reference path. """
+        reference_path = kwargs.get("reference_path", "#")
+        import plot_data
+        objects = values[self.inputs[self._displayable_input]]
+        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                   for i, o in enumerate(objects)]
+        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                     for i, o in enumerate(objects)]
+        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+
+        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                        elements=samples2d, name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
+        plots = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
+                                            coords=[(0, 0), (0, 300)], name='Results plot')
+        return [multiplot.to_dict()]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
 class MultiPlot(Display):
     """
     Generate a Multi plot which axes will be the given attributes.
@@ -730,6 +789,17 @@ class MultiPlot(Display):
         """ Write block config into a chunk of script. """
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        selector = dict_.get("selector", "Multiplot")
+        print("SELECTOR", selector)
+        if isinstance(selector, str):
+            return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
+                                       load_by_default=dict_["load_by_default"], position=dict_["position"])
+        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+                         load_by_default=dict_["load_by_default"], position=dict_["position"])
 
 
 class DeprecatedCadView(Display):
