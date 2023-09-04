@@ -190,6 +190,15 @@ class ClassMethod(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class ModelMethod(Block):
     """
@@ -270,6 +279,15 @@ class ModelMethod(Block):
                    full_classname(object_=self.method_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
 
 
 class Sequence(Block):
@@ -937,12 +955,21 @@ class GetModelAttribute(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class SetModelAttribute(Block):
     """
     Block to set an attribute value in a workflow.
 
-    :param attribute_name: Name of the attribute to set.
+    :param attribute_type: AttributeType variable that contain the model and the name of the attribute to select.
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
@@ -953,12 +980,11 @@ class SetModelAttribute(Block):
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
         if type_:
-            inputs.append(TypedVariable(type_=type_, 
-                                        name=f'Value to insert for attribute {self.attribute_type.name}'))
+            inputs.append(TypedVariable(type_=type_, name=f'Value to insert for attribute {self.attribute_type.name}'))
         else:
             inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
-        outputs = [TypedVariable(type_=self.attribute_type.class_, 
-                                    name=f'Model with changed attribute {self.attribute_type.name}')]
+        outputs = [TypedVariable(type_=self.attribute_type.class_,
+                                 name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -981,6 +1007,15 @@ class SetModelAttribute(Block):
                  f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
 
 
 class Sum(Block):
