@@ -193,6 +193,7 @@ class ClassMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
@@ -283,6 +284,7 @@ class ModelMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
@@ -793,11 +795,14 @@ class MultiPlot(Display):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "Multiplot")
         print("SELECTOR", selector)
         if isinstance(selector, str):
+            print("DEPRECATE")
+            load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
-                                       load_by_default=dict_["load_by_default"], position=dict_["position"])
+                                       load_by_default=load_by_default, position=dict_["position"])
         return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
                          load_by_default=dict_["load_by_default"], position=dict_["position"])
 
@@ -843,7 +848,8 @@ class CadView(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "cad")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
         return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                        position=dict_["position"])
@@ -890,7 +896,8 @@ class Markdown(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
         return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                        position=dict_["position"])
@@ -939,7 +946,8 @@ class PlotData(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
         return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                        position=dict_["position"])
@@ -1028,6 +1036,7 @@ class GetModelAttribute(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
@@ -1081,6 +1090,7 @@ class SetModelAttribute(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
