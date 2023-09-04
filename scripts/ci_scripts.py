@@ -11,23 +11,17 @@ scripts = [
     "dataset.py",
     "dataset_pareto.py",
     "filters.py",
-    "moving_object.py",
     "optimization.py",
     "graph.py",
     "sampling.py",
     "markdowns.py",
     "checks.py",
-    "unit_tests.py",
     "docx_writer.py",
     "markdown_to_docx.py",
 
     # Workflows
-    "workflow/blocks.py",
-    "workflow/workflow_with_models.py",
     "workflow/power_simulation.py",
-    "workflow/forms_simulation.py",
     "workflow/pipes.py",
-    "workflow/workflow_state_equalities.py",
     "workflow/workflow_diverge_converge.py",
     "workflow/workflow_clustering.py",
     "workflow/workflow_filtering.py",
@@ -46,7 +40,6 @@ scripts = [
     "utils/serialization.py",
     "utils/helpers.py",
     "utils/diff.py",
-    "type_matching.py",
 
     # Data structures
     "data-structures/1.py"

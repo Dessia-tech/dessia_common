@@ -1,7 +1,6 @@
 """
 Tests for dessia_common.Dataset class (loadings, check_platform and plots)
 """
-# import json
 import random
 import numpy as npy
 from dessia_common.models import all_cars_wi_feat

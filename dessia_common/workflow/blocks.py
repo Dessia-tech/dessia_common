@@ -3,6 +3,7 @@
 """ Module to define Blocks for workflows. """
 
 import inspect
+import warnings
 from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
 import itertools
@@ -10,15 +11,14 @@ from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, 
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType, AttributeType
+from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
+                                   PlotDataType, MarkdownType)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow
+from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue, Workflow
 from dessia_common.workflow.utils import ToScriptElement
-
 
 T = TypeVar("T")
 
@@ -54,6 +54,21 @@ def output_from_function(function, name: str = "result output"):
         type_ = type_from_annotation(annotations['return'], function.__module__)
         return TypedVariable(type_=type_, name=name)
     return Variable(name=name)
+
+
+def set_block_variable_names_from_dict(func):
+    """ Inspect function arguments to compute black variable names. """
+    def func_wrapper(cls, dict_):
+        obj = func(cls, dict_)
+        if 'input_names' in dict_:
+            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
+                input_.name = input_name
+        if 'output_names' in dict_:
+            output_items = zip(dict_['output_names'], obj.outputs)
+            for output_name, output_ in output_items:
+                output_.name = output_name
+        return obj
+    return func_wrapper
 
 
 class BlockError(Exception):
@@ -603,16 +618,16 @@ class Display(Block):
 
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
+    _type = None
+    serialize = False
 
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
-                 selector: Optional[str] = None, type_: Optional[str] = None, position: Tuple[float, float] = None):
+                 selector: Optional[ViewType] = None, position: Tuple[float, float] = None):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
         self.load_by_default = load_by_default
-        self._type = type_
-        self._selector = selector
-        self.serialize = False
+        self.selector = selector
 
     @property
     def type_(self) -> str:
@@ -621,23 +636,17 @@ class Display(Block):
             return self._type
         raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
 
-    @property
-    def selector(self) -> str:
-        """ Get display's selector. """
-        if self._selector:
-            return self._selector
-        raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
-
     def _display_settings(self, block_index: int, reference_path: str = "#") -> DisplaySetting:
         """ Compute block's display settings. """
         arguments = {"block_index": block_index, "reference_path": reference_path}
-        return DisplaySetting(selector=None, type_=self.type_, method="block_display", serialize_data=self.serialize,
-                              arguments=arguments, load_by_default=self.load_by_default)
+        return DisplaySetting(selector=self.selector.name, type_=self.type_, method="block_display",
+                              serialize_data=self.serialize, arguments=arguments,
+                              load_by_default=self.load_by_default)
 
     def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
-        settings = object_._display_settings_from_selector(self.selector)
+        settings = object_._display_settings_from_selector(self.selector.name)
         return [attrmethod_getter(object_, settings.method)()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -656,13 +665,15 @@ class MultiPlot(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attributes: List[str], load_by_default: bool = True,
+    _type = "plot_data"
+    serialize = True
+
+    def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
-                         type_="plot_data", name=name, position=position)
+                         name=name, selector=selector, position=position)
         self.inputs[0].name = "Input List"
-        self.serialize = True
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -695,7 +706,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [[multiplot.to_dict()]]
+        return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -703,50 +714,147 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
-class CadView(Display):
+class DeprecatedCadView(Display):
     """
-    Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...).
+    Deprecated version of CadView block.
 
-    :param name: Name of the block.
-    :param position: Position of the block in canvas.
+    Steps to upgrade to new version (CadView) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type CadViewType instead of str
     """
+
+    _type = "babylon_data"
 
     def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "cad",
-                 type_: str = "babylon_data", position: Tuple[float, float] = None):
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of CadView Block is deprecated and should not be used anymore."
+                      "Please upgrade to CadView new version, instead. (see docstrings)", DeprecationWarning)
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
-                         type_=type_, name=name, position=position)
+                         name=name, position=position)
+
+
+class CadView(Display):
+    """ Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...). """
+
+    _type = "babylon_data"
+
+    def __init__(self, selector: CadViewType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "cad")
+        if isinstance(selector, str):
+            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+                                     position=dict_["position"])
+        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                       position=dict_["position"])
+
+
+class DeprecatedMarkdown(Display):
+    """
+    Deprecated version of Markdown block.
+
+    Steps to upgrade to new version (Markdown) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type MarkdownSelector instead of str.
+    """
+
+    _type = "markdown"
+
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "markdown",
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of 'Markdown' Block is deprecated and should not be used anymore."
+                      "Please upgrade to 'Markdown' new version, instead. (see docstrings)", DeprecationWarning)
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, position=position)
 
 
 class Markdown(Display):
-    """
-    Generate the markdown representation of an object.
+    """ Generate a Markdown representation of an object. """
 
-    :param name: Name of the block.
-    :param position: Position of the block in canvas.
+    _type = "markdown"
+
+    def __init__(self, selector: MarkdownType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "markdown")
+        if isinstance(selector, str):
+            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+                                     position=dict_["position"])
+        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                       position=dict_["position"])
+
+
+class DeprecatedPlotData(Display):
+    """
+    Deprecated version of PlotData block.
+
+    Steps to upgrade to new version (PlotData) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type PlotDataSelector instead of str.
     """
 
-    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "markdown",
-                 type_: str = "markdown", position: Tuple[float, float] = None):
+    _type = "plot_data"
+    serialize = True
+
+    def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
+                      "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
         input_ = TypedVariable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
-                         selector=selector, type_=type_, position=position)
+                         selector=selector, position=position)
 
 
 class PlotData(Display):
-    """
-    Generate a DisplayObject that is displayable in PlotData features. Uses the the input object's plot_data method.
+    """ Generate a PlotData representation of an object. """
 
-    :param name: Name of the block.
-    :param position: Position of the block in canvas.
-    """
+    _type = "plot_data"
+    serialize = True
 
-    def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
-                 type_: str = "plot_data", position: Tuple[float, float] = None):
+    def __init__(self, selector: PlotDataType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
-                         selector=selector, type_=type_, position=position)
-        self.serialize = True
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "plot_data")
+        if isinstance(selector, str):
+            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+                                     position=dict_["position"])
+        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                       position=dict_["position"])
 
 
 class ModelAttribute(Block):
@@ -843,7 +951,7 @@ class SetModelAttribute(Block):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         type_ = get_attribute_type(self.attribute_type.name, parameters)
-        inputs = [TypedVariable(type_= self.attribute_type.class_, name='Model')]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
         if type_:
             inputs.append(TypedVariable(type_=type_, 
                                         name=f'Value to insert for attribute {self.attribute_type.name}'))
@@ -1072,7 +1180,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                archive = generate_archive(zip_archive, value)
+                generate_archive(zip_archive, value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:

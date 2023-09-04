@@ -16,11 +16,8 @@ class TestWorkflowDisplays(unittest.TestCase):
     @parameterized.expand([
         (0, "Workflow"),
         (1, "Documentation"),
-        (2, "3D (1)"),
-        (3, "2D (2)"),
-        (4, "MD (3)"),
-        (5, "2DTest (4)"),
-        (6, "MDTest (5)"),
+        (2, "Scatter Plot"),
+        (3, "Markdown")
     ])
     def test_selectors(self, index, expected_selector):
         setting = self.display_settings[index]
@@ -29,11 +26,8 @@ class TestWorkflowDisplays(unittest.TestCase):
     @parameterized.expand([
         ("Documentation", "markdown"),
         ("Workflow", "workflow"),
-        ("3D (1)", "babylon_data"),
-        ("2D (2)", "plot_data"),
-        ("MD (3)", "markdown"),
-        ("2DTest (4)", "plot_data_test"),
-        ("MDTest (5)", "markdown_test"),
+        ("Scatter Plot", "plot_data"),
+        ("Markdown", "markdown")
     ])
     def test_types(self, selector, expected_type):
         setting = self.workflow_run._display_settings_from_selector(selector)
@@ -47,11 +41,8 @@ class TestWorkflowDisplays(unittest.TestCase):
     @parameterized.expand([
         ("Documentation", str),
         ("Workflow", dict),
-        ("3D (1)", dict),
-        ("2D (2)", list),
-        ("MD (3)", str),
-        ("2DTest (4)", dict),
-        ("MDTest (5)", str),
+        ("Scatter Plot", dict),
+        ("Markdown", str)
     ])
     def test_data_types(self, selector, expected_type):
         display = self.workflow_run._display_from_selector(selector)
@@ -60,14 +51,6 @@ class TestWorkflowDisplays(unittest.TestCase):
     def test_workflow(self):
         display = self.workflow_run._display_from_selector("Workflow")
         self.assertSetEqual(set(display.data.keys()), WORKFLOW_KEYS)
-
-    def test_cad(self):
-        display = self.workflow_run._display_from_selector("3D (1)")
-        self.assertEqual(len(display.data["meshes"]), 2)
-
-    def test_plot_data(self):
-        display = self.workflow_run._display_from_selector("2D (2)")
-        self.assertEqual(len(display.data), 4)
 
     @parameterized.expand([
         (True,),

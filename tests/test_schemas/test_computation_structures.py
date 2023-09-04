@@ -24,38 +24,31 @@ class TestStructures(unittest.TestCase):
 
     @parameterized.expand([
         (
-            MethodTypeProperty(annotation=MethodType[StandaloneObject], attribute="method"),
-            False, "MethodType[dessia_common.forms.StandaloneObject]", "dessia_common.forms.StandaloneObject"
-        ),
-        (
-            MethodTypeProperty(annotation=ClassMethodType[StandaloneObject], attribute="method"),
-            True, "ClassMethodType[dessia_common.forms.StandaloneObject]", "dessia_common.forms.StandaloneObject"
-        )
-    ])
-    def test_methods(self, schema, expected_classmethod, expected_typing, expected_class):
-        computed_schema = schema.to_dict()
-        self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["is_method"], True)
-        self.assertEqual(computed_schema["classmethod_"], expected_classmethod)
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
-        self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
-
-    @parameterized.expand([
-        (
             AttributeTypeProperty(annotation=AttributeType[StandaloneObject], attribute="attribute"),
-            False, "AttributeType[dessia_common.forms.StandaloneObject]", "dessia_common.forms.StandaloneObject"
+            "attributes", "AttributeType[dessia_common.forms.StandaloneObject]",
+            "dessia_common.forms.StandaloneObject"
         ),
         (
             AttributeTypeProperty(annotation=ClassAttributeType[StandaloneObject], attribute="attribute"),
-            True, "ClassAttributeType[dessia_common.forms.StandaloneObject]", "dessia_common.forms.StandaloneObject"
+            "class_attributes", "ClassAttributeType[dessia_common.forms.StandaloneObject]",
+            "dessia_common.forms.StandaloneObject"
+        ),
+        (
+            MethodTypeProperty(annotation=MethodType[StandaloneObject], attribute="method"),
+            "methods", "MethodType[dessia_common.forms.StandaloneObject]",
+            "dessia_common.forms.StandaloneObject"
+        ),
+        (
+            MethodTypeProperty(annotation=ClassMethodType[StandaloneObject], attribute="method"),
+            "class_methods", "ClassMethodType[dessia_common.forms.StandaloneObject]",
+            "dessia_common.forms.StandaloneObject"
         )
     ])
-    def test_attributes(self, schema, expected_classattr, expected_typing, expected_class):
+    def test_attributes(self, schema, expected_type, expected_typing, expected_class):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
         self.assertEqual(computed_schema["is_attribute"], True)
-        self.assertEqual(computed_schema["classattribute_"], expected_classattr)
+        self.assertEqual(computed_schema["attribute_type"], expected_type)
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
         self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
