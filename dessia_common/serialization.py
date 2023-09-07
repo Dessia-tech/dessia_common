@@ -69,15 +69,11 @@ class SerializableObject(CoreDessiaObject):
                        pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
+                                  pointers_memo=pointers_memo, path=path)
         if cls is not SerializableObject:
-            obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
+                                  pointers_memo=pointers_memo, path=path)
         raise NotImplementedError("No object_class in dict")
 
     @property
