@@ -901,7 +901,7 @@ class Markdown(Display):
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMarkdown(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                       position=dict_["position"])
-        selector = MarkdownType(selector)
+        selector = MarkdownType.dict_to_object(selector)
         return Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                         position=dict_["position"])
 
