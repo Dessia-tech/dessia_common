@@ -70,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chore
 
 - Fix Spelling (x2)
+- Pylint : Fix iterator error
 - Object : Add Backward Compatibality over method_dict to cover old frontend calls
 - Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
 

@@ -141,7 +141,7 @@ setup(
         "orjson>=3.8.0",
         "typeguard",
         "networkx",
-        "numpy<=1.24.0",
+        "numpy<1.24.0",
         "pandas",
         "mypy_extensions",
         "scipy<1.10.1",
