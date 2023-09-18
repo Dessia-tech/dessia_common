@@ -11,7 +11,6 @@ from setuptools import setup
 from os.path import dirname, isdir, join
 import re
 from subprocess import CalledProcessError, check_output
-import numpy
 
 
 def readme():
@@ -129,7 +128,6 @@ setup(
     author="Dessia Technologies SAS",
     author_email="root@dessia.tech",
     include_package_data=True,
-    include_dirs=numpy.get_include(),
     packages=[
         "dessia_common",
         "dessia_common.workflow",
