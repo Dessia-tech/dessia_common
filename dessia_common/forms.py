@@ -412,7 +412,8 @@ class StandaloneObject(MovingObject):
         computation = f"{nok_string} or {ok_string}"
 
         return computation
-        
+
+    @markdown_view(selector="Markdown", load_by_default=True)
     def to_markdown(self):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
@@ -518,14 +519,6 @@ class StandaloneObject(MovingObject):
 
         dataset2 = plot_data.Dataset(elements=elements2, name="I2 = f(t)")
         return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
-    
-    @markdown_view(selector="Markdown", load_by_default=True)
-    def markdown_test(self):
-        """ Write a standard markdown of StandaloneObject. """
-        contents = " # Ceci est un markdown test"
-        contents += "\n## Attribute Table\n\n"
-        contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
-        return contents
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
