@@ -16,7 +16,10 @@ RATCHET_COVERAGE = 3.
 untracked_modules = ["dessia_common/templates.py",
                      "dessia_common/utils.py",
                      "dessia_common/optimization.py",
-                     'workflows/forms_simulation.py']
+                     'workflows/forms_simulation.py',
+                     "utils/jsonschema.py",
+                     "utils/serialization.py"
+                     ]
 
 print("untracked modules:", untracked_modules)
 
@@ -31,12 +34,11 @@ if global_coverage < MIN_GLOBAL_COVERAGE:
     raise RuntimeError('Package is not covered enough by tests: {}% expected minimum {}%'.format(
         global_coverage, MIN_GLOBAL_COVERAGE))
 
-print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to maximum {global_coverage}% (actual {MIN_GLOBAL_COVERAGE}%)')
+print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to {global_coverage}% (current: {MIN_GLOBAL_COVERAGE}%)')
 
 min_actual_coverage = 100
 for file_name, data in d['files'].items():
     print(file_name, data['summary']['percent_covered'], '%')
-    # print('/'.join(file_name.split('/')[-2:]))
     if '/'.join(file_name.split('/')[-2:]) in untracked_modules:
         print(file_name, '-> in untrack list')
     else:
@@ -50,5 +52,4 @@ for file_name, data in d['files'].items():
 if min_actual_coverage > MIN_MODULE_COVERAGE + RATCHET_COVERAGE:
     raise RuntimeError(f'MIN_MODULE_COVERAGE is too low: raise it to maximum {min_actual_coverage}')
 
-print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to \
-      maximum {min_actual_coverage}% (actual:{MIN_MODULE_COVERAGE})%')
+print(f'[Coverage] You can increase MIN_MODULE_COVERAGE to {min_actual_coverage}% (current: {MIN_MODULE_COVERAGE})%')

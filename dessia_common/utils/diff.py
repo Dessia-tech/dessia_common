@@ -8,7 +8,8 @@ from typing import List
 import numpy as npy
 from dessia_common import FLOAT_TOLERANCE
 import dessia_common.core as dc
-from dessia_common.utils.types import isinstance_base_types, is_sequence, full_classname
+from dessia_common.utils.types import isinstance_base_types, is_sequence
+from dessia_common.utils.helpers import full_classname
 from dessia_common.files import BinaryFile, StringFile
 
 
@@ -138,7 +139,7 @@ def diff(value1, value2, path='#'):
 
 
 def dict_diff(dict1, dict2, path='#'):
-    """ Returns diff between two dicts. """
+    """ Returns diff between two dictionaries. """
     diff_object = Diff([], [], [])
 
     dict_ = dict1
@@ -225,7 +226,7 @@ def data_eq(value1, value2):
 
 
 def dict_data_eq(dict1, dict2):
-    """ Returns if two dicts are equal on data equality. """
+    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
     for key, value in dict1.items():
         if key not in dict2:
             return False
@@ -279,7 +280,7 @@ def dict_hash(dict_):
     """
     Returns hash of a dict value.
 
-    If keys are orderable, only checks for first and last elements hashes if defined for performance purpose.
+    If keys can be ordered, only checks for first and last elements hashes if defined for performance purpose.
     """
     if not dict_:
         return 0
@@ -289,7 +290,7 @@ def dict_hash(dict_):
         # Try and sort keys in order to get first and last elements.
         sorted_keys = sorted(dict_.keys())
     except TypeError:
-        # Old less efficient hash for non orderable keys.
+        # Old less efficient hash for non order-able keys.
         for key, value in dict_.items():
             hash_ += hash(key) + choose_hash(value)
         return hash_

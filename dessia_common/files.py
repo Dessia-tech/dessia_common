@@ -28,6 +28,15 @@ class BinaryFile(io.BytesIO):
         return template
 
     @classmethod
+    def from_file(cls, filepath: str):
+        """ Get a file from a binary file. """
+        with open(filepath, 'rb') as file:
+            stream = cls()
+            stream.write(file.read())
+            stream.seek(0)
+            return stream
+
+    @classmethod
     def save_template_to_file(cls, filename):
         """ Save template of class into a file. """
         if cls.extension and not filename.endswith(cls.extension):
@@ -77,6 +86,15 @@ class StringFile(io.StringIO):
         stream.write(stream_file.read().decode('utf-8'))
         stream.seek(0)
         return stream
+
+    @classmethod
+    def from_file(cls, filepath: str):
+        """ Get a file from a file. """
+        with open(filepath, 'r', encoding='utf-8') as file:
+            stream = cls()
+            stream.write(file.read())
+            stream.seek(0)
+            return stream
 
     @classmethod
     def save_template_to_file(cls, filename):
@@ -176,3 +194,28 @@ class JsonFile(StringFile):
     """ A .json extended file. """
 
     extension = "json"
+
+
+class DocFile(BinaryFile):
+    """ Base class for Word files in old format. """
+
+    extension = 'doc'
+
+
+class DocxFile(BinaryFile):
+    """ Base class for Word files in new XML format. """
+
+    extension = 'docx'
+
+
+def generate_archive(zip_archive, value):
+    """ Write the contents of a file-like object to a ZipFile archive. """
+    if isinstance(value, StringFile):
+        with zip_archive.open(value.filename, 'w') as file:
+            file.write(value.getvalue().encode('utf-8'))
+    elif isinstance(value, BinaryFile):
+        with zip_archive.open(value.filename, 'w') as file:
+            file.write(value.getbuffer())
+    else:
+        raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+    return file

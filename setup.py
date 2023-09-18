@@ -124,7 +124,7 @@ setup(
     long_description=readme(),
     long_description_content_type='text/markdown',
     keywords=["Dessia", "SDK", "engineering"],
-    url="https://github.com/Dessia-tech/dessia-common",
+    url="https://github.com/Dessia-tech/dessia_common",
     author="Dessia Technologies SAS",
     author_email="root@dessia.tech",
     include_package_data=True,
@@ -134,13 +134,14 @@ setup(
         "dessia_common.utils",
         "dessia_common.models",
         "dessia_common.models.workflows",
-        "dessia_common.datatools"
+        "dessia_common.datatools",
+        "dessia_common.schemas"
     ],
     install_requires=[
         "orjson>=3.8.0",
         "typeguard",
         "networkx",
-        "numpy<=1.24.0",
+        "numpy<1.24.0",
         "pandas",
         "mypy_extensions",
         "scipy<1.10.1",
@@ -151,7 +152,9 @@ setup(
         "parameterized",
         "matplotlib",
         "scikit-learn>=1.2.0",
-        "cma"
+        "cma",
+        "docx",
+        "python-docx"
     ],
     python_requires=">=3.8",
 )
