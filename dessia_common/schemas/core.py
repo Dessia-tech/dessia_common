@@ -421,7 +421,7 @@ class TypingProperty(Property):
         """ Deserialize arguments. """
         rawargs = cls._raw_args_from_serialized(serialized)
         args = extract_args(rawargs)
-        return tuple([deserialize_annotation(a) for a in args])
+        return tuple(deserialize_annotation(a) for a in args)
 
     @classmethod
     def unfold_serialized_annotation(cls, serialized: str):
