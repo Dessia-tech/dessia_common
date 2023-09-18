@@ -803,6 +803,7 @@ class MultiPlot(Display):
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
         return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
                          load_by_default=dict_["load_by_default"], position=dict_["position"])
 
@@ -851,6 +852,7 @@ class CadView(Display):
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
+        selector = CadViewType.dict_to_object(selector)
         return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                        position=dict_["position"])
 
@@ -897,10 +899,11 @@ class Markdown(Display):
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
             load_by_default = dict_.get("load_by_default", False)
-            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
-                                     position=dict_["position"])
-        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                       position=dict_["position"])
+            return DeprecatedMarkdown(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = MarkdownType.dict_to_object(selector)
+        return Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
 
 
 class DeprecatedPlotData(Display):
@@ -947,10 +950,11 @@ class PlotData(Display):
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
             load_by_default = dict_.get("load_by_default", False)
-            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
-                                     position=dict_["position"])
-        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                       position=dict_["position"])
+            return DeprecatedPlotData(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
+        return PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
 
 
 class ModelAttribute(Block):
@@ -1003,7 +1007,7 @@ class GetModelAttribute(Block):
         if type_:
             outputs = [TypedVariable(type_=type_, name='Model attribute')]  
         else:
-            outputs=[Variable(name='Model attribute')]
+            outputs = [Variable(name='Model attribute')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
