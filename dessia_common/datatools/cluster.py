@@ -104,7 +104,7 @@ class ClusteredDataset(Dataset):
 
     def clustered_sublists(self):
         """
-        Split a ClusteredDataset of labelled DessiaObjects into aClusteredDatasetet of labelled Datasets.
+        Split a ClusteredDataset of labeled DessiaObjects into a ClusteredDatasetet of labeled Datasets.
 
         :return: A ClusteredDataset of length n_cluster that store each cluster in a Dataset. Labels are \
             the labels of each cluster, i.e. stored Dataset
@@ -121,9 +121,9 @@ class ClusteredDataset(Dataset):
         ClusteredDataset ex_split: 3 samples, 2 features, 3 clusters
         |   n°   |   Name   |   Common_attributes   |
         ---------------------------------------------
-        |      0 |     ex_0 |['mpg', 'displacemen...|
-        |      1 |     ex_1 |['mpg', 'displacemen...|
-        |      2 |     ex_2 |['mpg', 'displacemen...|
+        |      0 |     ex_0 |['mpg', 'displacement...|
+        |      1 |     ex_1 |['mpg', 'displacement...|
+        |      2 |     ex_2 |['mpg', 'displacement...|
         >>> print(split_clist[3][:3])
         Dataset ex_3: 3 samples, 5 features
         |   Mpg   |   Displacement   |   Horsepower   |   Weight   |   Acceleration   |
@@ -409,14 +409,14 @@ class ClusteredDataset(Dataset):
         """
         K-Means clustering on Dataset.
 
-        The KMeans algorithm clusters data by trying to separate samples in n groups of equal variance,
+        The K Means algorithm clusters data by trying to separate samples in n groups of equal variance,
         minimizing a criterion known as the inertia or within-cluster sum-of-squares (see below).
         This algorithm requires the number of clusters to be specified. It scales well to large number
         of samples and has been used across a large range of application areas in many different fields.
         The k-means algorithm divides a set of samples into disjoint clusters , each described by the mean
         of the samples in the cluster. The means are commonly called the cluster “centroids”; note that
         they are not, in general, points from, although they live in the same space.
-        The K-means algorithm aims to choose centroids that minimise the inertia, or within-cluster
+        The K-means algorithm aims to choose centroids that minimize the inertia, or within-cluster
         sum-of-squares criterion.
 
         See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
@@ -516,24 +516,21 @@ class ClusteredDataset(Dataset):
     @classmethod
     def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
         """
-        Get successive pareto sheets where each label is the index of a pareto sheet put them in a `ClusteredDataset`.
+        Get successive Pareto sheets where each label is the index of a Pareto sheet put them in a `ClusteredDataset`.
 
-        A pareto sheet is defined as the optimal points in a DOE for a pre-computed costs.
+        A Pareto sheet is defined as the optimal points in a DOE for already computed costs.
 
-        :param h_list:
-            The Dataset in which to pick optimal points.
+        :param h_list: The Dataset in which to pick optimal points.
         :type h_list: Dataset
 
-         :param costs_columns:
-             List of columns' indexes or attributes on which costs are stored in current Dataset
+         :param costs_columns: List of columns' indexes or attributes on which costs are stored in current Dataset
          :type costs_columns: `List[str]`
 
-        :param nb_sheets:
-            Number of pareto sheets to pick
+        :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
 
-        :return: a ClusteredDataset where each element is labelled with its pareto_sheet. Elements outside a
-        pareto_sheet are labeled `n_sheets`
+        :return: a ClusteredDataset where each element is labeled with its Pareto sheet. Elements outside a
+            Pareto sheet are labeled `n_sheets`
         :rtype: ClusteredDataset
         """
         labels = []
@@ -594,18 +591,3 @@ class ClusteredDataset(Dataset):
         """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)
-
-# Function to implement, to find a good eps parameter for dbscan
-# def nearestneighbors(self):
-#     vectors = []
-#     for machine in self.machines:
-#         vector = machine.to_vector()
-#         vectors.append(vector)
-#     neigh = NearestNeighbors(n_neighbors=14)
-#     vectors = StandardScaler().fit_transform(vectors)
-#     nbrs = neigh.fit(vectors)
-#     distances, indices = nbrs.kneighbors(vectors)
-#     distances = npy.sort(distances, axis=0)
-#     distances = distances[:, 1]
-#     plt.plot(distances)
-#     plt.show()

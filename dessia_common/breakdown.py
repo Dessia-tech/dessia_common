@@ -8,6 +8,7 @@ import collections
 import collections.abc
 import numpy as npy
 
+from dessia_common import REF_MARKER, OLD_REF_MARKER
 import dessia_common.serialization as dcs
 import dessia_common.utils.types as dct
 
@@ -79,15 +80,21 @@ def get_in_object_from_path(object_, path, evaluate_pointers=True):
     segments = path.lstrip('#/').split('/')
     element = object_
     for segment in segments:
-        if isinstance(element, dict) and '$ref' in element:
-            # Going down in the object and it is a reference
-            # Evaluating subreference
+        if isinstance(element, dict):
+            # Going down in the object and it is a reference : evaluating sub-reference
             if evaluate_pointers:
-                try:
-                    element = get_in_object_from_path(object_, element['$ref'])
-                except RecursionError as err:
-                    err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
-                    raise RecursionError(err_msg) from err
+                if REF_MARKER in element:
+                    try:
+                        element = get_in_object_from_path(object_, element[REF_MARKER])
+                    except RecursionError as err:
+                        err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                        raise RecursionError(err_msg) from err
+                elif OLD_REF_MARKER in element:  # Retro-compatibility to be remove sometime
+                    try:
+                        element = get_in_object_from_path(object_, element[OLD_REF_MARKER])
+                    except RecursionError as err:
+                        err_msg = f'Cannot get segment {segment} from path {path} in element {str(element)[:500]}'
+                        raise RecursionError(err_msg) from err
 
         try:
             element = extract_segment_from_object(element, segment)
@@ -128,7 +135,6 @@ def merge_breakdown_dicts(dict1, dict2):
                         dict3[class_name][obj] = path
                 else:
                     dict3[class_name][obj] = path
-            # dict3[class_name].update(refs)
         else:
             dict3[class_name] = refs
     return dict3
@@ -137,13 +143,8 @@ def merge_breakdown_dicts(dict1, dict2):
 def breakdown(obj, path=''):
     """ Breakdown object as a dict. """
     bd_dict = {}
-    if obj is None:
-        return bd_dict
 
-    if isinstance(obj, (str, float, int)):
-        return bd_dict
-
-    if isinstance(obj, npy.ndarray):
+    if obj is None or isinstance(obj, (str, float, int, npy.ndarray)):
         return bd_dict
 
     if isinstance(obj, (list, tuple, set)):
@@ -162,18 +163,17 @@ def breakdown(obj, path=''):
             bd_dict = merge_breakdown_dicts(bd_dict, breakdown(value, path2))
     else:
         # Put object and break it down
-        if path:  # avoid to get root object
-            if hasattr(obj, '__dict__'):
-                classname = obj.__class__.__name__
-                if classname in bd_dict:
-                    if obj in bd_dict[classname]:
-                        if len(path.split('.')) < len(bd_dict[classname][obj].split('.')):
-                            bd_dict[classname][obj] = path
-                    else:
+        if path and hasattr(obj, '__dict__'):  # avoid to get root object
+            classname = obj.__class__.__name__
+            if classname in bd_dict:
+                if obj in bd_dict[classname]:
+                    if len(path.split('.')) < len(bd_dict[classname][obj].split('.')):
                         bd_dict[classname][obj] = path
                 else:
-                    bd_dict[classname] = collections.OrderedDict()
                     bd_dict[classname][obj] = path
+            else:
+                bd_dict[classname] = collections.OrderedDict()
+                bd_dict[classname][obj] = path
 
         bd_dict = merge_breakdown_dicts(bd_dict, object_breakdown(obj, path=path))
 
@@ -240,9 +240,6 @@ def deep_getsizeof(obj, ids=None):
 
     if isinstance(obj, str):
         return result
-
-    # if isinstance(o, collections.Mapping):
-    #     return r + sum(d(k, ids) + d(v, ids) for k, v in o.items())
 
     if isinstance(obj, collections.abc.Mapping):
         return result + sum(dgso(k, ids) + dgso(v, ids) for k, v in obj.items())

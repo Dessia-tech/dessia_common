@@ -45,7 +45,7 @@ If you want the object to be reinserted as a pointer elsewhere, you should put i
 
         # If object is in the memo, inserting the pointer
         if use_pointers and self in memo:
-            return {'$ref': memo[self]}
+            return {'ref__': memo[self]}
 
         # init dict
         dict_ = self.base_dict()

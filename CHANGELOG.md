@@ -5,18 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.14.0
+
+### Added
+
+- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
+- Blocks : Display blocks are now more configurable (Custom selector)
+- DessiaObject: Add type to load_from_file method
+- Displays: Displays can now be defined with decorators
+- Document generator: add new class Table
+- Files: .doc & .docx files typings
+- Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor: add more Error Checks
+- Schemas refactor: add a json export to method schemas for low-code implementations
+- Schemas refactor: add default value to method types
+- Schemas refactor: add standalone in db property
+- Schemas refactor: Add support for Display View Types
+- Schemas refactor: Mutualize Display View Types and Attribute Types
+- Typings : add AttributeType, ClassAttributeType and View Types
+- Workflow : add Tasks display
+
 
 ### Changed
+ 
+- Blocks: Add the possibility to have TypedValue in SetModelAttribute
+- Blocks: ! Display blocks definition have changed to adapt to new View Decorator paradigm
+- DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
+- Document generator: add new module to write in docx file
+- Export: export all 3d formats in zip file
+- Files: add functions to init StringFile and BinaryFile from local path
+- MarkdownWriter: add some functions (table_of_contents, header)
+- Workflow : WorkflowRun now has smart display by default computation
+  - Documentation is disabled when at least one block is displayed by default, enabled otherwise
+  - Workflow always shows Documentation and its Display by default
+- Default color of Dataset points from blue to grey to make the difference between selected points and the other ones
+
+
+### Fixed
+
+- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
+- Exports : Add trailing line at the end of JSON export
+- Schemas refactor : allow incomplete schemas
+- Schemas refactor : old jsonschema with magic Method Type serialized value
+- Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+- Workflow: propagate progress_callback to blocks
+
+### Refactored
+
+- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- Remove Any support in schemas
+- Use of Schemas to serialize typings
+- Change serialize_typing function name to serialize_annotation
+- Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- Check Platform is now verbose and split into several functions
+- Document generator : Refactor document_generator module
+- Workflow : to_dict method do not use pointers anymore
+- Workflow : Remove some attributes from serialization
+
+
+### Removed
+
+- Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
+
+### Chore
+
+- Fix Spelling (x2)
+- Pylint : Fix iterator error
+- Object : Add Backward Compatibality over method_dict to cover old frontend calls
+- Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
+
+
+
+## 0.13.3
+
+### Changed
+
 - package_version is removed from serialization
-- License changed from GPL to Lesser GPL 
+- License changed from GPL to Lesser GPL
+- Add rotation speed in measures
 
 ### Fix
+
 - Workflow name correction: correct the name if it contains an apostrophe.
 
-## 0.13.2 [released 03/01/2023]
+
+## 0.13.2
+
+### Added 
+
+- Display settings now have load_by_default config option
 
 ### Fix
+
 - Workflow state/run to_dict fix on adding references
 - Handle serialization pointers of non-standalone objects
 - hash fix: calling hash instead of data hash in eq.
@@ -25,18 +105,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
-- WorkflowRun settings now sets the right method to call for workflow display
 - Handle serialization pointers of non-standalone objects
+- WorkflowRun settings now sets the right method to call for workflow display
+
 
 ## 0.13.0 [02/14/2023]
 
+
+### Chore
+
+- Tag for release candidate
+- Toggle some D2xx errors
+
 ### Fix
+
 - Do not take into account non-eq attributes
 
 ### CI
 
 - tutorials/ci_tutorials.py added to check runnability of .ipynb files inside this new folder
 - automatic upload of coverage
+- spellcheck with pyenchant integrated to pylint
 - fixing versions of pylint and pydocstyle to avoid uncontrolled new errors
 
 ### Performance
@@ -60,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.12.0 [released 01/20/2023]
 
+
 ### Changed
 
 - Reference path is now given all the way down to plot_data
@@ -82,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - add a check to enforce update of changelog in PR
 - code_pydocstyle.py checks daily instead of weekly
+- Add a time decrease effect for pylint
 
 ### Performance
 
