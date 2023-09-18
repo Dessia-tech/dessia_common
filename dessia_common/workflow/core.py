@@ -1396,7 +1396,9 @@ class Workflow(Block):
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
-               f"{self_script.declaration}"
+               f"{self_script.declaration}\n" \
+               f'documentation = """{self.documentation}"""' \
+               f"\n\nworkflow.documentation = documentation\n"
 
     def pipes_to_script(self, prefix, imports):
         """ Set pipes to script. """
