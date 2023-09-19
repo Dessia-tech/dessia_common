@@ -105,9 +105,7 @@ class TypedVariable(Variable):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
-                       **kwargs) -> 'TypedVariable':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariable':
         """
         Compute variable from dict.
 
@@ -726,12 +724,13 @@ class Workflow(Block):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
-                       **kwargs) -> 'Workflow':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Workflow':
         """ Recompute the object from a dict. """
+        pointers_memo = kwargs["pointers_memo"]
+        global_dict = kwargs["global_dict"]
         if pointers_memo is None or global_dict is None:
-            global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
+            global_dict, pointers_memo = update_pointers_data(global_dict=global_dict,
+                                                              current_dict=dict_,
                                                               pointers_memo=pointers_memo)
 
         workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
@@ -1430,8 +1429,7 @@ class ExecutionInfo(DessiaObject):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#', **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Deserialize the ExecutionInfo. """
         index_to_block = kwargs['index_to_block']
         before_block_memory_usage = [(index_to_block[int(i)], m) for i, m in dict_["before_block_memory_usage"]]
@@ -1443,9 +1441,8 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        after_block_memory_usage = {b: m for b, m in self.after_block_memory_usage}
-        for block, mem_start in self.before_block_memory_usage:
-            mem_end = after_block_memory_usage[block]
+        for block, mem_start in dict(self.after_block_memory_usage):
+            mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
                                   f"{humanize.naturalsize(mem_diff)}"))
@@ -1705,7 +1702,8 @@ class WorkflowState(DessiaObject):
 
         # Output value: priority for reference before values
         if self.output_value is not None:
-            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo, path='#/output_value')
+            serialized_output_value, memo = serialize_with_pointers(self.output_value, memo=memo,
+                                                                    path='#/output_value')
             dict_['output_value'] = serialized_output_value
 
         dict_['evaluated_blocks_indices'] = [i for i, b in enumerate(self.workflow.blocks)
@@ -1717,7 +1715,8 @@ class WorkflowState(DessiaObject):
         dict_['evaluated_variables_indices'] = [self.workflow.variable_indices(v) for v in self.workflow.variables
                                                 if v in self.activated_items and self.activated_items[v]]
 
-        dict_.update({'start_time': self.start_time, 'end_time': self.end_time, 'log': self.log})
+        dict_["log"] = self.log
+
         return dict_
 
     def add_input_value(self, input_index: int, value):

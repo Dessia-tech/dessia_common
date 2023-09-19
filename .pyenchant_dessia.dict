@@ -3,6 +3,7 @@ agglomerative
 backend
 BinaryFile
 bool
+boolean
 boolarg
 builtins
 classmethod
@@ -42,6 +43,7 @@ gt
 gte
 init
 intarg
+instantiation
 iterable
 itertools
 json
@@ -59,11 +61,13 @@ Mahalanobis
 matchable
 matplotlib
 Minkowski
+Mongodb
 nbv
 ndarray
 networkx
 numpy
 Openpyxl
+optimizer
 orjson
 Pycharm
 rtype
@@ -78,6 +82,7 @@ StringFile
 stringified
 stringify
 Stringify
+subclass
 submodule
 subobjects
 subscriptable

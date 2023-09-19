@@ -191,14 +191,12 @@ class ClassMethod(Block):
         return ToScriptElement(declaration=script, imports=imports)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
-        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
-                                      pointers_memo=pointers_memo, path=path)
+        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class ModelMethod(Block):
@@ -282,14 +280,12 @@ class ModelMethod(Block):
         return ToScriptElement(declaration=script, imports=imports)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
-        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
-                                      pointers_memo=pointers_memo, path=path)
+        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class Sequence(Block):
@@ -793,8 +789,7 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "Multiplot")
         print("SELECTOR", selector)
@@ -844,8 +839,7 @@ class CadView(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "cad")
         if isinstance(selector, str):
@@ -893,8 +887,7 @@ class Markdown(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
@@ -944,8 +937,7 @@ class PlotData(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
@@ -1038,14 +1030,12 @@ class GetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=imports)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
-        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
-                                      pointers_memo=pointers_memo, path=path)
+        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class SetModelAttribute(Block):
@@ -1092,14 +1082,12 @@ class SetModelAttribute(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Backward compatibility for old versions of blocks. """
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
-        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
-                                      pointers_memo=pointers_memo, path=path)
+        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class Sum(Block):
@@ -1284,9 +1272,7 @@ class Archive(Block):
 
     @classmethod
     @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
-                       **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Custom dict_to_object method. """
         return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
                    name=dict_['name'], position=dict_.get('position'))

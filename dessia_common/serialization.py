@@ -65,15 +65,14 @@ class SerializableObject(CoreDessiaObject):
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#', **kwargs) -> 'SerializableObject':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SerializableObject':
+    # def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+    #                    pointers_memo: Dict[str, Any] = None, path: str = '#', **kwargs) -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            return dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, **kwargs)
         if cls is not SerializableObject:
-            return dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, class_=cls, **kwargs)
         raise NotImplementedError("No object_class in dict")
 
     @property
