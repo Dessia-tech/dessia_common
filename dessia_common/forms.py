@@ -240,6 +240,7 @@ class StandaloneObject(MovingObject):
     _generic_eq = True
     _allowed_methods = ["add_standalone_object", "count_until", "add_float",
                         "generate_from_text", "generate_from_bin", "method_without_arg", "ill_defined_method"]
+    _non_serializable_attributes = ["samples"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
