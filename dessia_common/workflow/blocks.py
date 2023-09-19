@@ -190,6 +190,16 @@ class ClassMethod(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class ModelMethod(Block):
     """
@@ -270,6 +280,16 @@ class ModelMethod(Block):
                    full_classname(object_=self.method_type.class_, compute_for='class'),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
 
 
 class Sequence(Block):
@@ -655,6 +675,65 @@ class Display(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
+class DeprecatedMultiPlot(Display):
+    """
+    Generate a Multi plot which axes will be the given attributes.
+
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
+        Can be deep attributes with the '/' separator.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    type_ = "plot_data"
+
+    def __init__(self, attributes: List[str], load_by_default: bool = True,
+                 name: str = "", position: Tuple[float, float] = None):
+        self.attributes = attributes
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, position=position)
+        self.inputs[0].name = "Input List"
+        self.serialize = True
+
+    def equivalent(self, other):
+        """ Return whether if the block is equivalent to the other given. """
+        same_attributes = self.attributes == other.attributes
+        return Block.equivalent(self, other) and same_attributes
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return sum(len(a) for a in self.attributes)
+
+    def evaluate(self, values, **kwargs):
+        """ Create MultiPlot from block configuration. Handle reference path. """
+        reference_path = kwargs.get("reference_path", "#")
+        import plot_data
+        objects = values[self.inputs[self._displayable_input]]
+        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                   for i, o in enumerate(objects)]
+        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                     for i, o in enumerate(objects)]
+        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+
+        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                        elements=samples2d, name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
+        plots = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
+                                            coords=[(0, 0), (0, 300)], name='Results plot')
+        return [multiplot.to_dict()]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
 class MultiPlot(Display):
     """
     Generate a Multi plot which axes will be the given attributes.
@@ -713,6 +792,21 @@ class MultiPlot(Display):
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "Multiplot")
+        print("SELECTOR", selector)
+        if isinstance(selector, str):
+            print("DEPRECATE")
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
+                                       load_by_default=load_by_default, position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
+        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+                         load_by_default=dict_["load_by_default"], position=dict_["position"])
+
 
 class DeprecatedCadView(Display):
     """
@@ -755,8 +849,10 @@ class CadView(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "cad")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
+        selector = CadViewType.dict_to_object(selector)
         return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                        position=dict_["position"])
 
@@ -802,10 +898,12 @@ class Markdown(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
-                                     position=dict_["position"])
-        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                       position=dict_["position"])
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedMarkdown(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = MarkdownType.dict_to_object(selector)
+        return Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
 
 
 class DeprecatedPlotData(Display):
@@ -851,10 +949,12 @@ class PlotData(Display):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
-            return DeprecatedCadView(name=dict_["name"], load_by_default=dict_["load_by_default"], selector=selector,
-                                     position=dict_["position"])
-        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                       position=dict_["position"])
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedPlotData(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
+        return PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
 
 
 class ModelAttribute(Block):
@@ -907,7 +1007,7 @@ class GetModelAttribute(Block):
         if type_:
             outputs = [TypedVariable(type_=type_, name='Model attribute')]  
         else:
-            outputs=[Variable(name='Model attribute')]
+            outputs = [Variable(name='Model attribute')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -937,12 +1037,22 @@ class GetModelAttribute(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class SetModelAttribute(Block):
     """
     Block to set an attribute value in a workflow.
 
-    :param attribute_name: Name of the attribute to set.
+    :param attribute_type: AttributeType variable that contain the model and the name of the attribute to select.
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
@@ -953,12 +1063,11 @@ class SetModelAttribute(Block):
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
         if type_:
-            inputs.append(TypedVariable(type_=type_, 
-                                        name=f'Value to insert for attribute {self.attribute_type.name}'))
+            inputs.append(TypedVariable(type_=type_, name=f'Value to insert for attribute {self.attribute_type.name}'))
         else:
             inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
-        outputs = [TypedVariable(type_=self.attribute_type.class_, 
-                                    name=f'Model with changed attribute {self.attribute_type.name}')]
+        outputs = [TypedVariable(type_=self.attribute_type.class_,
+                                 name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -981,6 +1090,16 @@ class SetModelAttribute(Block):
                  f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
 
 
 class Sum(Block):
