@@ -523,7 +523,7 @@ class Workflow(Block):
         if memo is None:
             memo = {}
 
-        blocks = [b.__deepcopy__() for b in self.blocks]
+        blocks = [deepcopy_value(b, memo) for b in self.blocks]
         output_adress = self.variable_indices(self.output)
         if output_adress is None:
             output = None
@@ -1401,8 +1401,8 @@ class ExecutionInfo(DessiaObject):
     """ Workflow execution information: start & end date, memory consumption. """
 
     def __init__(self, start_time: float = None, end_time: float = None,
-                 before_block_memory_usage: Dict[Block, int] = None,
-                 after_block_memory_usage: Dict[Block, int] = None):
+                 before_block_memory_usage: List[Tuple[Block, int]] = None,
+                 after_block_memory_usage: List[Tuple[Block, int]] = None):
 
         if start_time is None:
             start_time = time.time()
@@ -1411,11 +1411,11 @@ class ExecutionInfo(DessiaObject):
         self.end_time = end_time
 
         if before_block_memory_usage is None:
-            before_block_memory_usage = {}
+            before_block_memory_usage = []
         self.before_block_memory_usage = before_block_memory_usage
 
         if after_block_memory_usage is None:
-            after_block_memory_usage = {}
+            after_block_memory_usage = []
         self.after_block_memory_usage = after_block_memory_usage
 
         DessiaObject.__init__(self, name="")
@@ -1433,10 +1433,8 @@ class ExecutionInfo(DessiaObject):
         dict_ = {"start_time": self.start_time,
                  "end_time": self.end_time}
         block_indices = kwargs['block_indices']
-        print(self.before_block_memory_usage)
-        print(block_indices)
-        dict_["before_block_memory_usage"] = {block_indices[b]: m for b, m in self.before_block_memory_usage.items()}
-        dict_["after_block_memory_usage"] = {block_indices[b]: m for b, m in self.after_block_memory_usage.items()}
+        dict_["before_block_memory_usage"] = [(block_indices[b], m) for b, m in self.before_block_memory_usage]
+        dict_["after_block_memory_usage"] = [(block_indices[b], m) for b, m in self.after_block_memory_usage]
 
         return dict_
 
@@ -1445,8 +1443,8 @@ class ExecutionInfo(DessiaObject):
                        pointers_memo: Dict[str, Any] = None, path: str = '#', **kwargs):
         """ Deserialize the ExecutionInfo. """
         index_to_block = kwargs['index_to_block']
-        before_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["before_block_memory_usage"].items()}
-        after_block_memory_usage = {index_to_block[int(i)]: m for i, m in dict_["after_block_memory_usage"].items()}
+        before_block_memory_usage = [(index_to_block[int(i)], m) for i, m in dict_["before_block_memory_usage"]]
+        after_block_memory_usage = [(index_to_block[int(i)], m) for i, m in dict_["after_block_memory_usage"]]
         return cls(start_time=dict_["start_time"], end_time=dict_["end_time"],
                    before_block_memory_usage=before_block_memory_usage,
                    after_block_memory_usage=after_block_memory_usage)
@@ -1455,7 +1453,8 @@ class ExecutionInfo(DessiaObject):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         blocks = kwargs["blocks"]
         table_content = []
-        for block in blocks:
+        blocks_after_block_memory_usage = {b: m for b,m in self.after_block_memory_usage.items()}
+        for block, _ in self.before_block_memory_usage:
             mem_start = self.before_block_memory_usage[block]
             mem_end = self.after_block_memory_usage[block]
             mem_diff = mem_end - mem_start
@@ -1525,10 +1524,11 @@ class WorkflowState(DessiaObject):
             else:
                 raise ValueError(f"WorkflowState Copy Error : item {item} cannot be activated")
             activated_items[copied_item] = value
+        copied_execution_info = self.execution_info.copy(deep=True, memo=memo)
         workflow_state = self.__class__(workflow=workflow, input_values=input_values, activated_items=activated_items,
                                         values=values,
                                         output_value=deepcopy_value(value=self.output_value, memo=memo),
-                                        log=self.log, execution_info=self.execution_info, name=self.name)
+                                        log=self.log, execution_info=copied_execution_info, name=self.name)
         return workflow_state
 
     def _data_hash(self):
@@ -1936,9 +1936,9 @@ class WorkflowState(DessiaObject):
             local_values[input_] = value
 
         kwargs['progress_callback'] = progress_callback
-        self.execution_info.before_block_memory_usage[block] = int(psutil.Process().memory_info().vms)
+        self.execution_info.before_block_memory_usage.append((block, int(psutil.Process().memory_info().vms)))
         output_values = block.evaluate(local_values, **kwargs)
-        self.execution_info.after_block_memory_usage[block] = int(psutil.Process().memory_info().vms)
+        self.execution_info.after_block_memory_usage.append((block, int(psutil.Process().memory_info().vms)))
         self._activate_block(block=block, output_values=output_values)
 
         # Updating progress
