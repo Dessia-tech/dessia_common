@@ -1438,12 +1438,10 @@ class ExecutionInfo(DessiaObject):
 
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
-        blocks = kwargs["blocks"]
         table_content = []
-        blocks_after_block_memory_usage = {b: m for b,m in self.after_block_memory_usage.items()}
-        for block, _ in self.before_block_memory_usage:
-            mem_start = self.before_block_memory_usage[block]
-            mem_end = self.after_block_memory_usage[block]
+        after_block_memory_usage = {b: m for b, m in self.after_block_memory_usage}
+        for block, mem_start in self.before_block_memory_usage:
+            mem_end = after_block_memory_usage[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
                                   f"{humanize.naturalsize(mem_diff)}"))
@@ -2114,8 +2112,12 @@ class WorkflowRun(WorkflowState):
         """ Render to markdown the WorkflowRun. """
         template = dessia_common.templates.workflow_run_markdown_template
         writer = MarkdownWriter(print_limit=25, table_limit=None)
-        
-        output_table = writer.object_table(self.output_value)
+
+        if is_sequence(self.output_value):
+            output_table = f"Output is a sequence of {len(self.output_value)} elements"
+        else:
+            output_table = writer.object_table(self.output_value)
+
         execution_info = self.execution_info.to_markdown(blocks=self.workflow.blocks)
         return template.substitute(name=self.name,
                                    workflow_name=self.workflow.name,
