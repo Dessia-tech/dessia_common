@@ -78,7 +78,7 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
-  - pip install sphinx sphinx-rtd-theme coverage cython3 volmdlr nbformat nbconvert
+  - pip install sphinx sphinx-rtd-theme coverage Cython volmdlr nbformat nbconvert
   - pip install plot_data --no-cache-dir
   - pip show coverage
   - pip show plot_data
