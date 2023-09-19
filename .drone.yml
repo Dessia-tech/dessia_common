@@ -78,6 +78,7 @@ steps:
   commands:
   - git fetch --tags
   - python setup.py install
+  - python -m pip install --upgrade pip
   - pip install wheel sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
   - pip install plot_data --no-cache-dir
   - pip show coverage
