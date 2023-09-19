@@ -609,6 +609,7 @@ class Workflow(Block):
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.variable_input_pipe(input_)
                 if i == block._displayable_input:
+                    incoming_pipe.memorize = True
                     reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
             settings = block._display_settings(block_index=block_index, reference_path=reference_path)

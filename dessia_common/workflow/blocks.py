@@ -797,9 +797,7 @@ class MultiPlot(Display):
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "Multiplot")
-        print("SELECTOR", selector)
         if isinstance(selector, str):
-            print("DEPRECATE")
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
