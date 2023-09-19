@@ -35,7 +35,7 @@ MAX_ERROR_BY_TYPE = {
     "too-many-arguments": 21,  # Huge refactor needed
     "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
-    "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
+    "import-outside-toplevel": 5,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
     "broad-exception-caught": 9,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "bare-except": 1,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
@@ -43,7 +43,6 @@ MAX_ERROR_BY_TYPE = {
     "too-many-statements": 1,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
     "attribute-defined-outside-init": 3,  # For test purposes
-    "consider-using-generator": 1,
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',

@@ -27,7 +27,7 @@ from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
 
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.breakdown import ExtractionError
@@ -568,7 +568,11 @@ class Workflow(Block):
     def block_selector(self, block: Block) -> str:
         """ Get or create a generic selector for given block. """
         if block in self.display_blocks and block.selector:
-            return block.selector.name
+            if isinstance(block.selector, ViewType):
+                return block.selector.name
+            if isinstance(block.selector, str):
+                # Backward compatibility dessia_common < 0.14.0
+                return block.selector
         return f"{self.selector_name(block)} ({self.blocks.index(block)})"
 
     def selector_name(self, block: Block) -> str:

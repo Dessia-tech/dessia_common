@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor : old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
 - Workflow: propagate progress_callback to blocks
+- Workflow Blocks: New display selectors are now correctly deserialized 
 
 ### Refactored
 
@@ -71,7 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Chore
 
 - Fix Spelling (x2)
-- Object : Add Backward Compitibality over method_dict to cover old frontend calls
+- Pylint : Fix iterator error
+- Object : Add Backward Compatibality over method_dict to cover old frontend calls
+- Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
 
 
 
