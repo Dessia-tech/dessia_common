@@ -177,16 +177,15 @@ class TypedVariableWithDefaultValue(TypedVariable):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#',
-                       **kwargs) -> 'TypedVariableWithDefaultValue':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariableWithDefaultValue':
         """
         Compute variable from dict.
 
         TODO Remove this ?
         """
         type_ = deserialize_typing(dict_['type_'])
-        default_value = deserialize(dict_['default_value'], global_dict=global_dict, pointers_memo=pointers_memo)
+        default_value = deserialize(dict_['default_value'], global_dict=kwargs["global_dict"],
+                                    pointers_memo=kwargs["pointers_memo"])
         return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
 
     def copy(self, deep: bool = False, memo=None):
