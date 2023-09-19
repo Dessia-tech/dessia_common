@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : WorkflowRun now has smart display by default computation
   - Documentation is disabled when at least one block is displayed by default, enabled otherwise
   - Workflow always shows Documentation and its Display by default
+- Workflow : Memorize display pipes
 - Default color of Dataset points from blue to grey to make the difference between selected points and the other ones
 
 
