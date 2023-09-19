@@ -1638,7 +1638,7 @@ class WorkflowState(DessiaObject):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
+    def dict_to_object(cls, dict_: JsonSerializable,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#',
                        **kwargs) -> 'WorkflowState':
         """ Compute Workflow State from given dict. Handles pointers. """

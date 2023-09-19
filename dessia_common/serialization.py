@@ -8,7 +8,7 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
