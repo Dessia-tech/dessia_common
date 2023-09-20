@@ -139,13 +139,9 @@ setup(
     ],
     install_requires=[
         "orjson>=3.8.0",
-        "typeguard",
         "networkx",
         "numpy",
-        "pandas",
-        "mypy_extensions",
         "scipy",
-        "pyDOE",
         "pyDOE2",
         "dectree",
         "openpyxl",
