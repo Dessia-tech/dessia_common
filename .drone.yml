@@ -79,7 +79,7 @@ steps:
   - git fetch --tags
   - python setup.py install
   - pip install wheel Cython>=3.0.0 --no-cache-dir
-  - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
+  - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert --no-cache-dir
   - pip install plot_data --no-cache-dir
   - pip show coverage
   - pip show plot_data
