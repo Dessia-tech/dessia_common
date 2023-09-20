@@ -1,65 +1,77 @@
+Getting started
 ===============
-Getting Started
-===============
 
+This package requires Python 3.8 or above. Please follow the instructions
+below to install the package. Depending on your needs, you can choose between
+two types of installation.
 
-Introduction
-############
-DessiaCommon is Dessia's base package, providing generic models and tools to manipulate MBSEs and display them on DessIA's platform.
-It is composed of three main modules : core, workflow and vectored_objects.
+Installing dessia_common through pip (Windows and Linux users)
+--------------------------------------------------------
 
-Installation
-############
+To install the latest version of the package you need to run the following
+command::
 
-Python
-******
+  pip install dessia_common
+  # or
+  pip3 install dessia_common
 
-Dessia Common package requires Python3.7
+To install a specific version of the package you would issue the following
+command::
 
-For Windows user, we recommand using Anaconda Distribution.
+  pip install dessia_common==0.1.0
+  # or
+  pip3 install dessia_common==0.1.0
 
-https://www.anaconda.com/distribution/
+Developer installation
+----------------------
 
-Git
-***
+First, clone the package. Then, enter the newly created dessia_common repository. Finally, develop the setup.py file, and you are good to go ! ::
 
-You may need to use git in order to manage your project versions and to share your work with your colleagues. In that extent please follow `git guidelines <https://docs.github.com/en/free-pro-team@latest/github/importing-your-projects-to-github/adding-an-existing-project-to-github-using-the-command-line>`_ to setup you own repository.
+  git clone https://github.com/Dessia-tech/dessia_common.git
 
+  cd dessia_common
 
-Installing
-**********
+  pip install dessia_common -e .
 
-.. code-block:: console
-    pip install dessia_common
+Requirements
+------------
 
-On linux, pip may be named pip3 (pip for python3)
+The installation of dessia_common requires the installation of other packages listed
+in the file setup.py and in the table below. These libraries will be
+automatically installed when you install dessia_common.
 
+=============  ===============  ===========
+Dependency     Minimum Version  Usage
+=============  ===============  ===========
+orjson         3.8.0            computation
+networkx       latest           computation
+numpy          latest           computation
+scipy          latest           computation
+pyDOE2         latest           computation
+dectree        latest           computation
+openpyxl       latest           computation
+parameterized  latest           test
+scikit-learn   1.2.0            computation
+cma            latest           computation
+docx           latest           computation
+python-docx    latest           computation
+matplotlib     latest           display
+=============  ===============  ===========
 
-Dessia Bot Template
-*******************
+Troubleshooting
+---------------
 
-In order to create your first bot, Dessia provide a quick way to setup you project, via its small and simple `dessia_bot_template package <https://github.com/Dessia-tech/dessia_bot_template>`_.
-You can downlad and unzip these files anywhere on your computer.
+If the installation is successful but your IDE don't recognize the package
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Afterward, run our wizard by running following shell commands (in AnacondaPrompt if you use Anaconda distribution) :
+In this case you may have several versions of Python installed on your
+computer. Make sure the `pip` command points to the right Python version, or
+that you have selected the desired Python version in your IDE.
+You can force the installation of the package on a given Python version by
+executing this command::
 
-.. code-block:: console
+  python -m pip install dessia_common
 
-    cd dessia_bot_template
-    python3 quickstart.py
-
-Your python package architecture is then created with provided information. This also installs lastest versions of dessia_common as well as volmldr, by default.
-
-You can install your package by navigating to the folder you created for your bot 
-
-.. code-block:: console
-
-    cd [...]/my_first_bot
-    python3 setup.py develop --user
-
-This install the package for the used Python (here python3) environment.
-
-You are now ready to write your first class and methods !
-
-
-
+You have to specify the Python version you are working with by replacing
+`python` by the Python of your choice. For example, `python3`, `python3.8`,
+`python3.9`, etc.
