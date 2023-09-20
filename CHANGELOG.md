@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: Mutualize Display View Types and Attribute Types
 - Typings : add AttributeType, ClassAttributeType and View Types
 - Workflow : add Tasks display
+- Workflow : add documentation to workflow when export in .py
 
 
 ### Changed
