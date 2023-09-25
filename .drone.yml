@@ -51,7 +51,7 @@ steps:
       path: /root/.cache/pip
 
 - name: check pep8 formatting
-  image: python:3.8
+  image: python:3.9
   commands:
     - git fetch --tags
     - pip3 install -U pip autopep8
@@ -63,7 +63,7 @@ steps:
       path: /root/.cache/pip
 
 - name: check changelog update
-  image: python:3.8
+  image: python:3.9
   when:
     event: pull_request
     branch:
@@ -74,11 +74,11 @@ steps:
 
 
 - name: install, run scripts and build doc
-  image: python:3.8
+  image: python:3.9
   commands:
   - git fetch --tags
   - python setup.py install
-  - pip install sphinx sphinx-rtd-theme coverage volmdlr nbformat nbconvert
+  - pip install sphinx sphinx-rtd-theme coverage volmdlr==0.12.0 nbformat nbconvert
   - pip install plot_data --no-cache-dir
   - pip show coverage
   - pip show plot_data
@@ -103,7 +103,7 @@ steps:
       path: /root/.cache/pip
 
 - name: develop
-  image: python:3.8
+  image: python:3.9
   commands:
   - python setup.py develop
 
@@ -114,7 +114,7 @@ steps:
 
 
 - name: generate sdist
-  image: python:3.8
+  image: python:3.9
   when:
       branch: master
 

@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+## 0.13.3 [released 05/09/2023]
+
+### Fix
+- add python 3.9 minimum requirement to avoid install issues
+
 ## 0.13.2 [released 03/01/2023]
 
 ### Fix

@@ -348,7 +348,7 @@ class RandDataD5(RandDataD1):
 
     @property
     def test_prop(self):
-        """Factice property for some tests."""
+        """Fictive property for some tests."""
         if self._test_prop is None:
             self._test_prop = 3
         return self._test_prop
