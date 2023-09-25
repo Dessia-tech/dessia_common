@@ -140,10 +140,10 @@ setup(
         "orjson>=3.8.0",
         "typeguard",
         "networkx",
-        "numpy<=1.24.0",
+        "numpy",
         "pandas",
         "mypy_extensions",
-        "scipy<1.10.1",
+        "scipy",
         "pyDOE",
         "pyDOE2",
         "dectree",
@@ -153,5 +153,5 @@ setup(
         "scikit-learn>=1.2.0",
         "cma"
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
