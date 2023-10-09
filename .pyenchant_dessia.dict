@@ -1,8 +1,10 @@
 args
 argspecs
+agglomerative
 backend
 BinaryFile
 bool
+boolean
 boolarg
 builtins
 classmethod
@@ -24,6 +26,7 @@ deserialize
 dessia
 DessiaObject
 dict
+dimensionality
 distarg
 docstring
 Dessia's
@@ -41,6 +44,8 @@ gt
 gte
 init
 intarg
+instantiation
+iterable
 itertools
 json
 JSON
@@ -54,13 +59,16 @@ lp
 lt
 lte
 Mahalanobis
+matchable
 matplotlib
 Minkowski
+Mongodb
 nbv
 ndarray
 networkx
 numpy
 Openpyxl
+optimizer
 orjson
 Pycharm
 rtype
@@ -75,6 +83,7 @@ StringFile
 stringified
 stringify
 Stringify
+subclass
 submodule
 subobjects
 subscriptable

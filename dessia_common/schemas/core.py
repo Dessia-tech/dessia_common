@@ -349,7 +349,7 @@ class Property:
         return self.definition_default
 
     def inject_reference(self, object_id: str):
-        """ Exposed to backend in order to inject mongo reference in place of object default value. """
+        """ Exposed to backend in order to inject MongoDB reference in place of object default value. """
         if self.standalone_in_db:
             self.definition_default = BackendReference(object_id)
 

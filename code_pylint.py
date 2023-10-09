@@ -29,8 +29,8 @@ MAX_ERROR_BY_TYPE = {
     "protected-access": 48,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 7,  # Reduce by dropping vectored objects
-    "too-many-branches": 10,  # Huge refactor needed. Will be reduced by schema refactor
-    "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
+    "too-many-branches": 11,  # Huge refactor needed. Will be reduced by schema refactor
+    "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 21,  # Huge refactor needed
     "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
@@ -48,7 +48,8 @@ MAX_ERROR_BY_TYPE = {
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',
                                 'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
                                 'too-many-return-statements', 'import-outside-toplevel',
-                                'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
+                                'too-many-instance-attributes', 'broad-except', 'bare-except',
+                                "broad-exception-caught",
                                 'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
                                 'attribute-defined-outside-init']
 

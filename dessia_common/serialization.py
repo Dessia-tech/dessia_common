@@ -8,7 +8,7 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
@@ -48,7 +48,7 @@ class SerializableObject(CoreDessiaObject):
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
-                id_method=True, id_memo=None) -> JsonSerializable:
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Generic to_dict method. """
         if memo is None:
             memo = {}
@@ -65,15 +65,12 @@ class SerializableObject(CoreDessiaObject):
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            return dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, **kwargs)
         if cls is not SerializableObject:
-            return dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, class_=cls, **kwargs)
         raise NotImplementedError("No object_class in dict")
 
     @property
