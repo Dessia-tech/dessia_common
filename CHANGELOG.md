@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.15.0
+
+### Added
+
+- Documentation : Rewrite from scratch
+
+
 ## 0.14.0
 
 ### Added
@@ -25,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Typings : add AttributeType, ClassAttributeType and View Types
 - Workflow : add Tasks display
 - Workflow : add documentation to workflow when export in .py
-
+- WorkflowState: add memory usage monitoring & markdown
 
 ### Changed
  
@@ -69,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
+- Workflow: jointjs plot
 
 ### Chore
 
@@ -91,18 +99,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+## 0.13.5 [released 09/25/2023]
 
-## 0.13.2
+### Fix
+- add python 3.9 minimum requirement to avoid install issues
 
-### Added 
+## 0.13.4 [released 07/31/2023]
 
-- Display settings now have load_by_default config option
+### Added
+- Add rotational speed to measures
+
+## 0.13.3 [released 05/04/2023]
+
+### Fix
+- Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
+
+## 0.13.2 [released 03/01/2023]
 
 ### Fix
 
 - Workflow state/run to_dict fix on adding references
 - Handle serialization pointers of non-standalone objects
 - hash fix: calling hash instead of data hash in eq.
+
+### Added
+
+- Display settings now have load_by_default config option
 
 ## 0.13.1
 

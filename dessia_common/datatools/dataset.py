@@ -262,7 +262,7 @@ class Dataset(DessiaObject):
             string += end_bar
         return string
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, *args, **kwargs) -> str:
         """Render a markdown of the object output type: string."""
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
@@ -631,7 +631,8 @@ class Dataset(DessiaObject):
             # Dimensionality plot
             dimensionality_plot = self._plot_dimensionality()
             # Scatter Matrix
-            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
+            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(),
+                                                   axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
