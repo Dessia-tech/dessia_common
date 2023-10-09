@@ -72,9 +72,6 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _export_formats:
-        List of all available export formats. Class must define a export_[format] for each format in _export_formats
-
     :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
     :param name: Name of object.
@@ -83,7 +80,6 @@ class DessiaObject(SerializableObject):
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
-    _titled_attributes = []
     _eq_is_data_eq = True
     _vector_features = None
 
