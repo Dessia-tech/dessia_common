@@ -196,6 +196,7 @@ class ClassMethod(Block):
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
+        kwargs['force_generic'] = True
         return super().dict_to_object(dict_=dict_, **kwargs)
 
 
@@ -1034,6 +1035,7 @@ class GetModelAttribute(Block):
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        kwargs['force_generic'] = True
         return super().dict_to_object(dict_=dict_, **kwargs)
 
 

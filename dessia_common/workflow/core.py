@@ -726,8 +726,8 @@ class Workflow(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Workflow':
         """ Recompute the object from a dict. """
-        pointers_memo = kwargs["pointers_memo"]
-        global_dict = kwargs["global_dict"]
+        pointers_memo = kwargs.get("pointers_memo", None)
+        global_dict = kwargs.get("global_dict", None)
         if pointers_memo is None or global_dict is None:
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict,
                                                               current_dict=dict_,
