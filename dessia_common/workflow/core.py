@@ -427,9 +427,20 @@ class Workflow(Block):
     def handle_block(self, block):
         """ Perform some initialization action on a block and its variables. """
         if isinstance(block, Workflow):
+            # Protecting direct Workflow blocks
             raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
+
+        # Populating variables with block variables
         self.variables.extend(block.inputs)
         self.variables.extend(block.outputs)
+
+        # Memorizing block incoming pipes
+        if block in self.display_blocks:
+            for i, input_ in enumerate(block.inputs):
+                incoming_pipe = self.variable_input_pipe(input_)
+                if incoming_pipe and i == block._displayable_input:
+                    incoming_pipe.memorize = True
+
         try:
             self.coordinates[block] = (0, 0)
         except ValueError as err:
@@ -611,7 +622,6 @@ class Workflow(Block):
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.variable_input_pipe(input_)
                 if i == block._displayable_input:
-                    incoming_pipe.memorize = True
                     reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
             settings = block._display_settings(block_index=block_index, reference_path=reference_path)
@@ -1995,7 +2005,7 @@ class WorkflowRun(WorkflowState):
             end_time = time.time()
         self.end_time = end_time
         self.execution_time = end_time - start_time
-        filtered_values = {p: values[p] for p in workflow.memorized_pipes}
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes if p in values}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,
                                start_time=start_time, end_time=end_time,
