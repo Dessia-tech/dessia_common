@@ -31,7 +31,7 @@ def set_inputs_from_function(method, inputs=None):
     nargs, ndefault_args = split_argspecs(args_specs)
 
     for iarg, argument in enumerate(args_specs.args):
-        if argument not in ['self', 'cls', 'progress_callback']:
+        if argument not in ["self", "cls", "progress_callback"]:
             try:
                 annotations = get_type_hints(method)
                 type_ = type_from_annotation(annotations[argument], module=method.__module__)
@@ -50,8 +50,8 @@ def set_inputs_from_function(method, inputs=None):
 def output_from_function(function, name: str = "result output"):
     """ Inspect given function argspecs and compute block output from it. """
     annotations = get_type_hints(function)
-    if 'return' in annotations:
-        type_ = type_from_annotation(annotations['return'], function.__module__)
+    if "return" in annotations:
+        type_ = type_from_annotation(annotations["return"], function.__module__)
         return TypedVariable(type_=type_, name=name)
     return Variable(name=name)
 
@@ -60,11 +60,11 @@ def set_block_variable_names_from_dict(func):
     """ Inspect function arguments to compute black variable names. """
     def func_wrapper(cls, dict_):
         obj = func(cls, dict_)
-        if 'input_names' in dict_:
-            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
+        if "input_names" in dict_:
+            for input_name, input_ in zip(dict_["input_names"], obj.inputs):
                 input_.name = input_name
-        if 'output_names' in dict_:
-            output_items = zip(dict_['output_names'], obj.outputs)
+        if "output_names" in dict_:
+            output_items = zip(dict_["output_names"], obj.outputs)
             for output_name, output_ in output_items:
                 output_.name = output_name
         return obj
@@ -108,7 +108,7 @@ class InstantiateModel(Block):
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
-        return {self.model_class.__module__.split('.')[0]: 1}
+        return {self.model_class.__module__.split(".")[0]: 1}
 
     def _docstring(self):
         """ Parse given class' docstring. """
@@ -124,7 +124,7 @@ class InstantiateModel(Block):
         """ Write block config into a chunk of script. """
         script = f"InstantiateModel(model_class=" \
                  f"{self.model_class.__name__}, {self.base_script()})"
-        imports = [full_classname(object_=self.model_class, compute_for='class'), self.full_classname]
+        imports = [full_classname(object_=self.model_class, compute_for="class"), self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
 
@@ -184,8 +184,8 @@ class ClassMethod(Block):
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", {self.base_script()})"
 
-        imports = [full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -195,7 +195,7 @@ class ClassMethod(Block):
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
-        kwargs['force_generic'] = True
+        kwargs["force_generic"] = True
         return super().dict_to_object(dict_=dict_, **kwargs)
 
 
@@ -254,7 +254,7 @@ class ModelMethod(Block):
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
-        return {self.method_type.class_.__module__.split('.')[0]: 1}
+        return {self.method_type.class_.__module__.split(".")[0]: 1}
 
     def _docstring(self):
         """ Parse given method's docstring. """
@@ -272,8 +272,8 @@ class ModelMethod(Block):
                  f"{self.method_type.class_.__name__}, '{self.method_type.name}')" \
                  f", {self.base_script()})"
 
-        imports = [full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -283,7 +283,7 @@ class ModelMethod(Block):
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["method_type"]:
             dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
-        kwargs['force_generic'] = True
+        kwargs["force_generic"] = True
         return super().dict_to_object(dict_=dict_, **kwargs)
 
 
@@ -358,7 +358,7 @@ class WorkflowBlock(Block):
     """
     Wrapper around workflow to put it in a block of another workflow.
 
-    Even if a workflow is a block, it can't be used directly as it has a different behavior
+    Even if a workflow is a block, it cannot be used directly as it has a different behavior
     than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
@@ -412,7 +412,7 @@ class WorkflowBlock(Block):
 
     def _to_script(self, prefix: str) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        prefix = f'{prefix}sub_'
+        prefix = f"{prefix}sub_"
         workflow_script = self.workflow._to_script(prefix)
         script_workflow = f"\n# --- Subworkflow --- \n" \
             f"{workflow_script.declaration}" \
@@ -448,7 +448,7 @@ class ForEach(Block):
                 input_ = workflow_input.copy()
                 input_.name = f"Binding: {input_.name}"
                 inputs.append(input_)
-        output_variable = Variable(name='Foreach output')
+        output_variable = Variable(name="Foreach output")
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
@@ -621,7 +621,7 @@ class Filter(Block):
         filter_variables = [f"DessiaFilter("
                             f"attribute='{f.attribute}', comparison_operator='{f.comparison_operator}', "
                             f"bound={f.bound}, name='{f.name}')" for f in self.filters]
-        filters = '[' + ",".join(filter_variables) + ']'
+        filters = f"[{','.join(filter_variables)}"
         script = f"Filter(filters={filters}, logical_operator='{self.logical_operator}', {self.base_script()})"
 
         imports = [DessiaFilter("", "", 0).full_classname, self.full_classname]
@@ -632,7 +632,7 @@ class Display(Block):
     """ Abstract block class for display behaviors. """
 
     _displayable_input = 0
-    _non_editable_attributes = ['inputs']
+    _non_editable_attributes = ["inputs"]
     _type = None
     serialize = False
 
@@ -710,17 +710,17 @@ class DeprecatedMultiPlot(Display):
         samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
                                       reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                      for i, o in enumerate(objects)]
-        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+        tooltip = plot_data.Tooltip(name="Tooltip", attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=samples2d, name='Scatter Plot')
+                                        elements=samples2d, name="Scatter Plot")
 
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+        parallelplot = plot_data.ParallelPlot(disposition="horizontal", axes=self.attributes,
                                               rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name='Results plot')
+                                            coords=[(0, 0), (0, 300)], name="Results plot")
         return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -769,17 +769,17 @@ class MultiPlot(Display):
         samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
                                       reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                      for i, o in enumerate(objects)]
-        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+        tooltip = plot_data.Tooltip(name="Tooltip", attributes=self.attributes)
 
         scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=samples2d, name='Scatter Plot')
+                                        elements=samples2d, name="Scatter Plot")
 
-        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+        parallelplot = plot_data.ParallelPlot(disposition="horizontal", axes=self.attributes,
                                               rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name='Results plot')
+                                            coords=[(0, 0), (0, 300)], name="Results plot")
         return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -1014,15 +1014,15 @@ class GetModelAttribute(Block):
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
-        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_type.name}')]
+        return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_type.name}")]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         script = f"GetModelAttribute(attribute_type=AttributeType(" \
                  f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
-        imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
-                   full_classname(object_=self.attribute_type.class_, compute_for='class'),
+        imports = [full_classname(object_=self.attribute_type, compute_for="instance"),
+                   full_classname(object_=self.attribute_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
@@ -1032,7 +1032,7 @@ class GetModelAttribute(Block):
         # Backward compatibility dessia_common < 0.14.0
         if "object_class" not in dict_["attribute_type"]:
             dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
-        kwargs['force_generic'] = True
+        kwargs["force_generic"] = True
         return super().dict_to_object(dict_=dict_, **kwargs)
 
 
@@ -1127,7 +1127,7 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        Block.__init__(self, [Variable(name='+'), Variable(name='-')], [Variable(name='Substraction')], name=name,
+        Block.__init__(self, [Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
                        position=position)
 
     def evaluate(self, values, **kwargs):
@@ -1235,8 +1235,8 @@ class Export(Block):
                  f", filename='{self.filename}', extension='{self.extension}'" \
                  f", text={self.text}, {self.base_script()})"
 
-        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for='instance'),
-                   full_classname(object_=self.method_type.class_, compute_for='class')]
+        imports = [self.full_classname, full_classname(object_=self.method_type, compute_for="instance"),
+                   full_classname(object_=self.method_type.class_, compute_for="class")]
         return ToScriptElement(declaration=script, imports=imports)
 
 
@@ -1259,11 +1259,11 @@ class Archive(Block):
         inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="Archive")], name=name, position=position)
 
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method=True, id_memo=None,
                 **kwargs):
         """ Serialize the block with custom logic. """
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
+        dict_["number_exports"] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
         return dict_
 
@@ -1272,14 +1272,14 @@ class Archive(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Custom dict_to_object method. """
         return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
-                   name=dict_['name'], position=dict_.get('position'))
+                   name=dict_["name"], position=dict_.get("position"))
 
     def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """
         name_input = self.inputs[-1]
         archive_name = f"{values.pop(name_input)}.{self.extension}"
         archive = BinaryFile(archive_name)
-        with ZipFile(archive, 'w') as zip_archive:
+        with ZipFile(archive, "w") as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
                 generate_archive(zip_archive, value)
