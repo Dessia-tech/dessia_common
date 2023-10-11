@@ -88,7 +88,11 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
-        outputs = [TypedVariable(type_=self.model_class, name="Instantiated object")]
+        if model_class.__name__:
+            output_name = model_class.__name__
+        else:
+            output_name = "Instantiated object"
+        outputs = [TypedVariable(type_=self.model_class, name=output_name)]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
