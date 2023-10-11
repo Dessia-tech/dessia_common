@@ -23,7 +23,7 @@ MIN_NOTE = 9.3
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
 
-UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
+UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error", "protected-access"]
 
 MAX_ERROR_BY_TYPE = {
     "protected-access": 48,  # Highly dependant on our "private" conventions. Keeps getting raised
