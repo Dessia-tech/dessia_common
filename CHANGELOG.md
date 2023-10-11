@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.15.0
+
+### Added
+
+- Documentation : Rewrite from scratch
+
+
 ## 0.14.0
 
 ### Added
@@ -24,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas refactor: Mutualize Display View Types and Attribute Types
 - Typings : add AttributeType, ClassAttributeType and View Types
 - Workflow : add Tasks display
-
+- WorkflowState: add memory usage monitoring & markdown
 
 ### Changed
  
@@ -68,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
+- Workflow: jointjs plot
 
 ### Chore
 

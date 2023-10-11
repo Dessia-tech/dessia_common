@@ -72,9 +72,6 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _export_formats:
-        List of all available export formats. Class must define a export_[format] for each format in _export_formats
-
     :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
 
     :param name: Name of object.
@@ -83,7 +80,6 @@ class DessiaObject(SerializableObject):
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
-    _titled_attributes = []
     _eq_is_data_eq = True
     _vector_features = None
 
@@ -401,9 +397,9 @@ class DessiaObject(SerializableObject):
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
         return axs
-    
+
     @classmethod
-    def display_settings(cls) -> List[DisplaySetting]:
+    def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
         settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
         settings.extend(cls._display_settings_from_decorators())
@@ -460,7 +456,7 @@ class DessiaObject(SerializableObject):
             displays.append(display_.to_dict())
         return displays
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, **kwargs) -> str:
         """ Render a markdown of the object output type: string. """
         writer = MarkdownWriter(print_limit=25, table_limit=None)
         template = templates.dessia_object_markdown_template
@@ -632,7 +628,7 @@ class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
     @classmethod
-    def display_settings(cls):
+    def display_settings(cls, **kwargs):
         """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
         display_settings = super().display_settings()
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
@@ -1010,7 +1006,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of Boolean indices with the logical operator into a simple boolean index.
+        Combine a list of Boolean indices with the logical operator into a simple Boolean index.
 
         :param booleans_lists: List of boolean indices
 
