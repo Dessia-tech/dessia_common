@@ -88,7 +88,7 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
-        outputs = [TypedVariable(type_=self.model_class, name='Instanciated object')]
+        outputs = [TypedVariable(type_=self.model_class, name="Instantiated object")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -147,8 +147,7 @@ class ClassMethod(Block):
         inputs = set_inputs_from_function(self.method, inputs)
 
         self.argument_names = [i.name for i in inputs]
-        output_name = f"method result of {method_type.name}"
-        output = output_from_function(function=self.method, name=output_name)
+        output = output_from_function(function=self.method, name="Return")
         Block.__init__(self, inputs, [output], name=name, position=position)
 
     def equivalent_hash(self):
@@ -211,21 +210,19 @@ class ModelMethod(Block):
 
     _non_serializable_attributes = ["method"]
 
-    def __init__(self, method_type: MethodType[Type], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, method_type: MethodType[Type], name: str = "", position: Tuple[float, float] = None):
         self.method_type = method_type
-        inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
+        inputs = [TypedVariable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
         inputs = set_inputs_from_function(self.method, inputs)
 
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
-        return_output_name = f"method result of {method_type.name}"
-        return_output = output_from_function(function=self.method, name=return_output_name)
-
-        model_output_name = f"model at output {method_type.name}"
-        model_output = TypedVariable(type_=method_type.class_, name=model_output_name)
+        return_output = output_from_function(function=self.method, name="Return")
+        model_output = TypedVariable(type_=method_type.class_, name="Self")
         outputs = [return_output, model_output]
+
         if name == "":
             name = f"Model method: {method_type.name}"
         Block.__init__(self, inputs, outputs, name=name, position=position)
@@ -302,7 +299,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name="Sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -335,7 +332,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name="Sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -445,11 +442,11 @@ class ForEach(Block):
         inputs = []
         for i, workflow_input in enumerate(self.workflow_block.inputs):
             if i == iter_input_index:
-                variable_name = 'Iterable input: ' + workflow_input.name
+                variable_name = f"Iterable input: {workflow_input.name}"
                 inputs.append(Variable(name=variable_name))
             else:
                 input_ = workflow_input.copy()
-                input_.name = 'binding ' + input_.name
+                input_.name = f"Binding: {input_.name}"
                 inputs.append(input_)
         output_variable = Variable(name='Foreach output')
         self.output_connections = None  # TODO: configuring port internal connections

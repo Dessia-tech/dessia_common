@@ -2136,6 +2136,7 @@ class WorkflowRun(WorkflowState):
                                    output_table=output_table,
                                    execution_info=execution_info)
 
+
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
