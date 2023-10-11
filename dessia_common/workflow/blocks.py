@@ -505,8 +505,8 @@ class Unpacker(Block):
 
     def __init__(self, indices: List[int], name: str = '', position: Tuple[float, float] = None):
         self.indices = indices
-        outputs = [Variable(name=f"output_{i}") for i in indices]
-        Block.__init__(self, inputs=[Variable(name="input_sequence")], outputs=outputs, name=name, position=position)
+        outputs = [Variable(name=f"Element {i}") for i in indices]
+        Block.__init__(self, inputs=[Variable(name="Sequence")], outputs=outputs, name=name, position=position)
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
@@ -535,8 +535,8 @@ class Flatten(Block):
     """
 
     def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        inputs = [Variable(name='input_sequence')]
-        outputs = [Variable(name='flatten_sequence')]
+        inputs = [Variable(name="Sequence")]
+        outputs = [Variable(name="Flattened sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -561,8 +561,8 @@ class Product(Block):
 
     def __init__(self, number_list: int, name: str = '', position: Tuple[float, float] = None):
         self.number_list = number_list
-        inputs = [Variable(name='list_product_' + str(i)) for i in range(self.number_list)]
-        output_variable = Variable(name='Product output')
+        inputs = [Variable(name=f"Sequence {i}") for i in range(self.number_list)]
+        output_variable = Variable(name="Product")
         Block.__init__(self, inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
@@ -598,8 +598,8 @@ class Filter(Block):
                  position: Tuple[float, float] = None):
         self.filters = filters
         self.logical_operator = logical_operator
-        inputs = [Variable(name='input_list')]
-        outputs = [Variable(name='output_list')]
+        inputs = [Variable(name="Sequence")]
+        outputs = [Variable(name="Filtered sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent(self, other):
@@ -747,7 +747,7 @@ class MultiPlot(Display):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=selector, position=position)
-        self.inputs[0].name = "Input List"
+        self.inputs[0].name = "Sequence"
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -831,7 +831,7 @@ class CadView(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -879,7 +879,7 @@ class Markdown(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -929,7 +929,7 @@ class PlotData(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -957,8 +957,8 @@ class ModelAttribute(Block):
 
     def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
         self.attribute_name = attribute_name
-        inputs = [Variable(name='Model')]
-        outputs = [Variable(name='Model attribute')]
+        inputs = [Variable(name="Model")]
+        outputs = [Variable(name="Attribute value")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -971,7 +971,7 @@ class ModelAttribute(Block):
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
-        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
+        return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_name}")]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -988,15 +988,15 @@ class GetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         if type_:
-            outputs = [TypedVariable(type_=type_, name='Model attribute')]  
+            outputs = [TypedVariable(type_=type_, name="Attribute value")]
         else:
-            outputs = [Variable(name='Model attribute')]
+            outputs = [Variable(name="Attribute value")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1049,13 +1049,12 @@ class SetModelAttribute(Block):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         type_ = get_attribute_type(self.attribute_type.name, parameters)
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         if type_:
-            inputs.append(TypedVariable(type_=type_, name=f'Value to insert for attribute {self.attribute_type.name}'))
+            inputs.append(TypedVariable(type_=type_, name="Value"))
         else:
-            inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
-        outputs = [TypedVariable(type_=self.attribute_type.class_,
-                                 name=f'Model with changed attribute {self.attribute_type.name}')]
+            inputs.append(Variable(name="Value"))
+        outputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1100,7 +1099,7 @@ class Sum(Block):
     def __init__(self, number_elements: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name='Sum')], name=name, position=position)
+        Block.__init__(self, inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1208,9 +1207,9 @@ class Export(Block):
         self.extension = extension
         self.text = text
 
-        output = output_from_function(function=method, name="export_output")
-        inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
-                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
+        output = output_from_function(function=method, name="Stream")
+        inputs = [TypedVariable(type_=method_type.class_, name="Model"),
+                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def evaluate(self, values, **kwargs):
@@ -1256,9 +1255,9 @@ class Archive(Block):
         self.filename = filename
         self.extension = "zip"
         self.text = False
-        inputs = [Variable(name="export_" + str(i)) for i in range(number_exports)]
-        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename"))
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
+        inputs = [Variable(name=f"Export {i}") for i in range(number_exports)]
+        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename"))
+        Block.__init__(self, inputs=inputs, outputs=[Variable(name="Archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
                 **kwargs):
