@@ -84,7 +84,7 @@ class InstantiateModel(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, model_class: Type, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, model_class: Type, name: str = "", position: Tuple[float, float] = None):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
@@ -139,7 +139,7 @@ class ClassMethod(Block):
 
     _non_serializable_attributes = ["method"]
 
-    def __init__(self, method_type: ClassMethodType[Type], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = "", position: Tuple[float, float] = None):
         self.method_type = method_type
         inputs = []
 
@@ -296,7 +296,7 @@ class Sequence(Block):
     :param position: Position in canvas.
     """
 
-    def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, number_arguments: int, name: str = "", position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [TypedVariable(type_=List[T], name="Sequence")]
@@ -329,7 +329,7 @@ class Concatenate(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, number_arguments: int = 2, name: str = "", position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [TypedVariable(type_=List[T], name="Sequence")]
@@ -366,7 +366,7 @@ class WorkflowBlock(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, workflow: Workflow, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, workflow: Workflow, name: str = "", position: Tuple[float, float] = None):
         self.workflow = workflow
         # TODO: configuring port internal connections
         self.input_connections = None
@@ -434,7 +434,7 @@ class ForEach(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = '',
+    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = "",
                  position: Tuple[float, float] = None):
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
@@ -503,7 +503,7 @@ class Unpacker(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, indices: List[int], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, indices: List[int], name: str = "", position: Tuple[float, float] = None):
         self.indices = indices
         outputs = [Variable(name=f"Element {i}") for i in indices]
         Block.__init__(self, inputs=[Variable(name="Sequence")], outputs=outputs, name=name, position=position)
@@ -534,7 +534,7 @@ class Flatten(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", position: Tuple[float, float] = None):
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Flattened sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
@@ -559,7 +559,7 @@ class Flatten(Block):
 class Product(Block):
     """ A block to generate the product combinations. """
 
-    def __init__(self, number_list: int, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, number_list: int, name: str = "", position: Tuple[float, float] = None):
         self.number_list = number_list
         inputs = [Variable(name=f"Sequence {i}") for i in range(self.number_list)]
         output_variable = Variable(name="Product")
@@ -594,7 +594,7 @@ class Filter(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = '',
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = "",
                  position: Tuple[float, float] = None):
         self.filters = filters
         self.logical_operator = logical_operator
@@ -909,7 +909,7 @@ class DeprecatedPlotData(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "plot_data",
                  position: Tuple[float, float] = None):
         warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
@@ -955,7 +955,7 @@ class ModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, attribute_name: str, name: str = "", position: Tuple[float, float] = None):
         self.attribute_name = attribute_name
         inputs = [Variable(name="Model")]
         outputs = [Variable(name="Attribute value")]
@@ -1045,7 +1045,7 @@ class SetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         type_ = get_attribute_type(self.attribute_type.name, parameters)
@@ -1096,7 +1096,7 @@ class Sum(Block):
     :param position: Position of the block in the workflow
     """
 
-    def __init__(self, number_elements: int = 2, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, number_elements: int = 2, name: str = "", position: Tuple[float, float] = None):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
@@ -1126,7 +1126,7 @@ class Sum(Block):
 class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, name: str = "", position: Tuple[float, float] = None):
         Block.__init__(self, [Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
                        position=position)
 
@@ -1150,7 +1150,7 @@ class ConcatenateStrings(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, number_elements: int = 2, separator: str = "", name: str = '',
+    def __init__(self, number_elements: int = 2, separator: str = "", name: str = "",
                  position: Tuple[float, float] = None):
         self.number_elements = number_elements
         self.separator = separator
