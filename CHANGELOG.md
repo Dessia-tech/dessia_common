@@ -85,7 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
 
 
-
 ## 0.13.3
 
 ### Changed
