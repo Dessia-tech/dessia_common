@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : WorkflowRun now has smart display by default computation
   - Documentation is disabled when at least one block is displayed by default, enabled otherwise
   - Workflow always shows Documentation and its Display by default
-- Workflow : Memorize display pipes
+- Workflow : Memorize display pipes from init
 - Default color of Dataset points from blue to grey to make the difference between selected points and the other ones
 
 
@@ -90,18 +90,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+## 0.13.5 [released 09/25/2023]
 
-## 0.13.2
+### Fix
+- add python 3.9 minimum requirement to avoid install issues
 
-### Added 
+## 0.13.4 [released 07/31/2023]
 
-- Display settings now have load_by_default config option
+### Added
+- Add rotational speed to measures
+
+## 0.13.3 [released 05/04/2023]
+
+### Fix
+- Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
+
+## 0.13.2 [released 03/01/2023]
 
 ### Fix
 
 - Workflow state/run to_dict fix on adding references
 - Handle serialization pointers of non-standalone objects
 - hash fix: calling hash instead of data hash in eq.
+
+### Added
+
+- Display settings now have load_by_default config option
 
 ## 0.13.1
 
