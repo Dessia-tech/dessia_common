@@ -3,7 +3,6 @@
 """ Gathers all workflow relative features. """
 
 import ast
-import inspect
 import time
 import datetime
 from functools import cached_property
@@ -20,7 +19,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing, SCHEMA_HEADER
+    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -29,7 +28,7 @@ from dessia_common.utils.helpers import prettyname
 
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplaySetting, DisplayObject
+from dessia_common.displays import DisplaySetting
 from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
@@ -83,25 +82,24 @@ class Variable(DessiaObject):
         return NotImplementedError(msg)
 
 
+T = TypeVar("T")
+
+
 class TypedVariable(Variable):
     """ Variable for workflow with a typing. """
 
     has_default_value: bool = False
 
-    def __init__(self, type_: Type[Any], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, type_: Type[T], name: str = '', position: Tuple[float, float] = None):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
+        self.pretty_type = pretty_annotation(annotation=type_)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None,
                 **kwargs):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
-        if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
-            # TODO QUICKFIX
-            serialized = "dessia_common.displays.DisplayObject"
-        else:
-            serialized = serialize_annotation(self.type_)
-        dict_.update({'type_': serialized})
+        dict_.update({"type_": serialize_annotation(self.type_), "pretty_type": self.pretty_type})
         return dict_
 
     @classmethod
@@ -151,9 +149,6 @@ class VariableWithDefaultValue(Variable):
         warnings.warn("VariableWithDefaultValue is deprecated and shouldn't be used anymore. ")
         Variable.__init__(self, name=name, position=position)
         self.default_value = default_value
-
-
-T = TypeVar("T")
 
 
 class TypedVariableWithDefaultValue(TypedVariable):

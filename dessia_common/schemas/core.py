@@ -11,6 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
+from dessia_common.displays import DisplayObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
                                    CadViewType, PlotDataType, MarkdownType, ViewType)
@@ -1414,6 +1415,8 @@ def custom_class_schema(annotation: Type[T], attribute: str, definition_default:
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
         return CustomClass(annotation=annotation, attribute=attribute, definition_default=definition_default)
+    if issubclass(annotation, DisplayObject):
+        return Property(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
