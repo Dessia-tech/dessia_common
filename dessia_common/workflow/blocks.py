@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
-from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE, pretty_annotation
+from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
@@ -88,11 +88,7 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
-        if model_class.__name__:
-            output_name = pretty_annotation(model_class)
-        else:
-            output_name = "Instantiated object"
-        outputs = [TypedVariable(type_=self.model_class, name=output_name)]
+        outputs = [TypedVariable(type_=self.model_class, name="Model")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -152,8 +148,7 @@ class ClassMethod(Block):
 
         self.argument_names = [i.name for i in inputs]
 
-        return_type = method_type.output_type()
-        output = output_from_function(function=self.method, name=f"Return ({pretty_annotation(return_type)}")
+        output = output_from_function(function=self.method, name="Return")
         Block.__init__(self, inputs, [output], name=name, position=position)
 
     def equivalent_hash(self):
@@ -218,17 +213,15 @@ class ModelMethod(Block):
 
     def __init__(self, method_type: MethodType[Type], name: str = "", position: Tuple[float, float] = None):
         self.method_type = method_type
-        classname = pretty_annotation(method_type.class_)
-        inputs = [TypedVariable(type_=method_type.class_, name=classname)]
+        inputs = [TypedVariable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
         inputs = set_inputs_from_function(self.method, inputs)
 
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
-        return_type = method_type.output_type()
-        return_output = output_from_function(function=self.method, name=f"Return ({pretty_annotation(return_type)}")
-        model_output = TypedVariable(type_=method_type.class_, name=f"Model ({classname})")
+        return_output = output_from_function(function=self.method, name="Return")
+        model_output = TypedVariable(type_=method_type.class_, name="Model")
         outputs = [return_output, model_output]
 
         if name == "":
@@ -839,8 +832,7 @@ class CadView(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        classname = pretty_annotation(selector.class_)
-        input_ = TypedVariable(DessiaObject, name=classname)
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -888,8 +880,7 @@ class Markdown(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        classname = pretty_annotation(selector.class_)
-        input_ = TypedVariable(DessiaObject, name=classname)
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -939,8 +930,7 @@ class PlotData(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        classname = pretty_annotation(selector.class_)
-        input_ = TypedVariable(DessiaObject, name=classname)
+        input_ = TypedVariable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -1002,13 +992,12 @@ class GetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        classname = pretty_annotation(attribute_type.class_)
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name=classname)]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         if type_:
-            outputs = [TypedVariable(type_=type_, name=pretty_annotation(type_))]
+            outputs = [TypedVariable(type_=type_, name="Attribute")]
         else:
-            outputs = [Variable(name="Attribute (unknown type)")]
+            outputs = [Variable(name="Attribute")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1060,14 +1049,13 @@ class SetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        classname = pretty_annotation(attribute_type.class_)
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name=classname)]
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         if type_:
-            inputs.append(TypedVariable(type_=type_, name=f"Value ({pretty_annotation(type_)})"))
+            inputs.append(TypedVariable(type_=type_, name="Value"))
         else:
-            inputs.append(Variable(name="Value (unknown type)"))
-        outputs = [TypedVariable(type_=self.attribute_type.class_, name=classname)]
+            inputs.append(Variable(name="Value"))
+        outputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1220,9 +1208,8 @@ class Export(Block):
         self.extension = extension
         self.text = text
 
-        classname = pretty_annotation(method_type.class_)
         output = output_from_function(function=method, name="Stream")
-        inputs = [TypedVariable(type_=method_type.class_, name=classname),
+        inputs = [TypedVariable(type_=method_type.class_, name="Model"),
                   TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
