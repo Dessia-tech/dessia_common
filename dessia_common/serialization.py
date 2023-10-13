@@ -66,7 +66,7 @@ class SerializableObject(CoreDessiaObject):
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
             return dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
