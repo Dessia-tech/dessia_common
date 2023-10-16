@@ -7,12 +7,10 @@ from scipy.spatial.distance import pdist, squareform
 import numpy as npy
 from sklearn import preprocessing
 
-try:
-    from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
+from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
         PointStyle, Sample
-    from plot_data.colors import BLUE, GREY
-except ImportError:
-    pass
+from plot_data.colors import BLUE, GREY
+
 from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
 from dessia_common.exports import MarkdownWriter
 from dessia_common import templates

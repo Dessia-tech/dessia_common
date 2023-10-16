@@ -6,11 +6,9 @@ import numpy as npy
 from sklearn import cluster
 import matplotlib.pyplot as plt
 
-try:
-    from plot_data.core import PointFamily
-    from plot_data.colors import LIGHTGREY, Color
-except ImportError:
-    pass
+from plot_data.core import PointFamily
+from plot_data.colors import LIGHTGREY, Color
+
 from dessia_common.exports import XLSXWriter
 from dessia_common.core import DessiaObject, DessiaFilter
 from dessia_common.datatools.dataset import Dataset
