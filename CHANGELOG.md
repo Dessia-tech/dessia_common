@@ -108,22 +108,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Workflow name correction: correct the name if it contains an apostrophe.
 
-## 0.13.5 [released 09/25/2023]
+## 0.13.5 [09/25/2023]
 
 ### Fix
 - add python 3.9 minimum requirement to avoid install issues
 
-## 0.13.4 [released 07/31/2023]
+## 0.13.4 [07/31/2023]
 
 ### Added
 - Add rotational speed to measures
 
-## 0.13.3 [released 05/04/2023]
+## 0.13.3 [05/04/2023]
 
 ### Fix
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 
-## 0.13.2 [released 03/01/2023]
+## 0.13.2 [03/01/2023]
 
 ### Fix
 
@@ -181,7 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0 [released 01/20/2023]
+## 0.12.0 [01/20/2023]
 
 
 ### Changed
@@ -233,7 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0 [released 12/19/2022]
+## 0.11.0 [12/19/2022]
 
 ### Fixed
 
