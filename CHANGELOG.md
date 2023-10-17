@@ -12,6 +12,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation : Rewrite from scratch
 
 
+## 0.15.0
+
+### Added
+
+- Workflow : Variables now have a pretty type to display on frontend
+
+### Changed
+
+- Workflow : Block input and output names have been enhanced
+
+
 ## 0.14.0
 
 ### Added
