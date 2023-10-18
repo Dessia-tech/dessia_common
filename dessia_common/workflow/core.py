@@ -234,7 +234,7 @@ class Variable(DessiaObject):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable2':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ WRITE DOCSTRING. """
         default_value = dict_.get("default_value", _UNDEFINED)
         return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
