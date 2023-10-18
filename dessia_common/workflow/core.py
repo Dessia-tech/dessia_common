@@ -154,9 +154,6 @@ _UNDEFINED = object()
 #         self.default_value = default_value
 
 
-T = TypeVar("T")
-
-
 # class TypedVariableWithDefaultValue(TypedVariable):
 #     """
 #     Workflow variables wit a type and a default value.
@@ -213,13 +210,19 @@ T = TypeVar("T")
 #         return casted_variable._to_script()
 
 
+T = TypeVar("T")
+
+
 class Variable(DessiaObject):
     """ New version of workflow variable. """
 
-    def __init__(self, type_: Type = None, default_value: Any = _UNDEFINED,
+    def __init__(self, type_: Type[T] = None, default_value: T = _UNDEFINED,
                  name: str = "", position: Tuple[float, float] = (0, 0)):
-        self.type_ = type_
         self.default_value = default_value
+        if self.has_default_value and type_ is None:
+            self.type_ = type(default_value)
+        else:
+            self.type_ = type_
         self.position = position
         super().__init__(name)
 
@@ -243,6 +246,19 @@ class Variable(DessiaObject):
     @property
     def has_default_value(self):
         return self.default_value is not _UNDEFINED
+
+    def is_file_type(self) -> bool:
+        """ Return whether a variable is of type File given its type_ attribute. """
+        if self.type_ is None:
+            return False
+
+        if is_typing(self.type_):
+            # Handling List[BinaryFile or StringFile]
+            return get_args(self.type_)[0] in [BinaryFile, StringFile]
+
+        if not isinstance(self.type_, type):
+            return False
+        return issubclass(self.type_, (StringFile, BinaryFile))
 
 
 NAME_VARIABLE = Variable(type_=str, name="Result Name")
@@ -2163,10 +2179,8 @@ class WorkflowRun(WorkflowState):
             output_table = writer.object_table(self.output_value)
 
         execution_info = self.execution_info.to_markdown(blocks=self.workflow.blocks)
-        return template.substitute(name=self.name,
-                                   workflow_name=self.workflow.name,
-                                   output_table=output_table,
-                                   execution_info=execution_info)
+        return template.substitute(name=self.name, workflow_name=self.workflow.name,
+                                   output_table=output_table, execution_info=execution_info)
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
