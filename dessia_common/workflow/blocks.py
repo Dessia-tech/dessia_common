@@ -17,7 +17,7 @@ from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue, Workflow
+from dessia_common.workflow.core import Block, Variable, Workflow
 from dessia_common.workflow.utils import ToScriptElement
 
 T = TypeVar("T")
@@ -40,10 +40,9 @@ def set_inputs_from_function(method, inputs=None):
                     from error
             if iarg > nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg - 1]
-                input_ = TypedVariableWithDefaultValue(type_=type_, default_value=default, name=argument)
-                inputs.append(input_)
+                inputs.append(Variable(type_=type_, default_value=default, name=argument))
             else:
-                inputs.append(TypedVariable(type_=type_, name=argument))
+                inputs.append(Variable(type_=type_, name=argument))
     return inputs
 
 
@@ -52,7 +51,7 @@ def output_from_function(function, name: str = "result output"):
     annotations = get_type_hints(function)
     if 'return' in annotations:
         type_ = type_from_annotation(annotations['return'], function.__module__)
-        return TypedVariable(type_=type_, name=name)
+        return Variable(type_=type_, name=name)
     return Variable(name=name)
 
 

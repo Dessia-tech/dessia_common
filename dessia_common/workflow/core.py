@@ -44,183 +44,180 @@ from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonb
 _UNDEFINED = object()
 
 
-class Variable(DessiaObject):
-    """ Variable for workflow. """
-
-    _standalone_in_db = False
-    _eq_is_data_eq = False
-    has_default_value: bool = False
-
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        DessiaObject.__init__(self, name=name)
-        if position is None:
-            self.position = (0, 0)
-        else:
-            self.position = position
-
-        self.default_value = None
-        self.type_ = None
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, **kwargs):
-        """ Serialize the variable with custom logic. """
-        dict_ = DessiaObject.base_dict(self)
-        dict_.update({'has_default_value': self.has_default_value, 'position': self.position})
-        return dict_
-
-    def _to_script(self) -> ToScriptElement:
-        script = self._get_to_script_elements()
-        script.declaration = f"{self.__class__.__name__}({script.declaration})"
-
-        script.imports.append(self.full_classname)
-        return script
-
-    def _get_to_script_elements(self):
-        declaration = f"name='{self.name}', position={self.position}"
-        return ToScriptElement(declaration=declaration, imports=[], imports_as_is=[])
-
-    def is_file_type(self):
-        """ Not implemented yet. Should be implemented when all variable have types necessarily. """
-        msg = f"File checking is not implemented for untyped workflow Variable named '{self.name}'.\n" \
-              f"If this variable is a workflow input, variable should be typed " \
-              f"and of type TypedVariable or TypedVariableWithDefaultValues"
-        return NotImplementedError(msg)
-
-
-class TypedVariable(Variable):
-    """ Variable for workflow with a typing. """
-
-    has_default_value: bool = False
-
-    def __init__(self, type_: Type[Any], name: str = '', position: Tuple[float, float] = None):
-        Variable.__init__(self, name=name, position=position)
-        self.type_ = type_
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, **kwargs):
-        """ Serializes the object with specific logic. """
-        dict_ = super().to_dict(use_pointers, memo, path)
-        if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
-            # TODO QUICKFIX
-            serialized = "dessia_common.displays.DisplayObject"
-        else:
-            serialized = serialize_annotation(self.type_)
-        dict_.update({'type_': serialized})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariable':
-        """
-        Compute variable from dict.
-
-        TODO Remove this ?
-        """
-        type_ = deserialize_typing(dict_['type_'])
-        return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
-
-    def copy(self, deep: bool = False, memo=None):
-        """ Copies and gives a new object with no linked data. """
-        return TypedVariable(type_=self.type_, name=self.name)
-
-    def _get_to_script_elements(self) -> ToScriptElement:
-        script = super()._get_to_script_elements()
-
-        script.declaration += f", type_={self.type_.__name__}"
-
-        if "builtins" not in serialize_annotation(self.type_):
-            script.imports.append(serialize_annotation(self.type_))
-        return script
-
-    def is_file_type(self) -> bool:
-        """ Return whether a variable is of type File given its type_ attribute. """
-        if is_typing(self.type_):
-            # Handling List[BinaryFile or StringFile]
-            return get_args(self.type_)[0] in [BinaryFile, StringFile]
-
-        if not isinstance(self.type_, type):
-            return False
-        return issubclass(self.type_, (StringFile, BinaryFile))
-
-
-class VariableWithDefaultValue(Variable):
-    """
-    A variable with a default value.
-
-    TODO Isn't this always typed ?
-    """
-
-    has_default_value: bool = True
-
-    def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
-        warnings.warn("VariableWithDefaultValue is deprecated and shouldn't be used anymore. ")
-        Variable.__init__(self, name=name, position=position)
-        self.default_value = default_value
+# class Variable(DessiaObject):
+#     """ Variable for workflow. """
+#
+#     _standalone_in_db = False
+#     _eq_is_data_eq = False
+#     has_default_value: bool = False
+#
+#     def __init__(self, name: str = '', position: Tuple[float, float] = None):
+#         DessiaObject.__init__(self, name=name)
+#         if position is None:
+#             self.position = (0, 0)
+#         else:
+#             self.position = position
+#
+#         self.default_value = None
+#         self.type_ = None
+#
+#     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, **kwargs):
+#         """ Serialize the variable with custom logic. """
+#         dict_ = DessiaObject.base_dict(self)
+#         dict_.update({'has_default_value': self.has_default_value, 'position': self.position})
+#         return dict_
+#
+#     def _to_script(self) -> ToScriptElement:
+#         script = self._get_to_script_elements()
+#         script.declaration = f"{self.__class__.__name__}({script.declaration})"
+#
+#         script.imports.append(self.full_classname)
+#         return script
+#
+#     def _get_to_script_elements(self):
+#         declaration = f"name='{self.name}', position={self.position}"
+#         return ToScriptElement(declaration=declaration, imports=[], imports_as_is=[])
+#
+#     def is_file_type(self):
+#         """ Not implemented yet. Should be implemented when all variable have types necessarily. """
+#         msg = f"File checking is not implemented for untyped workflow Variable named '{self.name}'.\n" \
+#               f"If this variable is a workflow input, variable should be typed " \
+#               f"and of type TypedVariable or TypedVariableWithDefaultValues"
+#         return NotImplementedError(msg)
+#
+#
+# class TypedVariable(Variable):
+#     """ Variable for workflow with a typing. """
+#
+#     has_default_value: bool = False
+#
+#     def __init__(self, type_: Type[Any], name: str = '', position: Tuple[float, float] = None):
+#         Variable.__init__(self, name=name, position=position)
+#         self.type_ = type_
+#
+#     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, **kwargs):
+#         """ Serializes the object with specific logic. """
+#         dict_ = super().to_dict(use_pointers, memo, path)
+#         if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
+#             # TODO QUICKFIX
+#             serialized = "dessia_common.displays.DisplayObject"
+#         else:
+#             serialized = serialize_annotation(self.type_)
+#         dict_.update({'type_': serialized})
+#         return dict_
+#
+#     @classmethod
+#     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariable':
+#         """
+#         Compute variable from dict.
+#
+#         TODO Remove this ?
+#         """
+#         type_ = deserialize_typing(dict_['type_'])
+#         return cls(type_=type_, name=dict_['name'], position=dict_.get("position"))
+#
+#     def copy(self, deep: bool = False, memo=None):
+#         """ Copies and gives a new object with no linked data. """
+#         return TypedVariable(type_=self.type_, name=self.name)
+#
+#     def _get_to_script_elements(self) -> ToScriptElement:
+#         script = super()._get_to_script_elements()
+#
+#         script.declaration += f", type_={self.type_.__name__}"
+#
+#         if "builtins" not in serialize_annotation(self.type_):
+#             script.imports.append(serialize_annotation(self.type_))
+#         return script
+#
+#     def is_file_type(self) -> bool:
+#         """ Return whether a variable is of type File given its type_ attribute. """
+#         if is_typing(self.type_):
+#             # Handling List[BinaryFile or StringFile]
+#             return get_args(self.type_)[0] in [BinaryFile, StringFile]
+#
+#         if not isinstance(self.type_, type):
+#             return False
+#         return issubclass(self.type_, (StringFile, BinaryFile))
+#
+#
+# class VariableWithDefaultValue(Variable):
+#     """
+#     A variable with a default value.
+#
+#     TODO Isn't this always typed ?
+#     """
+#
+#     has_default_value: bool = True
+#
+#     def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
+#         warnings.warn("VariableWithDefaultValue is deprecated and shouldn't be used anymore. ")
+#         Variable.__init__(self, name=name, position=position)
+#         self.default_value = default_value
 
 
 T = TypeVar("T")
 
 
-class TypedVariableWithDefaultValue(TypedVariable):
-    """
-    Workflow variables wit a type and a default value.
-
-    TODO Can this be just VariableWithDefaultValue ? Type is induced ?
-    """
-
-    has_default_value: bool = True
-
-    def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
-        TypedVariable.__init__(self, type_=type_, name=name, position=position)
-        self.default_value = default_value
-
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
-                **kwargs):
-        """ Serialize the variable with custom logic. """
-        dict_ = super().to_dict(use_pointers, memo, path)
-        dict_.update({'default_value': serialize(self.default_value)})
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariableWithDefaultValue':
-        """
-        Compute variable from dict.
-
-        TODO Remove this ?
-        """
-        type_ = deserialize_typing(dict_['type_'])
-        default_value = deserialize(dict_['default_value'], global_dict=kwargs["global_dict"],
-                                    pointers_memo=kwargs["pointers_memo"])
-        return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
-
-    def copy(self, deep: bool = False, memo=None):
-        """
-        Copy a TypedVariableWithDefaultValue.
-
-        :param deep: DESCRIPTION, defaults to False
-        :type deep: bool, optional
-
-        :param memo: a memo to use, defaults to None
-        :type memo: TYPE, optional
-
-        :return: The copied object
-        """
-        if memo is None:
-            memo = {}
-        copied_default_value = deepcopy_value(self.default_value, memo=memo)
-        return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
-
-    def _to_script(self) -> ToScriptElement:
-        warnings.warn("to_script method is not implemented for TypedVariableWithDefaultValue yet. "
-                      "We are losing the default value as we call the TypedVariable method")
-        casted_variable = TypedVariable(type_=self.type_, name=self.name, position=self.position)
-        return casted_variable._to_script()
-
-
-NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
+# class TypedVariableWithDefaultValue(TypedVariable):
+#     """
+#     Workflow variables wit a type and a default value.
+#
+#     TODO Can this be just VariableWithDefaultValue ? Type is induced ?
+#     """
+#
+#     has_default_value: bool = True
+#
+#     def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
+#         TypedVariable.__init__(self, type_=type_, name=name, position=position)
+#         self.default_value = default_value
+#
+#     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None,
+#                 **kwargs):
+#         """ Serialize the variable with custom logic. """
+#         dict_ = super().to_dict(use_pointers, memo, path)
+#         dict_.update({'default_value': serialize(self.default_value)})
+#         return dict_
+#
+#     @classmethod
+#     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'TypedVariableWithDefaultValue':
+#         """
+#         Compute variable from dict.
+#
+#         TODO Remove this ?
+#         """
+#         type_ = deserialize_typing(dict_['type_'])
+#         default_value = deserialize(dict_['default_value'], global_dict=kwargs["global_dict"],
+#                                     pointers_memo=kwargs["pointers_memo"])
+#         return cls(type_=type_, default_value=default_value, name=dict_['name'], position=dict_.get('position'))
+#
+#     def copy(self, deep: bool = False, memo=None):
+#         """
+#         Copy a TypedVariableWithDefaultValue.
+#
+#         :param deep: DESCRIPTION, defaults to False
+#         :type deep: bool, optional
+#
+#         :param memo: a memo to use, defaults to None
+#         :type memo: TYPE, optional
+#
+#         :return: The copied object
+#         """
+#         if memo is None:
+#             memo = {}
+#         copied_default_value = deepcopy_value(self.default_value, memo=memo)
+#         return TypedVariableWithDefaultValue(type_=self.type_, default_value=copied_default_value, name=self.name)
+#
+#     def _to_script(self) -> ToScriptElement:
+#         warnings.warn("to_script method is not implemented for TypedVariableWithDefaultValue yet. "
+#                       "We are losing the default value as we call the TypedVariable method")
+#         casted_variable = TypedVariable(type_=self.type_, name=self.name, position=self.position)
+#         return casted_variable._to_script()
 
 
-class Variable2(DessiaObject):
+class Variable(DessiaObject):
     """ New version of workflow variable. """
 
-    def __init__(self, type_: Type, default_value: Any = _UNDEFINED,
+    def __init__(self, type_: Type = None, default_value: Any = _UNDEFINED,
                  name: str = "", position: Tuple[float, float] = (0, 0)):
         self.type_ = type_
         self.default_value = default_value
@@ -243,6 +240,9 @@ class Variable2(DessiaObject):
         default_value = dict_.get("default_value", _UNDEFINED)
         return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
+
+
+NAME_VARIABLE = Variable(type_=str, name="Result Name")
 
 
 class Block(DessiaObject):
@@ -367,7 +367,7 @@ class Workflow(Block):
                                     "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
     def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 detached_variables: List[TypedVariable] = None, description: str = "",
+                 detached_variables: List[Variable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
@@ -1112,7 +1112,7 @@ class Workflow(Block):
         """
         variable_match = {}
         for variable in self.variables:
-            if isinstance(variable, TypedVariable):
+            if variable.type_ is not None:
                 vartype = variable.type_
             else:
                 continue
@@ -1161,7 +1161,7 @@ class Workflow(Block):
         # If both are NBVs, non-equality has already been checked
         # If one is NBV and not the other, there is no need to check non-equality
 
-        if not (isinstance(variable, TypedVariable) and isinstance(other_variable, TypedVariable)):
+        if variable.type_ is None or other_variable.type_ is None:
             # Variable must be typed to be seen compatible
             return False
         return True
@@ -1771,7 +1771,7 @@ class WorkflowState(DessiaObject):
                     value = self.input_values[index]
                 else:
                     msg = f"Value '{input_.name}' of index '{index}' in inputs has no value."
-                    if isinstance(input_, TypedVariable):
+                    if input_.type_ is not None:
                         msg += f" Should be instance of '{input_.type_}'."
                     raise ValueError(msg)
             else:
@@ -1913,7 +1913,7 @@ class WorkflowState(DessiaObject):
             self._activate_pipe(pipe=outgoing_pipe, value=value)
         self.activated_items[variable] = True
 
-    def _activate_input(self, input_: TypedVariable, value):  # Inputs must always be Typed
+    def _activate_input(self, input_: Variable, value):  # Inputs must always be Typed
         """ Type-check, activate the variable and propagate the value to its pipe. """
         # Type checking
         value_type_check(value, input_.type_)
@@ -1983,7 +1983,7 @@ class WorkflowState(DessiaObject):
                 self._activate_input(input_=variable, value=variable.default_value)
             elif check_all_inputs:
                 msg = f"Value {variable.name} of index {index} in inputs has no value"
-                if isinstance(variable, TypedVariable):
+                if variable.type_ is not None:
                     msg += f": should be instance of {variable.type_}"
                 raise ValueError(msg)
 
@@ -2216,6 +2216,8 @@ def value_type_check(value, type_):
 
     Check if the value as the specified type.
     """
+    if type_ is None:
+        return False
     try:  # TODO: Sub-scripted generics cannot be used...
         if not isinstance(value, type_):
             return False
