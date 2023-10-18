@@ -685,7 +685,7 @@ class DeprecatedMultiPlot(Display):
     def __init__(self, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[Variable(List[DessiaObject])], load_by_default=load_by_default,
+        Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
                          name=name, position=position)
         self.inputs[0].name = "Input List"
         self.serialize = True
@@ -745,7 +745,7 @@ class MultiPlot(Display):
     def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[Variable(List[DessiaObject])], load_by_default=load_by_default,
+        Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=selector, position=position)
         self.inputs[0].name = "Sequence"
 
@@ -831,7 +831,7 @@ class CadView(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = Variable(DessiaObject, name="Model")
+        input_ = Variable(type_=DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -864,7 +864,7 @@ class DeprecatedMarkdown(Display):
                  position: Tuple[float, float] = None):
         warnings.warn("This version of 'Markdown' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'Markdown' new version, instead. (see docstrings)", DeprecationWarning)
-        input_ = Variable(DessiaObject, name="Model to display")
+        input_ = Variable(type_=DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
                          selector=selector, position=position)
 
@@ -879,7 +879,7 @@ class Markdown(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = Variable(DessiaObject, name="Model")
+        input_ = Variable(type_=DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -913,7 +913,7 @@ class DeprecatedPlotData(Display):
                  position: Tuple[float, float] = None):
         warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
-        input_ = Variable(DessiaObject, name="Model to display")
+        input_ = Variable(type_=DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
                          selector=selector, position=position)
 
