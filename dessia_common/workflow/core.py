@@ -240,6 +240,10 @@ class Variable(DessiaObject):
         return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
 
+    @property
+    def has_default_value(self):
+        return self.default_value is not _UNDEFINED
+
 
 NAME_VARIABLE = Variable(type_=str, name="Result Name")
 
@@ -845,7 +849,7 @@ class Workflow(Block):
             variable_index = copied_workflow.variables.index(input_)
             if variable_index in copied_ivv:
                 dict_[input_index] = serialize(copied_ivv[variable_index])
-            elif isinstance(input_, TypedVariableWithDefaultValue):
+            elif input_.has_default_value:
                 dict_[input_index] = serialize(input_.default_value)
 
         return dict_
