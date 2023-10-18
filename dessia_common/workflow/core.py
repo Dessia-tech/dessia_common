@@ -41,6 +41,9 @@ from dessia_common.serialization import deserialize, serialize_with_pointers, se
 from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
+_UNDEFINED = object()
+
+
 class Variable(DessiaObject):
     """ Variable for workflow. """
 
@@ -92,8 +95,7 @@ class TypedVariable(Variable):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None,
-                **kwargs):
+    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None, **kwargs):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
         if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
@@ -215,6 +217,34 @@ class TypedVariableWithDefaultValue(TypedVariable):
 NAME_VARIABLE = TypedVariable(type_=str, name="Result Name")
 
 
+class Variable2(DessiaObject):
+    """ New version of workflow variable. """
+
+    def __init__(self, type_: Type, default_value: Any = _UNDEFINED,
+                 name: str = "", position: Tuple[float, float] = (0, 0)):
+        self.type_ = type_
+        self.default_value = default_value
+        self.position = position
+        super().__init__(name)
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
+        """ WRITE DOCSTRING. """
+        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path,
+                                id_method=id_method, id_memo=id_memo, **kwargs)
+        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position})
+        if self.default_value is not _UNDEFINED:
+            dict_["default_value"] = serialize(self.default_value)
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable2':
+        """ WRITE DOCSTRING. """
+        default_value = dict_.get("default_value", _UNDEFINED)
+        return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
+                   name=dict_["name"], position=tuple(dict_["position"]))
+
+
 class Block(DessiaObject):
     """ An Abstract block. Do not instantiate alone. """
 
@@ -247,7 +277,6 @@ class Block(DessiaObject):
         Used by workflow module only.
         """
         return self.__class__.__name__ == other.__class__.__name__
-
 
     def _docstring(self):
         """ Base function for sub model docstring computing. """
