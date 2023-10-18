@@ -87,7 +87,7 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
-        outputs = [TypedVariable(type_=self.model_class, name="Model")]
+        outputs = [Variable(type_=self.model_class, name="Model")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -212,7 +212,7 @@ class ModelMethod(Block):
 
     def __init__(self, method_type: MethodType[Type], name: str = "", position: Tuple[float, float] = None):
         self.method_type = method_type
-        inputs = [TypedVariable(type_=method_type.class_, name="Model")]
+        inputs = [Variable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
         inputs = set_inputs_from_function(self.method, inputs)
 
@@ -220,7 +220,7 @@ class ModelMethod(Block):
         self.argument_names = [i.name for i in inputs[1:]]
 
         return_output = output_from_function(function=self.method, name="Return")
-        model_output = TypedVariable(type_=method_type.class_, name="Model")
+        model_output = Variable(type_=method_type.class_, name="Model")
         outputs = [return_output, model_output]
 
         if name == "":
@@ -299,7 +299,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = "", position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name="Sequence")]
+        outputs = [Variable(type_=List[T], name="Sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -332,7 +332,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = "", position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=List[T], name="Sequence")]
+        outputs = [Variable(type_=List[T], name="Sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -638,7 +638,7 @@ class Display(Block):
 
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
                  selector: Optional[ViewType] = None, position: Tuple[float, float] = None):
-        output = TypedVariable(type_=DisplayObject, name="Display Object")
+        output = Variable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
         self.load_by_default = load_by_default
@@ -685,7 +685,7 @@ class DeprecatedMultiPlot(Display):
     def __init__(self, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+        Display.__init__(self, inputs=[Variable(List[DessiaObject])], load_by_default=load_by_default,
                          name=name, position=position)
         self.inputs[0].name = "Input List"
         self.serialize = True
@@ -745,7 +745,7 @@ class MultiPlot(Display):
     def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+        Display.__init__(self, inputs=[Variable(List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=selector, position=position)
         self.inputs[0].name = "Sequence"
 
@@ -816,7 +816,7 @@ class DeprecatedCadView(Display):
                  position: Tuple[float, float] = None):
         warnings.warn("This version of CadView Block is deprecated and should not be used anymore."
                       "Please upgrade to CadView new version, instead. (see docstrings)", DeprecationWarning)
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = Variable(type_=DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -831,7 +831,7 @@ class CadView(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model")
+        input_ = Variable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -864,7 +864,7 @@ class DeprecatedMarkdown(Display):
                  position: Tuple[float, float] = None):
         warnings.warn("This version of 'Markdown' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'Markdown' new version, instead. (see docstrings)", DeprecationWarning)
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = Variable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
                          selector=selector, position=position)
 
@@ -879,7 +879,7 @@ class Markdown(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model")
+        input_ = Variable(DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -913,7 +913,7 @@ class DeprecatedPlotData(Display):
                  position: Tuple[float, float] = None):
         warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
-        input_ = TypedVariable(DessiaObject, name="Model to display")
+        input_ = Variable(DessiaObject, name="Model to display")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
                          selector=selector, position=position)
 
@@ -929,7 +929,7 @@ class PlotData(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = TypedVariable(DessiaObject, name="Model")
+        input_ = Variable(type_=DessiaObject, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -991,12 +991,9 @@ class GetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
+        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
-        if type_:
-            outputs = [TypedVariable(type_=type_, name="Attribute")]
-        else:
-            outputs = [Variable(name="Attribute")]
+        outputs = [Variable(type_=type_, name="Attribute")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1048,13 +1045,10 @@ class SetModelAttribute(Block):
     def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
+        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
-        if type_:
-            inputs.append(TypedVariable(type_=type_, name="Value"))
-        else:
-            inputs.append(Variable(name="Value"))
-        outputs = [TypedVariable(type_=self.attribute_type.class_, name="Model")]
+        inputs.append(Variable(type_=type_, name="Value"))
+        outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -1154,9 +1148,8 @@ class ConcatenateStrings(Block):
                  position: Tuple[float, float] = None):
         self.number_elements = number_elements
         self.separator = separator
-        inputs = [TypedVariableWithDefaultValue(name=f"Substring {i + 1}", type_=str, default_value="")
-                  for i in range(number_elements)]
-        output = TypedVariable(name="Concatenation", type_=str)
+        inputs = [Variable(name=f"Substring {i + 1}", type_=str, default_value="") for i in range(number_elements)]
+        output = Variable(name="Concatenation", type_=str)
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def equivalent_hash(self):
@@ -1208,8 +1201,8 @@ class Export(Block):
         self.text = text
 
         output = output_from_function(function=method, name="Stream")
-        inputs = [TypedVariable(type_=method_type.class_, name="Model"),
-                  TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename")]
+        inputs = [Variable(type_=method_type.class_, name="Model"),
+                  Variable(type_=str, default_value=filename, name="Filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
     def evaluate(self, values, **kwargs):
@@ -1256,7 +1249,7 @@ class Archive(Block):
         self.extension = "zip"
         self.text = False
         inputs = [Variable(name=f"Export {i}") for i in range(number_exports)]
-        inputs.append(TypedVariableWithDefaultValue(type_=str, default_value=filename, name="Filename"))
+        inputs.append(Variable(type_=str, default_value=filename, name="Filename"))
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="Archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method=True, id_memo=None,

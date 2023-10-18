@@ -1,5 +1,5 @@
 """ Tools for forms of workflows. """
-from dessia_common.workflow.core import TypedVariable, TypedVariableWithDefaultValue, Pipe, Workflow
+from dessia_common.workflow.core import Variable, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, GetModelAttribute, ForEach,\
     MultiPlot, Unpacker, WorkflowBlock
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
@@ -38,8 +38,8 @@ multiplot = MultiPlot(selector=multiplot_selector, attributes=multiplot_attribut
 
 unpacker = Unpacker(indices=[0], name="Unpacker")
 
-int_variable = TypedVariable(type_=int, name="Some Integer")
-name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name", default_value="Shared Name")
+int_variable = Variable(type_=int, name="Some Integer")
+name_variable = Variable(type_=str, name="Shared Name", default_value="Shared Name")
 
 pipe_int_1 = Pipe(input_variable=int_variable, output_variable=instanciate_generator.inputs[1])
 pipe_name_1 = Pipe(input_variable=name_variable, output_variable=instanciate_generator.inputs[3])

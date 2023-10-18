@@ -1,14 +1,15 @@
 import unittest
 from dessia_common.workflow.blocks import GetModelAttribute, SetModelAttribute
-from dessia_common.workflow.core import Variable, TypedVariable
+from dessia_common.workflow.core import Variable
 from dessia_common.typings import AttributeType
 from dessia_common.forms import DessiaObject
 from typing import List, Dict
 from parameterized import parameterized
 
+
 class DummyClassForTesting(DessiaObject):
-    def __init__(self, int_: int , variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
-                  l: List[int] = [1,2,3], d: Dict[str,int] = {'a':1,'b':2}, two: int = 2, name: str ='', **kwargs):
+    def __init__(self, int_: int, variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
+                l: List[int] = [1, 2, 3], d: Dict[str, int] = {'a': 1,'b': 2}, two: int = 2, name: str = "", **kwargs):
         self.int_ = int_
         variable_= variable_
         self.float_ = float_
@@ -45,7 +46,7 @@ class TestGetModelAttribute(unittest.TestCase):
     def test_outputs(self, type_, name):
         block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
         if type_:
-            typed_varible = TypedVariable(type_=type_, name='Model attribute')
+            typed_varible = Variable(type_=type_, name='Model attribute')
             self.assertTrue(block.outputs[0].name == typed_varible.name)
             self.assertTrue(block.outputs[0].type_ == typed_varible.type_)
         else:
@@ -90,11 +91,11 @@ class TestSetModelAttribute(unittest.TestCase):
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        typed_varible_output = TypedVariable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
+        typed_varible_output = Variable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
         self.assertTrue(block.outputs[0].name == typed_varible_output.name)
         self.assertTrue(block.outputs[0].type_ == typed_varible_output.type_)
         if type_:
-            typed_varible_input = TypedVariable(type_=type_, name='Value to insert for attribute '+name)
+            typed_varible_input = Variable(type_=type_, name='Value to insert for attribute '+name)
             self.assertTrue(block.inputs[1].name == typed_varible_input.name)
             self.assertTrue(block.inputs[1].type_ == typed_varible_input.type_)
         else:
