@@ -11,6 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
+from dessia_common.displays import DisplayObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
                                    CadViewType, PlotDataType, MarkdownType, ViewType)
@@ -324,6 +325,11 @@ class Property:
         """ Stringified annotation. """
         return str(self.annotation)
 
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Stringified pretty annotation. """
+        return self.serialized
+
     @property
     def standalone_in_db(self) -> bool:
         """ Properties cannot be in database by default. """
@@ -396,6 +402,17 @@ class TypingProperty(Property):
             return compute_typing_schema_serialization(serialized_typing=serialized, args_schemas=self.args_schemas)
         return serialized
 
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Recursively prettify annotation. """
+        prettyfied = self.origin.__name__
+        if prettyfied in ["list", "dict", "tuple", "type"]:
+            # TODO Dirty quick-fix. Find a generic way to automatize this
+            prettyfied = prettyfied.capitalize()
+        if self.args:
+            return compute_pretty_schema_annotation(serialized_typing=prettyfied, args_schemas=self.args_schemas)
+        return prettyfied
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Split Typing and Arguments and delegate deserialization to specific classes. """
@@ -460,6 +477,11 @@ class ProxyProperty(TypingProperty):
     def serialized(self) -> str:
         """ Stringify under-proxy-annotation. """
         return self.schema.serialized
+
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Stringify under-proxy-annotation. """
+        return self.schema.pretty_annotation
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -569,6 +591,11 @@ class MeasureProperty(BuiltinProperty):
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for="class")
 
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Full class name. """
+        return self.annotation.__name__
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize as annotation custom class. """
@@ -590,10 +617,15 @@ class FileProperty(Property):
     def __init__(self, annotation: Type[File], attribute: str, definition_default: File = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
         """ Return file classname. """
         return full_classname(object_=self.annotation, compute_for="class")
+
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Return file classname. """
+        return self.annotation.__name__
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write File as a Dict. """
@@ -638,6 +670,11 @@ class CustomClass(Property):
         """ Full class name. """
         return full_classname(object_=self.annotation, compute_for="class")
 
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Return file classname. """
+        return self.annotation.__name__
+
     @property
     def standalone_in_db(self) -> bool:
         """ Whether the class is standalone in db. """
@@ -678,10 +715,15 @@ class UnionProperty(TypingProperty):
     def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    @property
+    @cached_property
     def serialized(self) -> str:
         """ Generic serialization with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_typing_schema_serialization(serialized_typing="Union", args_schemas=self.args_schemas)
+
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Generic prettyfication with 'Union' enforced, because Union annotation has no __name__ attribute. """
+        return compute_pretty_schema_annotation(serialized_typing="Union", args_schemas=self.args_schemas)
 
     @property
     def standalone_in_db(self) -> Optional[bool]:
@@ -761,12 +803,19 @@ class HeterogeneousSequence(TypingProperty):
             return [get_schema(annotation=self.args[0], attribute=f"{self.attribute}/0")]
         return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
 
-    @property
+    @cached_property
     def serialized(self) -> str:
         """ If additional items, concatenate ellipsis. """
         if self.additional_items:
             return f"Tuple[{self.args_schemas[0].serialized}, ...]"
         return super().serialized
+
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ If additional items, concatenate ellipsis. """
+        if self.additional_items:
+            return f"Tuple[{self.args_schemas[0].pretty_annotation}, ...]"
+        return super().pretty_annotation
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -1317,9 +1366,15 @@ SERIALIZED_TO_SCHEMA_CLASS = {
 
 
 def serialize_annotation(annotation: Type[T], attribute: str = "") -> str:
-    """ Make use of schema to serialized annotations. """
+    """ Make use of schema to serialize annotations. """
     schema = get_schema(annotation=annotation, attribute=attribute)
     return schema.serialized
+
+
+def pretty_annotation(annotation: Type[T], attribute: str = "") -> str:
+    """ Make use of schema to compute pretty annotations. """
+    schema = get_schema(annotation=annotation, attribute=attribute)
+    return schema.pretty_annotation
 
 
 def deserialize_annotation(serialized: str) -> Type[T]:
@@ -1360,6 +1415,8 @@ def custom_class_schema(annotation: Type[T], attribute: str, definition_default:
     if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
         return CustomClass(annotation=annotation, attribute=attribute, definition_default=definition_default)
+    if issubclass(annotation, DisplayObject):
+        return Property(annotation=annotation, attribute=attribute, definition_default=definition_default)
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
@@ -1381,6 +1438,11 @@ def object_default(definition_default: CoreDessiaObject = None, class_schema: Cl
 def compute_typing_schema_serialization(serialized_typing: str, args_schemas: List[Property]) -> str:
     """ Build final typing serialized string. """
     return f"{serialized_typing}[{', '.join([s.serialized for s in args_schemas])}]"
+
+
+def compute_pretty_schema_annotation(serialized_typing: str, args_schemas: List[Property]) -> str:
+    """ Build final typing pretty annotation string. """
+    return f"{serialized_typing}[{', '.join([s.pretty_annotation for s in args_schemas])}]"
 
 
 def serialize_typing(typing_, attribute: str = "") -> str:

@@ -3,7 +3,6 @@
 """ Gathers all workflow relative features. """
 
 import ast
-import inspect
 import time
 import datetime
 from functools import cached_property
@@ -20,7 +19,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing, SCHEMA_HEADER
+    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -29,7 +28,7 @@ from dessia_common.utils.helpers import prettyname
 
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplaySetting, DisplayObject
+from dessia_common.displays import DisplaySetting
 from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
@@ -2164,6 +2163,7 @@ class WorkflowRun(WorkflowState):
                                    workflow_name=self.workflow.name,
                                    output_table=output_table,
                                    execution_info=execution_info)
+
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """
