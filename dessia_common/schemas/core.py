@@ -28,6 +28,8 @@ TYPES_FROM_STRING = {"unicode": str, "str": str, "float": float, "int": int, "bo
 
 _fullargsspec_cache = {}
 
+_UNDEFINED = object()
+
 
 class BackendReference(CoreDessiaObject):
     """ Enable Backend reference injection. """
@@ -75,19 +77,13 @@ class Schema:
      We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
-    def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str, name: str = ""):
+    def __init__(self, annotations: Annotations, attributes: List[str],
+                 default_arguments: Dict[str, Any], name: str = ""):
         self.annotations = annotations
-        self.attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
+        self.attributes = attributes
         self.name = name
 
-        try:  # Parse docstring
-            self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
-        except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
-            self.parsed_docstring = FAILED_DOCSTRING_PARSING
-
-        self.parsed_attributes = self.parsed_docstring["attributes"]
-
-        self.required_arguments, default_arguments = split_default_args(argspecs=argspec, merge=False)
+        self.required_arguments = [a for a in attributes if a not in default_arguments]
 
         self.property_schemas = {}
         for attribute in self.attributes:
@@ -106,17 +102,9 @@ class Schema:
         """ Extract and compute a schema from one of the attributes. """
         schema = self.property_schemas.get(attribute, None)
 
-        if self.parsed_attributes is not None and attribute in self.parsed_attributes:
-            try:
-                description = self.parsed_attributes[attribute]["desc"]
-            except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
-                description = FAILED_ATTRIBUTE_PARSING["desc"]
-        else:
-            description = ""
-
         editable = attribute in self.editable_attributes
         if schema is not None:
-            return schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
+            return schema.to_dict(title=prettyname(attribute), editable=editable, description="")
 
         # if attribute in self.default_arguments:
         #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
@@ -136,11 +124,9 @@ class Schema:
         return [a for a in self.attributes if self.property_schemas[a].standalone_in_db]
 
     def to_dict(self):
-        """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a: self.chunk(a) for a in self.attributes}
-        schema.update({"required": self.required_arguments, "properties": properties,
-                       "description": self.parsed_docstring["description"]})
+        schema.update({"required": self.required_arguments, "properties": properties, "description": ""})
         return schema
 
     def default_dict(self):
@@ -184,8 +170,83 @@ class Schema:
             return UntypedArgument(attribute)
         return PassedCheck(f"Attribute '{attribute}' : is annotated")
 
+    @classmethod
+    def from_type(cls, annotation: Type[T], attribute: str = "attribute", default_value: T = _UNDEFINED) -> 'Schema':
+        annotations = {attribute: annotation}
+        default_arguments = {}
+        if default_value != _UNDEFINED:
+            default_arguments[attribute] = default_value
+        return cls(annotations=annotations, attributes=[attribute], default_arguments=default_arguments)
 
-class ClassSchema(Schema):
+    @classmethod
+    def from_serialized_type(cls, type_: str, attribute: str = "attribute", default_value: T = _UNDEFINED) -> 'Schema':
+        annotation = deserialize_annotation(type_)
+        return cls.from_type(annotation=annotation, attribute=attribute, default_value=default_value)
+
+
+class MemberSchema(Schema):
+    """
+    Abstraction of a Schema.
+
+    It reads the user-defined type hints and then writes into a Dict the recursive structure of an object
+    that can be handled by dessia_common.
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    for example.
+
+    Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
+    That is why it implements methods with the same name.
+
+    TODO We might want to define our 'own argspecs', in order to full native support of workflow.
+     We could translate inspect argspecs into a dessia_common pseudo-language.
+    """
+
+    def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str, name: str = ""):
+        attributes = [a for a in argspec.args if a not in RESERVED_ARGNAMES]
+
+        try:  # Parse docstring
+            self.parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
+            self.parsed_docstring = FAILED_DOCSTRING_PARSING
+
+        self.parsed_attributes = self.parsed_docstring["attributes"]
+
+        required_arguments, default_arguments = split_default_args(argspecs=argspec, merge=False)
+
+        super().__init__(annotations=annotations, attributes=attributes, default_arguments=default_arguments, name=name)
+
+        self.required_arguments = required_arguments
+
+    def to_dict(self):
+        """ Write the whole schema. """
+        schema = super().to_dict()
+        schema["description"] = self.parsed_docstring["description"]
+        return schema
+
+    def chunk(self, attribute: str):
+        """ Extract and compute a schema from one of the attributes. """
+        schema = self.property_schemas.get(attribute, None)
+
+        if self.parsed_attributes is not None and attribute in self.parsed_attributes:
+            try:
+                description = self.parsed_attributes[attribute]["desc"]
+            except Exception:  # Catching broad exception because we don't want it to break platform if a failure occurs
+                description = FAILED_ATTRIBUTE_PARSING["desc"]
+        else:
+            description = ""
+
+        editable = attribute in self.editable_attributes
+        if schema is not None:
+            return schema.to_dict(title=prettyname(attribute), editable=editable, description=description)
+
+        # if attribute in self.default_arguments:
+        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
+        #     default = self.default_arguments.get(attribute, None)
+        #     print("Default", default)
+        #     chunk["default_value"] = schema.default_value(definition_default=default)
+        return {}
+
+
+class ClassSchema(MemberSchema):
     """
     Schema of a class.
 
@@ -200,7 +261,7 @@ class ClassSchema(Schema):
         members = inspect.getfullargspec(self.class_.__init__)
         docstring = class_.__doc__
 
-        Schema.__init__(self, annotations=annotations, argspec=members, docstring=docstring,
+        MemberSchema.__init__(self, annotations=annotations, argspec=members, docstring=docstring,
                         name=full_classname(class_))
 
     @property
@@ -229,7 +290,7 @@ class ClassSchema(Schema):
         return dict_
 
 
-class MethodSchema(Schema):
+class MethodSchema(MemberSchema):
     """
     Schema of a method.
 

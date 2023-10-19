@@ -19,7 +19,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation
+    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation, _UNDEFINED
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -38,9 +38,6 @@ from dessia_common.serialization import deserialize, serialize_with_pointers, se
     serialize_dict, add_references, deserialize_argument
 
 from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
-
-
-_UNDEFINED = object()
 
 
 # class Variable(DessiaObject):
@@ -229,8 +226,7 @@ class Variable(DessiaObject):
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ WRITE DOCSTRING. """
-        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path,
-                                id_method=id_method, id_memo=id_memo, **kwargs)
+        dict_ = DessiaObject.base_dict(self)
         dict_.update({"type_": serialize_annotation(self.type_), "position": self.position})
         if self.default_value is not _UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
