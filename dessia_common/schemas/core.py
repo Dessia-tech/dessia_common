@@ -195,9 +195,6 @@ class MemberSchema(Schema):
 
     Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
     That is why it implements methods with the same name.
-
-    TODO We might want to define our 'own argspecs', in order to full native support of workflow.
-     We could translate inspect argspecs into a dessia_common pseudo-language.
     """
 
     def __init__(self, annotations: Annotations, argspec: inspect.FullArgSpec, docstring: str, name: str = ""):
@@ -262,7 +259,7 @@ class ClassSchema(MemberSchema):
         docstring = class_.__doc__
 
         MemberSchema.__init__(self, annotations=annotations, argspec=members, docstring=docstring,
-                        name=full_classname(class_))
+                              name=full_classname(class_))
 
     @property
     def editable_attributes(self):
@@ -371,7 +368,7 @@ class MethodSchema(MemberSchema):
 class Property:
     """ Base class for a schema property. """
 
-    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = _UNDEFINED):
         self.annotation = annotation
         self.attribute = attribute
         self.definition_default = definition_default
@@ -396,6 +393,10 @@ class Property:
         """ Properties cannot be in database by default. """
         return False
 
+    @property
+    def has_default_value(self):
+        return self.definition_default != _UNDEFINED
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Simple get class from its name. """
@@ -408,8 +409,11 @@ class Property:
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = "") -> PropertySchema:
         """ Write base schema as a Dict. """
-        return {"title": title, "editable": editable, "description": description,
-                "python_typing": self.serialized, "type": None}
+        dict_ = {"title": title, "editable": editable, "description": description,
+                 "python_typing": self.serialized, "type": None}
+        if self.has_default_value:
+            dict_["default_value"] = self.default_value()
+        return dict_
 
     def default_value(self):
         """ Generic default. Yield user default if defined, else None. """
@@ -434,7 +438,7 @@ class TypingProperty(Property):
 
     SERIALIZED_REGEXP = r"([^\[\]]*)\[(.*)\]"
 
-    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
@@ -520,10 +524,10 @@ class ProxyProperty(TypingProperty):
     """
     Schema Class for Proxies.
 
-    Proxies are just intermediate types which actual schemas if its arguments. For example OptionalProperty proxy.
+    Proxies are just intermediary types with actual schemas in its arguments. For example OptionalProperty proxy.
     """
 
-    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.annotation = self.args[0]
@@ -533,6 +537,10 @@ class ProxyProperty(TypingProperty):
         """ Return a reference to its only argument. """
         return get_schema(annotation=self.annotation, attribute=self.attribute,
                           definition_default=self.definition_default)
+
+    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
+        """ Write Proxy as a Dict. """
+        return self.schema.to_dict(title=title, editable=editable, description=description)
 
     @cached_property
     def serialized(self) -> str:
@@ -561,18 +569,10 @@ class OptionalProperty(ProxyProperty):
     def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
-    def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
-        """ Write Optional as a Dict. """
-        default_value = self.schema.default_value()
-
-        base_chunk = self.schema.to_dict(title=title, editable=editable, description=description)
-        chunk = {**base_chunk, "default_value": default_value}
-        return chunk
-
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
         """ Deserialize Optional annotation. """
-        raise NotImplementedError("Optional deser not implemented yet. ")
+        raise NotImplementedError("Optional deserialization not implemented yet. ")
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -591,7 +591,7 @@ class AnnotatedProperty(ProxyProperty):
                            "Dessia only supports python 3.9 at the moment."
 
     # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = None):
+    def __init__(self, annotation: Type[T], attribute: str, definition_default: T = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
         raise NotImplementedError(self._not_implemented_msg)
 
@@ -619,7 +619,7 @@ Builtin = Union[str, bool, float, int]
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
 
-    def __init__(self, annotation: Type[Builtin], attribute: str, definition_default: Builtin = None):
+    def __init__(self, annotation: Type[Builtin], attribute: str, definition_default: Builtin = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -636,7 +636,7 @@ class BuiltinProperty(Property):
         """ Write Builtin as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
         chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
-        if self.default_value() is not None:
+        if self.default_value() is not _UNDEFINED:
             chunk["default_value"] = self.default_value()
         return chunk
 
@@ -644,7 +644,7 @@ class BuiltinProperty(Property):
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
 
-    def __init__(self, annotation: Type[Measure], attribute: str, definition_default: Measure = None):
+    def __init__(self, annotation: Type[Measure], attribute: str, definition_default: Measure = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -675,7 +675,7 @@ File = Union[StringFile, BinaryFile]
 class FileProperty(Property):
     """ Schema class for File type hints. """
 
-    def __init__(self, annotation: Type[File], attribute: str, definition_default: File = None):
+    def __init__(self, annotation: Type[File], attribute: str, definition_default: File = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -707,7 +707,7 @@ class FileProperty(Property):
 
     def has_no_default(self) -> PassedCheck:
         """ Check if the user definition doesn't have any default value, as it is not supported for files. """
-        if self.definition_default is not None:
+        if self.definition_default is not _UNDEFINED:
             msg = f"{self.check_prefix}File input defines a default value, whereas it is not supported."
             return CheckWarning(msg)
         msg = f"{self.check_prefix}File input doesn't define a default value, as it should."
@@ -718,7 +718,7 @@ class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
 
     def __init__(self, annotation: Type[CoreDessiaObject], attribute: str,
-                 definition_default: CoreDessiaObject = None):
+                 definition_default: CoreDessiaObject = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @property
@@ -773,7 +773,7 @@ class CustomClass(Property):
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
 
-    def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = None):
+    def __init__(self, annotation: Type[Union[T]], attribute: str, definition_default: Union[T] = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @cached_property
@@ -848,7 +848,7 @@ class HeterogeneousSequence(TypingProperty):
     Datatype that can be seen as a Tuple. Have any amount of arguments but a limited length.
     """
 
-    def __init__(self, annotation: Type[Tuple], attribute: str, definition_default: Tuple = None):
+    def __init__(self, annotation: Type[Tuple], attribute: str, definition_default: Tuple = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.additional_items = Ellipsis in self.args
@@ -901,7 +901,7 @@ class HeterogeneousSequence(TypingProperty):
 
         Return serialized user default if defined, else a Tuple of Nones with the right size.
         """
-        if self.definition_default is not None:
+        if self.definition_default is not _UNDEFINED:
             return self.definition_default
         return tuple(s.default_value() for s in self.args_schemas)
 
@@ -939,7 +939,7 @@ class HomogeneousSequence(TypingProperty):
     Datatype that can be seen as a List. Have only one argument but an unlimited length.
     """
 
-    def __init__(self, annotation: Type[List[T]], attribute: str, definition_default: List[T] = None):
+    def __init__(self, annotation: Type[List[T]], attribute: str, definition_default: List[T] = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -968,7 +968,7 @@ class HomogeneousSequence(TypingProperty):
 
     def has_no_default(self) -> PassedCheck:
         """ Check if List doesn't define a default value that is other than None. """
-        if self.definition_default is not None:
+        if self.definition_default is not _UNDEFINED and self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable List input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
             return UnsupportedDefault(msg)
@@ -985,7 +985,7 @@ class DynamicDict(TypingProperty):
     """
 
     def __init__(self, annotation: Type[Dict[str, Builtin]], attribute: str,
-                 definition_default: Dict[str, Builtin] = None):
+                 definition_default: Dict[str, Builtin] = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1051,7 +1051,7 @@ class DynamicDict(TypingProperty):
 
     def has_no_default(self) -> PassedCheck:
         """ Check if Dict doesn't define a default value that is other than None. """
-        if self.definition_default is not None:
+        if self.definition_default is not _UNDEFINED and self.definition_default is not None:
             msg = f"{self.check_prefix}Mutable Dict input defines a default value other than None," \
                   f"which will lead to unexpected behavior and therefore, is not supported."
             return UnsupportedDefault(msg)
@@ -1071,7 +1071,7 @@ class InstanceOfProperty(TypingProperty):
     """
 
     def __init__(self, annotation: Type[InstanceOf[BaseClass]], attribute: str,
-                 definition_default: BaseClass = None):
+                 definition_default: BaseClass = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1097,8 +1097,7 @@ class InstanceOfProperty(TypingProperty):
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict(title=title, editable=editable, description=description)
-        chunk.update({"type": "object", "instance_of": self.classes[0],
-                      "classes": self.classes,
+        chunk.update({"type": "object", "instance_of": self.classes[0], "classes": self.classes,
                       "standalone_in_db": self.standalone_in_db})
         return chunk
 
@@ -1122,7 +1121,7 @@ class SubclassProperty(TypingProperty):
     """
 
     def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: str,
-                 definition_default: Type[BaseClass] = None):
+                 definition_default: Type[BaseClass] = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1158,7 +1157,7 @@ class AttributeTypeProperty(TypingProperty):
     A specifically instantiated AttributeType validated against this type.
     """
 
-    def __init__(self, annotation: Type[AttributeType], attribute: str, definition_default: AttributeType = None):
+    def __init__(self, annotation: Type[AttributeType], attribute: str, definition_default: AttributeType = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
         self.class_ = self.args[0]
@@ -1194,8 +1193,8 @@ class AttributeTypeProperty(TypingProperty):
         return chunk
     
     def default_value(self):
-        """ Sets AttributeType object_class and argument class_ if it is different than Type. """
-        if self.definition_default:
+        """ Sets AttributeType object_class and argument class_ if it is different from Type. """
+        if self.definition_default is not _UNDEFINED:
             return self.definition_default.to_dict()
         
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
@@ -1222,7 +1221,7 @@ class MethodTypeProperty(AttributeTypeProperty):
     A specifically instantiated MethodType validated against this type.
     """
 
-    def __init__(self, annotation: Type[MethodType], attribute: str, definition_default: MethodType = None):
+    def __init__(self, annotation: Type[MethodType], attribute: str, definition_default: MethodType = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1251,7 +1250,7 @@ class SelectorProperty(AttributeTypeProperty):
     A specifically instantiated AttributeType validated against this type.
     """
 
-    def __init__(self, annotation: Type[ViewType], attribute: str, definition_default: AttributeType = None):
+    def __init__(self, annotation: Type[ViewType], attribute: str, definition_default: AttributeType = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1283,7 +1282,7 @@ class ClassProperty(TypingProperty):
     Non DessiaObject sub-classes validated against this type.
     """
 
-    def __init__(self, annotation: Type[Class], attribute: str, definition_default: Class = None):
+    def __init__(self, annotation: Type[Class], attribute: str, definition_default: Class = _UNDEFINED):
         super().__init__(annotation=annotation, attribute=attribute, definition_default=definition_default)
 
     @classmethod
@@ -1334,7 +1333,7 @@ class AnyProperty(Property):
     """ Handle Any typed (cannot be form inputs). """
 
     def __init__(self, attribute: str):
-        super().__init__(annotation=Any, attribute=attribute, definition_default=None)
+        super().__init__(annotation=Any, attribute=attribute, definition_default=_UNDEFINED)
 
     def to_dict(self, title: str = "", editable: bool = False, description: str = ""):
         """ Write chunk of Any property. Useful for low-code features. """
@@ -1387,7 +1386,7 @@ def split_argspecs(argspecs: inspect.FullArgSpec) -> Tuple[int, int]:
     return nargs, ndefault_args
 
 
-def get_schema(annotation: Type[T], attribute: str = "", definition_default: Optional[T] = None) -> Property:
+def get_schema(annotation: Type[T], attribute: str = "", definition_default: T = _UNDEFINED) -> Property:
     """ Get schema Property object from given annotation. """
     if annotation is None or inspect.isclass(annotation) and issubclass(annotation, type(None)):
         return GenericTypeProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -1455,19 +1454,19 @@ def is_typing(object_) -> bool:
     return has_module and has_origin and has_args
 
 
-def typing_schema(typing_: Type[T], attribute: str, definition_default: T = None) -> Property:
+def typing_schema(typing_: Type[T], attribute: str, definition_default: T = _UNDEFINED) -> Property:
     """ Get schema Property for typing annotations. """
     origin = get_origin(typing_)
     if origin is Union and union_is_default_value(typing_):
         # This is a false UnionProperty => Is a default value set to None
-        return OptionalProperty(annotation=typing_, attribute=attribute, definition_default=definition_default)
+        return OptionalProperty(annotation=typing_, attribute=attribute, definition_default=None)
     try:
         return ORIGIN_TO_SCHEMA_CLASS[origin](typing_, attribute, definition_default)
     except KeyError as exc:
         raise NotImplementedError(f"No Schema defined for typing '{typing_}'.") from exc
 
 
-def custom_class_schema(annotation: Type[T], attribute: str, definition_default: T = None) -> Property:
+def custom_class_schema(annotation: Type[T], attribute: str, definition_default: T = _UNDEFINED) -> Property:
     """ Get schema Property object for non typing annotations. """
     if issubclass(annotation, Measure):
         return MeasureProperty(annotation=annotation, attribute=attribute, definition_default=definition_default)
@@ -1481,13 +1480,13 @@ def custom_class_schema(annotation: Type[T], attribute: str, definition_default:
     raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
-def object_default(definition_default: CoreDessiaObject = None, class_schema: ClassSchema = None):
+def object_default(definition_default: CoreDessiaObject = _UNDEFINED, class_schema: ClassSchema = None):
     """
     Default value of an object.
 
     Return serialized user default if definition, else None.
     """
-    if definition_default is not None:
+    if definition_default is not _UNDEFINED:
         return definition_default.to_dict(use_pointers=False)
     if class_schema is not None:
         # TODO Should we implement this ? Right now, tests state that the result is None

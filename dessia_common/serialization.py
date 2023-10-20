@@ -120,8 +120,7 @@ def serialize(value):
             return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
-            raise dc_err.SerializationError(msg)
+            raise dc_err.SerializationError(f"Element of value '{value}' is not json serializable")
         serialized_value = value
     return serialized_value
 
