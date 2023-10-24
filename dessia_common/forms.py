@@ -42,7 +42,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_view, markdown_view
+from dessia_common.decorators import plot_data_view, markdown_view, cad_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -371,6 +371,16 @@ class StandaloneObject(MovingObject):
         frame22 = frame12.translation(offset=vm.X3D)
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
+
+    @cad_view("CAD With Selector")
+    def display_cad(self):
+        """ Volmdlr primitives of 'cubes'. """
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
+                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        primitives = [subcube, cube]
+        return vmc.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
     @plot_data_view("2D View")
     def primitives(self):
