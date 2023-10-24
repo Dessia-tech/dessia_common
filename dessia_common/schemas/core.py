@@ -722,7 +722,7 @@ class UnionProperty(TypingProperty):
 
     @cached_property
     def pretty_annotation(self) -> str:
-        """ Generic prettyfication with 'Union' enforced, because Union annotation has no __name__ attribute. """
+        """ Generic prettification with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_pretty_schema_annotation(serialized_typing="Union", args_schemas=self.args_schemas)
 
     @property
