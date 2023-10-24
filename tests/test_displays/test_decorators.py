@@ -8,7 +8,7 @@ class TestComputationFromDecorators(unittest.TestCase):
         self.settings = StandaloneObject._display_settings_from_decorators()
 
     def test_number_of_settings(self):
-        self.assertEqual(len(self.settings), 6)
+        self.assertEqual(len(self.settings), 7)
 
     @parameterized.expand([
         (0, "Graph 2D"),
