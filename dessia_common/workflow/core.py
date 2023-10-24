@@ -591,7 +591,6 @@ class Workflow(Block):
             memo = {}
 
         dict_ = Block.to_dict(self, use_pointers=False)
-        dict_['object_class'] = 'dessia_common.workflow.core.Workflow'  # Force migrating from dessia_common.workflow
 
         output = self.variable_indices(self.output)
         dict_.update({'blocks': [b.to_dict(use_pointers=False) for b in self.blocks],
@@ -632,6 +631,7 @@ class Workflow(Block):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = workflow.variable_from_index(ast.literal_eval(variable_index_str))
                 imposed_variable_values[variable] = value
+                variable.default_value = value
         elif "imposed_variable_indices" in dict_:
             for variable_index in dict_["imposed_variable_indices"]:
                 variable = workflow.variable_from_index(variable_index)
