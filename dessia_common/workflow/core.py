@@ -47,6 +47,7 @@ VariableAdress = Union[int, Tuple[int, int, int]]
 
 class Variable(DessiaObject):
     """ New version of workflow variable. """
+    _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = _UNDEFINED,
                  name: str = "", position: Tuple[float, float] = (0, 0)):
