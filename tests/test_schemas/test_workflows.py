@@ -17,7 +17,7 @@ class TestRunSchema(unittest.TestCase):
         self.assertEqual(self.schema[key], value)
 
     @parameterized.expand([
-        ("title", "ForEach - binding Workflow Block - optimization Value"),
+        ("title", "ForEach - Binding: Workflow Block - optimization Value"),
         ("python_typing", "int"),
         ("editable", True),
         ("type", "number"),
@@ -62,7 +62,7 @@ class TestStartSchema(unittest.TestCase):
 class TestWorkflowSchemasEqualities(unittest.TestCase):
     def test_equalities(self):
         run_schema = workflow_.method_schemas["run"]
-        start_schema = workflow_.method_schemas["run_start"]
+        start_schema = workflow_.method_schemas["start_run"]
         del run_schema["required"]
         del start_schema["required"]
         self.assertEqual(run_schema, start_schema)
