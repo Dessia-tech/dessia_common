@@ -63,7 +63,7 @@ def cad_view(selector: str, load_by_default: bool = False):
     """ Decorator to markdown."""
     def decorator(function):
         """ Decorator to markdown. """
-        set_decorated_function_metadata(function=function, type_="cad", selector=selector,
+        set_decorated_function_metadata(function=function, type_="babylon_data", selector=selector,
                                         serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
