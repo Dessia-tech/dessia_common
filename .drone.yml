@@ -15,16 +15,16 @@ steps:
   - git merge master
   - git push
 
-- name: merge testing on dev
-  image: alpine/git
-  when:
-    event: push
-    branch: testing
-  commands:
-  - git fetch origin dev
-  - git checkout dev
-  - git merge testing
-  - git push
+#- name: merge testing on dev
+#  image: alpine/git
+#  when:
+#    event: push
+#    branch: testing
+#  commands:
+#  - git fetch origin dev
+#  - git checkout dev
+#  - git merge testing
+#  - git push
 
 - name: notify
   when:
