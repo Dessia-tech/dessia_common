@@ -31,7 +31,7 @@ class TestRunSchema(unittest.TestCase):
     def test_properties(self, key, value):
         properties = self.schema["properties"]
         self.assertEqual(len(properties), 6)
-        self.assertEqual(properties["2"], value)
+        self.assertEqual(properties["2"][key], value)
 
 
 class TestStartSchema(unittest.TestCase):
