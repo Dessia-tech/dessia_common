@@ -1,34 +1,68 @@
+import unittest
+from parameterized import parameterized
 from dessia_common.models.workflows.forms_workflow import workflow_
 
-ms = workflow_.method_schemas
 
-run_schema = workflow_.method_schemas["run"]
-start_schema = workflow_.method_schemas["start_run"]
+class TestRunSchema(unittest.TestCase):
+    def setUp(self) -> None:
+        self.schema = workflow_.method_schemas["run"]
 
-assert run_schema["required"] == ["0", "3", "5"]
-assert len(run_schema["properties"]) == 6
-assert run_schema["classes"] == "dessia_common.workflow.core.Workflow"
-assert run_schema["method"]
-assert run_schema["type"] == "object"
-assert run_schema["properties"]["2"] == {
-    "title": "ForEach - binding Workflow Block - optimization Value", "editable": True, "python_typing": "int",
-    "type": "number", "default_value": 3,
-    "description": {
-        "desc": "value that will be added to model's intarg attribute",
-        "type_": "int",
-        "annotation": "<class 'int'>"
-    }
-}
+    @parameterized.expand([
+        ("required", ["0", "3", "5"]),
+        ("classes", "dessia_common.workflow.core.Workflow"),
+        ("method", True),
+        ("type", "object")
+    ])
+    def test_items(self, key, value):
+        self.assertEqual(self.schema[key], value)
 
-assert start_schema["required"] == []
-assert len(run_schema["properties"]) == 6
-assert start_schema["python_typing"] == "dessia_common.typings.MethodType"
-assert start_schema["properties"]["4"] == {"title": "Shared Name", "editable": True, "description": None,
-                                           "python_typing": "str", "type": "string", "default_value": "Shared Name"}
+    @parameterized.expand([
+        ("title", "ForEach - binding Workflow Block - optimization Value"),
+        ("python_typing", "int"),
+        ("editable", True),
+        ("type", "number"),
+        ("default_value", 3),
+        ("description", {
+            "desc": "value that will be added to model's intarg attribute",
+            "type_": "int",
+            "annotation": "<class 'int'>"
+        })
+    ])
+    def test_properties(self, key, value):
+        properties = self.schema["properties"]
+        self.assertEqual(len(properties), 6)
+        self.assertEqual(properties["2"], value)
 
-# Test run and start equalities apart from required
-del run_schema["required"]
-del start_schema["required"]
-assert run_schema == start_schema
 
-print("script workflows.py has passed.")
+class TestStartSchema(unittest.TestCase):
+    def setUp(self) -> None:
+        self.schema = workflow_.method_schemas["start_run"]
+
+    @parameterized.expand([
+        ("required", []),
+        ("python_typing", "dessia_common.typings.MethodType")
+    ])
+    def test_items(self, key, value):
+        self.assertEqual(self.schema[key], value)
+
+    @parameterized.expand([
+        ("title", "Shared Name"),
+        ("python_typing", "str"),
+        ("editable", True),
+        ("type", "string"),
+        ("default_value", "Shared Name"),
+        ("description", None)
+    ])
+    def test_properties(self, key, value):
+        properties = self.schema["properties"]
+        self.assertEqual(len(properties), 6)
+        self.assertEqual(properties["4"][key], value)
+
+
+class TestWorkflowSchemasEqualities(unittest.TestCase):
+    def test_equalities(self):
+        run_schema = workflow_.method_schemas["run"]
+        start_schema = workflow_.method_schemas["run_start"]
+        del run_schema["required"]
+        del start_schema["required"]
+        self.assertEqual(run_schema, start_schema)
