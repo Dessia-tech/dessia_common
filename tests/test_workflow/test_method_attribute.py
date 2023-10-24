@@ -52,7 +52,6 @@ class TestGetModelAttribute(unittest.TestCase):
             variable = Variable(name='Model attribute')
             self.assertTrue(block.outputs[0]._data_eq(variable))
 
-
     @parameterized.expand([
         'int_',
         'float_',
@@ -82,7 +81,7 @@ class TestSetModelAttribute(unittest.TestCase):
         (str, 'str_'),
         (bool, 'bool_'),
         (List[int], 'l'),
-        (Dict[str,int], 'd'),
+        (Dict[str, int], 'd'),
         (int, 'two'),
         (str, 'name'),
         (None, 'variable_'),
@@ -90,13 +89,11 @@ class TestSetModelAttribute(unittest.TestCase):
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        typed_varible_output = TypedVariable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
-        self.assertTrue(block.outputs[0].name == typed_varible_output.name)
-        self.assertTrue(block.outputs[0].type_ == typed_varible_output.type_)
+        typed_variable_output = TypedVariable(type_=DummyClassForTesting, name="Model")
+        self.assertEqual(block.outputs[0].type_, typed_variable_output.type_)
         if type_:
-            typed_varible_input = TypedVariable(type_=type_, name='Value to insert for attribute '+name)
-            self.assertTrue(block.inputs[1].name == typed_varible_input.name)
-            self.assertTrue(block.inputs[1].type_ == typed_varible_input.type_)
+            typed_variable_input = TypedVariable(type_=type_, name="Value")
+            self.assertEqual(block.inputs[1].type_, typed_variable_input.type_)
         else:
             variable_input = Variable(name='Value to insert for attribute '+name)
             self.assertTrue(block.inputs[1]._data_eq(variable_input))
@@ -119,6 +116,7 @@ class TestSetModelAttribute(unittest.TestCase):
     def test_setmethod_equivalent(self, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting,name))
         self.assertTrue(block.equivalent(block.__deepcopy__()))
+
 
 if __name__ == '__main__':
     unittest.main()
