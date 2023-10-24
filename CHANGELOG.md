@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Documentation : Rewrite from scratch
+- WorkflowState: add memory usage monitoring & markdown
+
+
+### Removed
+
+- Workflow : jointjs plot
 
 
 ## 0.15.0
@@ -25,68 +31,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.14.0
 
+
 ### Added
 
-- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
+- Blocks : GetModelAttribute block which will replace ModelAttribute in a few releases
 - Blocks : Display blocks are now more configurable (Custom selector)
-- DessiaObject: Add type to load_from_file method
-- Displays: Displays can now be defined with decorators
-- Document generator: add new class Table
-- Files: .doc & .docx files typings
-- Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
-- Schemas refactor: add more Error Checks
-- Schemas refactor: add a json export to method schemas for low-code implementations
-- Schemas refactor: add default value to method types
-- Schemas refactor: add standalone in db property
-- Schemas refactor: Add support for Display View Types
-- Schemas refactor: Mutualize Display View Types and Attribute Types
-- Typings : add AttributeType, ClassAttributeType and View Types
-- Workflow : add Tasks display
-- WorkflowState: add memory usage monitoring & markdown
+- DessiaObjegitct : Add type to load_from_file method arguments
+- Displays : Displays can now be defined with decorators
+- Document generator : New module to write in docx file
+- Document generator : New class Table
+- Files : Functions to init StringFile and BinaryFile from local path
+- Files : .doc & .docx files typings
+- MarkdownWriter : New functions (table_of_contents, header)
+- Schemas refactor : Support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor : More Error Checks
+- Schemas refactor : JSON export to method schemas for low-code implementations
+- Schemas refactor : Default value to method types
+- Schemas refactor : Standalone in db property
+- Schemas refactor : Support for Display View Types
+- Schemas refactor : Mutualize Display View Types and Attribute Types
+- Typings : AttributeType, ClassAttributeType and View Types
+- Workflow : Tasks display
+
 
 ### Changed
  
-- Blocks: Add the possibility to have TypedValue in SetModelAttribute
-- Blocks: ! Display blocks definition have changed to adapt to new View Decorator paradigm
-- DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
-- Document generator: add new module to write in docx file
-- Export: export all 3d formats in zip file
-- Files: add functions to init StringFile and BinaryFile from local path
-- MarkdownWriter: add some functions (table_of_contents, header)
+- Blocks : Add the possibility to have TypedValue in SetModelAttribute
+- Blocks : ! Display blocks definition have changed to adapt to new View Decorator paradigm
+- Dataset : Default color of points from blue to grey to make the difference between selected points and the other ones
+- DessiaObject : Rename load_from_file and load_from_stream to from_json and from_json_stream
+- Export : Export all 3d formats in zip file
 - Workflow : WorkflowRun now has smart display by default computation
   - Documentation is disabled when at least one block is displayed by default, enabled otherwise
   - Workflow always shows Documentation and its Display by default
 - Workflow : Memorize display pipes from init
-- Default color of Dataset points from blue to grey to make the difference between selected points and the other ones
 
 
 ### Fixed
 
-- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
+- Dataset : Allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 - Exports : Add trailing line at the end of JSON export
-- Schemas refactor : allow incomplete schemas
-- Schemas refactor : old jsonschema with magic Method Type serialized value
+- Schemas refactor : Allow incomplete schemas
+- Schemas refactor : Old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
-- Workflow: propagate progress_callback to blocks
-- Workflow Blocks: New display selectors are now correctly deserialized 
+- Workflow : Propagate progress_callback to blocks
+- Workflow Blocks : New display selectors are now correctly deserialized
+
 
 ### Refactored
 
-- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
-- Remove Any support in schemas
-- Use of Schemas to serialize typings
-- Change serialize_typing function name to serialize_annotation
-- Change tests. Unittests are in 'tests' folder. Other tests in scripts
-- Check Platform is now verbose and split into several functions
+- Tests : Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- DessiaObject : Check Platform is now verbose and split into several functions
 - Document generator : Refactor document_generator module
+- Schemas : Whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- Schemas : Remove Any support in schemas
+- Schemas : Use of Schemas to serialize typings
+- Schemas : Change serialize_typing function name to serialize_annotation
 - Workflow : to_dict method do not use pointers anymore
 - Workflow : Remove some attributes from serialization
 
 
 ### Removed
 
-- Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
-- Workflow: jointjs plot
+- Serialization : Remove warning for dict_to_object if class is not inheriting from SerializableObject
 
 ### Chore
 

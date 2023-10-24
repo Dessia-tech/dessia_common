@@ -84,7 +84,7 @@ def cad_view(selector: str, load_by_default: bool = False):
     """
     def decorator(function):
         """ Decorator to 3D views. """
-        set_decorated_function_metadata(function=function, type_="cad", selector=selector,
+        set_decorated_function_metadata(function=function, type_="babylon_data", selector=selector,
                                         serialize_data=True, load_by_default=load_by_default)
         return function
     return decorator
