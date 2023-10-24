@@ -380,7 +380,7 @@ class StandaloneObject(MovingObject):
         cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
                                    outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
         primitives = [subcube, cube]
-        return vmc.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
+        return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
     @plot_data_view("2D View")
     def primitives(self):
