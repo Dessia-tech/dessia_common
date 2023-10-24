@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.15.0
+
+### Added
+
+- Documentation : Rewrite from scratch
+- WorkflowState: add memory usage monitoring & markdown
+
+
+### Removed
+
+- Workflow : jointjs plot
+
+
 ## 0.14.0
 
 
@@ -12,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Blocks : GetModelAttribute block which will replace ModelAttribute in a few releases
 - Blocks : Display blocks are now more configurable (Custom selector)
-- DessiaObject : Add type to load_from_file method arguments
+- DessiaObjegitct : Add type to load_from_file method arguments
 - Displays : Displays can now be defined with decorators
 - Document generator : New module to write in docx file
 - Document generator : New class Table
@@ -71,14 +84,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Serialization : Remove warning for dict_to_object if class is not inheriting from SerializableObject
 
-
 ### Chore
 
 - Fix Spelling (x2)
 - Pylint : Fix iterator error
 - Object : Add Backward Compatibality over method_dict to cover old frontend calls
 - Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
-
 
 
 ## 0.13.3
@@ -93,22 +104,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Workflow name correction: correct the name if it contains an apostrophe.
 
-## 0.13.5 [released 09/25/2023]
+## 0.13.5 [09/25/2023]
 
 ### Fix
 - add python 3.9 minimum requirement to avoid install issues
 
-## 0.13.4 [released 07/31/2023]
+## 0.13.4 [07/31/2023]
 
 ### Added
 - Add rotational speed to measures
 
-## 0.13.3 [released 05/04/2023]
+## 0.13.3 [05/04/2023]
 
 ### Fix
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 
-## 0.13.2 [released 03/01/2023]
+## 0.13.2 [03/01/2023]
 
 ### Fix
 
@@ -166,7 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0 [released 01/20/2023]
+## 0.12.0 [01/20/2023]
 
 
 ### Changed
@@ -218,7 +229,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0 [released 12/19/2022]
+## 0.11.0 [12/19/2022]
 
 ### Fixed
 

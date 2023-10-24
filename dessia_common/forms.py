@@ -425,7 +425,7 @@ class StandaloneObject(MovingObject):
         return computation
 
     @markdown_view(selector="Markdown", load_by_default=True)
-    def to_markdown(self):
+    def to_markdown(self, *args, **kwargs):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
         # Quem Stygios dumque
