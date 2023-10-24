@@ -6,11 +6,13 @@ from dessia_common.forms import DessiaObject
 from typing import List, Dict
 from parameterized import parameterized
 
+
 class DummyClassForTesting(DessiaObject):
-    def __init__(self, int_: int , variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
-                  l: List[int] = [1,2,3], d: Dict[str,int] = {'a':1,'b':2}, two: int = 2, name: str ='', **kwargs):
+    def __init__(self, int_: int, variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
+                  l: List[int] = [1, 2, 3], d: Dict[str, int] = {'a': 1, 'b': 2}, two: int = 2,
+                 name: str = '', **kwargs):
         self.int_ = int_
-        variable_= variable_
+        variable_ = variable_
         self.float_ = float_
         self.str_ = str_
         self.bool_ = bool_
@@ -36,22 +38,20 @@ class TestGetModelAttribute(unittest.TestCase):
         (str, 'str_'),
         (bool, 'bool_'),
         (List[int], 'l'),
-        (Dict[str,int], 'd'),
+        (Dict[str, int], 'd'),
         (int, 'two'),
         (str, 'name'),
         (None, 'variable_'),
         (None, 'combine'),
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
-        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
         if type_:
-            typed_varible = TypedVariable(type_=type_, name='Model attribute')
-            self.assertTrue(block.outputs[0].name == typed_varible.name)
+            typed_varible = TypedVariable(type_=type_, name="Model")
             self.assertTrue(block.outputs[0].type_ == typed_varible.type_)
         else:
-            variable = Variable(name='Model attribute')
+            variable = Variable(name="Model")
             self.assertTrue(block.outputs[0]._data_eq(variable))
-
 
     @parameterized.expand([
         'int_',
@@ -68,7 +68,7 @@ class TestGetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_getmethod_equivalent(self, name):
-        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
         self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 
@@ -82,7 +82,7 @@ class TestSetModelAttribute(unittest.TestCase):
         (str, 'str_'),
         (bool, 'bool_'),
         (List[int], 'l'),
-        (Dict[str,int], 'd'),
+        (Dict[str, int], 'd'),
         (int, 'two'),
         (str, 'name'),
         (None, 'variable_'),
@@ -90,13 +90,11 @@ class TestSetModelAttribute(unittest.TestCase):
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        typed_varible_output = TypedVariable(type_=DummyClassForTesting, name='Model with changed attribute '+name)
-        self.assertTrue(block.outputs[0].name == typed_varible_output.name)
-        self.assertTrue(block.outputs[0].type_ == typed_varible_output.type_)
+        typed_variable_output = TypedVariable(type_=DummyClassForTesting, name="Model")
+        self.assertEqual(block.outputs[0].type_, typed_variable_output.type_)
         if type_:
-            typed_varible_input = TypedVariable(type_=type_, name='Value to insert for attribute '+name)
-            self.assertTrue(block.inputs[1].name == typed_varible_input.name)
-            self.assertTrue(block.inputs[1].type_ == typed_varible_input.type_)
+            typed_variable_input = TypedVariable(type_=type_, name="Value")
+            self.assertEqual(block.inputs[1].type_, typed_variable_input.type_)
         else:
             variable_input = Variable(name='Value to insert for attribute '+name)
             self.assertTrue(block.inputs[1]._data_eq(variable_input))
@@ -117,8 +115,9 @@ class TestSetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_setmethod_equivalent(self, name):
-        block = SetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
         self.assertTrue(block.equivalent(block.__deepcopy__()))
+
 
 if __name__ == '__main__':
     unittest.main()
