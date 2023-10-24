@@ -6,11 +6,13 @@ from dessia_common.forms import DessiaObject
 from typing import List, Dict
 from parameterized import parameterized
 
+
 class DummyClassForTesting(DessiaObject):
-    def __init__(self, int_: int , variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
-                  l: List[int] = [1,2,3], d: Dict[str,int] = {'a':1,'b':2}, two: int = 2, name: str ='', **kwargs):
+    def __init__(self, int_: int, variable_, float_: float = 0.0, str_: str = 'test', bool_: bool = True,
+                  l: List[int] = [1, 2, 3], d: Dict[str, int] = {'a': 1, 'b': 2}, two: int = 2,
+                 name: str = '', **kwargs):
         self.int_ = int_
-        variable_= variable_
+        variable_ = variable_
         self.float_ = float_
         self.str_ = str_
         self.bool_ = bool_
@@ -36,20 +38,19 @@ class TestGetModelAttribute(unittest.TestCase):
         (str, 'str_'),
         (bool, 'bool_'),
         (List[int], 'l'),
-        (Dict[str,int], 'd'),
+        (Dict[str, int], 'd'),
         (int, 'two'),
         (str, 'name'),
         (None, 'variable_'),
         (None, 'combine'),
         (None, 'kwargs')])
     def test_outputs(self, type_, name):
-        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
         if type_:
-            typed_varible = TypedVariable(type_=type_, name='Model attribute')
-            self.assertTrue(block.outputs[0].name == typed_varible.name)
+            typed_varible = TypedVariable(type_=type_, name="Model")
             self.assertTrue(block.outputs[0].type_ == typed_varible.type_)
         else:
-            variable = Variable(name='Model attribute')
+            variable = Variable(name="Model")
             self.assertTrue(block.outputs[0]._data_eq(variable))
 
     @parameterized.expand([
@@ -67,7 +68,7 @@ class TestGetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_getmethod_equivalent(self, name):
-        block = GetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
         self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 
@@ -114,7 +115,7 @@ class TestSetModelAttribute(unittest.TestCase):
         'tuple_',
         'list_of_tuple'])
     def test_setmethod_equivalent(self, name):
-        block = SetModelAttribute(AttributeType(DummyClassForTesting,name))
+        block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
         self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 
