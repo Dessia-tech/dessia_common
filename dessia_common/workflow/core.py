@@ -8,7 +8,6 @@ import datetime
 from functools import cached_property
 import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
-from copy import deepcopy
 import warnings
 
 import humanize
@@ -18,8 +17,8 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation, _UNDEFINED
+from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
+                                        is_typing, pretty_annotation, _UNDEFINED, Schema)
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -152,7 +151,7 @@ class Block(DessiaObject):
                 return docstring[input_]
         except Exception:  # Broad except to avoid error 500 on doc computing
             return FAILED_ATTRIBUTE_PARSING
-        return None
+        return EMPTY_PARSED_ATTRIBUTE
 
     def input_name(self, input_: Variable):
         """ Compute input name by concatenating block name in front. """
@@ -557,33 +556,65 @@ class Workflow(Block):
     @property
     def method_schemas(self):
         """ New support of method schemas. """
-        properties = {}
-        required = []
+        default_arguments = {}
+        attributes = []
+        annotations = {}
+        titles = {}
+        descriptions = {}
+        editable_attributes = {}
         for i, input_ in enumerate(self.inputs + self.detached_variables):
-            # Default value
-            default_ = input_.default_value
-            if not input_.has_default_value:
-                required.append(str(i))
-            schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
+            # input_address = str(self.variable_indices(input_))
+            input_address = str(i)
+            attributes.append(input_address)
+            annotations[input_address] = input_.type_
+
+            # Editable and Default values
+            if input_.has_default_value:
+                default_arguments[input_address] = input_.default_value
+            editable_attributes[input_address] = input_ not in self.imposed_variable_values
 
             # Title & Description
-            description = None
+            description = EMPTY_PARSED_ATTRIBUTE
             title = prettyname(input_.name)
             if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
                 block = self.block_from_variable(input_)
                 description = block.parse_input_doc(input_)
                 title = block.input_name(input_)
-            editable = input_ not in self.imposed_variable_values
-            properties[str(i)] = schema.to_dict(title=title, editable=editable, description=description)
+            descriptions[input_address] = description
+            titles[input_address] = title
 
-        schemas = {}
-        for method_name in ["run", "start_run"]:
-            schemas[method_name] = deepcopy(SCHEMA_HEADER)
-            schemas[method_name].update({"required": required, "method": True, "properties": properties,
-                                         "python_typing": "dessia_common.typings.MethodType",
-                                         "description": self.description,
-                                         "classes": "dessia_common.workflow.core.Workflow"})
-        schemas["start_run"]["required"] = []
+        schema = Schema(annotations=annotations, attributes=attributes, default_arguments=default_arguments,
+                        titles=titles, editable_attributes=editable_attributes,
+                        documentation=self.description, descriptions=descriptions)
+        schemas = {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
+
+        # properties = {}
+        # required = []
+        # for i, input_ in enumerate(self.inputs + self.detached_variables):
+        #     # Default value
+        #     default_ = input_.default_value
+        #     if not input_.has_default_value:
+        #         required.append(str(i))
+        #     schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
+        #
+        #     # Title & Description
+        #     description = None
+        #     title = prettyname(input_.name)
+        #     if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
+        #         block = self.block_from_variable(input_)
+        #         description = block.parse_input_doc(input_)
+        #         title = block.input_name(input_)
+        #     editable = input_ not in self.imposed_variable_values
+        #     properties[str(i)] = schema.to_dict(title=title, editable=editable, description=description)
+
+        # schemas = {}
+        # for method_name in ["run", "start_run"]:
+        #     schemas[method_name] = deepcopy(SCHEMA_HEADER)
+        #     schemas[method_name].update({"required": required, "method": True, "properties": properties,
+        #                                  "python_typing": "dessia_common.typings.MethodType",
+        #                                  "description": self.description,
+        #                                  "classes": "dessia_common.workflow.core.Workflow"})
+        # schemas["start_run"]["required"] = []
         return schemas
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
