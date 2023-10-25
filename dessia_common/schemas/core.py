@@ -487,7 +487,8 @@ class TypingProperty(Property):
     @property
     def args_schemas(self) -> List[Property]:
         """ Get schema for each argument. """
-        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
+        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}", title=f"{self.title}/{i}")
+                for i, a in enumerate(self.args)]
 
     @cached_property
     def serialized(self) -> str:
@@ -571,7 +572,8 @@ class ProxyProperty(TypingProperty):
     def schema(self):
         """ Return a reference to its only argument. """
         return get_schema(annotation=self.annotation, attribute=self.attribute,
-                          definition_default=self.definition_default)
+                          definition_default=self.definition_default, title=self.title,
+                          editable=self.editable, description=self.description)
 
     def to_dict(self):
         """ Write Proxy as a Dict. """
@@ -912,8 +914,9 @@ class HeterogeneousSequence(TypingProperty):
         Otherwise, each argument is ordered and strictly defined by its type
         """
         if self.additional_items:
-            return [get_schema(annotation=self.args[0], attribute=f"{self.attribute}/0")]
-        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}") for i, a in enumerate(self.args)]
+            return [get_schema(annotation=self.args[0], attribute=f"{self.attribute}/0", title=f"{self.title}/0")]
+        return [get_schema(annotation=a, attribute=f"{self.attribute}/{i}", title=f"{self.title}/{i}")
+                for i, a in enumerate(self.args)]
 
     @cached_property
     def serialized(self) -> str:
@@ -1230,7 +1233,8 @@ class AttributeTypeProperty(TypingProperty):
 
         self.class_ = self.args[0]
         self.class_schema = get_schema(annotation=self.class_, attribute=attribute,
-                                       definition_default=definition_default)
+                                       definition_default=definition_default, title=title,
+                                       editable=self.editable, description=description)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -1472,14 +1476,16 @@ def get_schema(annotation: Type[T], attribute: str = "", definition_default: T =
     elif annotation in TYPING_EQUIVALENCES:
         schema_type = BuiltinProperty
     elif is_typing(annotation):
-        return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default)
+        return typing_schema(typing_=annotation, attribute=attribute, definition_default=definition_default,
+                             title=title, editable=editable, description=description)
     elif hasattr(annotation, "__origin__") and annotation.__origin__ is type:
         # Type is not considered a Typing as it has no arguments
         schema_type = ClassProperty
     elif annotation is Any:
         schema_type = AnyProperty
     elif inspect.isclass(annotation):
-        return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default)
+        return custom_class_schema(annotation=annotation, attribute=attribute, definition_default=definition_default,
+                                   title=title, editable=editable, description=description)
     elif isinstance(annotation, TypeVar):
         schema_type = GenericTypeProperty
     else:
