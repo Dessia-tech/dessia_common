@@ -169,7 +169,7 @@ class Schema:
         If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
         """
-        return {a: self.property_schemas[a].default_value() for a in self.attributes}
+        return {a: s.default_value() for a, s in self.property_schemas.items() if s.has_default_value}
 
     def check_list(self) -> CheckList:
         """
@@ -447,7 +447,7 @@ class Property:
         return dict_
 
     def default_value(self):
-        """ Generic default. Yield user default if defined, else None. """
+        """ Generic default. Yield user default if defined. """
         return self.definition_default
 
     def inject_reference(self, object_id: str):
@@ -677,7 +677,7 @@ class BuiltinProperty(Property):
         """ Write Builtin as a Dict. """
         chunk = super().to_dict()
         chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
-        if self.default_value() is not _UNDEFINED:
+        if self.has_default_value:
             chunk["default_value"] = self.default_value()
         return chunk
 
@@ -1262,7 +1262,7 @@ class AttributeTypeProperty(TypingProperty):
     
     def default_value(self):
         """ Sets AttributeType object_class and argument class_ if it is different from Type. """
-        if self.definition_default is not _UNDEFINED:
+        if self.has_default_value:
             return self.definition_default.to_dict()
         
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
