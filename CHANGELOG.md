@@ -18,6 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : jointjs plot
 
 
+### Build
+
+- Drone : Ignore failure over testing to dev merge and coverage upload
+
+
 ## 0.15.0
 
 ### Added
