@@ -41,7 +41,7 @@ from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonb
 
 T = TypeVar("T")
 
-VariableAdress = Union[int, Tuple[int, int, int]]
+VariableAddress = Union[int, Tuple[int, int, int]]
 
 
 class Variable(DessiaObject):
@@ -562,7 +562,10 @@ class Workflow(Block):
         titles = {}
         descriptions = {}
         editable_attributes = {}
-        for i, input_ in enumerate(self.inputs + self.detached_variables):
+        free_inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
+        # TODO free_inputs is a quickfix and I would want to find another solution.
+        #  Set imposed variable values in inputs ?
+        for i, input_ in enumerate(free_inputs + self.detached_variables):
             # input_address = str(self.variable_indices(input_))
             input_address = str(i)
             attributes.append(input_address)
@@ -737,7 +740,7 @@ class Workflow(Block):
             return self._start_run_dict()
         raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
-    def variable_from_index(self, index: VariableAdress):
+    def variable_from_index(self, index: VariableAddress):
         """ Index elements are, in order : (Block index : int, Port side (0: input, 1: output), Port index : int). """
         if isinstance(index, int):
             return self.nonblock_variables[index]
@@ -816,7 +819,8 @@ class Workflow(Block):
                         pipe.memorize = True
         return branch_blocks
 
-    def pipe_from_variable_indices(self, upstream_indices: VariableAdress, downstream_indices: VariableAdress) -> Pipe:
+    def pipe_from_variable_indices(self, upstream_indices: VariableAddress,
+                                   downstream_indices: VariableAddress) -> Pipe:
         """ Get a pipe from the global indices of its attached variables. """
         for pipe in self.pipes:
             if self.variable_indices(pipe.input_variable) == upstream_indices \
@@ -825,7 +829,7 @@ class Workflow(Block):
         msg = f"No pipe has '{upstream_indices}' as upstream variable and '{downstream_indices}' as downstream variable"
         raise ValueError(msg)
 
-    def pipe_variable_indices(self, pipe: Pipe) -> Tuple[VariableAdress, VariableAdress]:
+    def pipe_variable_indices(self, pipe: Pipe) -> Tuple[VariableAddress, VariableAddress]:
         """ Return the global indices of a pipe's attached variables. """
         return self.variable_indices(pipe.input_variable), self.variable_indices(pipe.output_variable)
 
