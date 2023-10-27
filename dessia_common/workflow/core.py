@@ -18,7 +18,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        is_typing, pretty_annotation, _UNDEFINED, Schema)
+                                        is_typing, pretty_annotation, UNDEFINED, Schema)
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -48,7 +48,7 @@ class Variable(DessiaObject):
     """ New version of workflow variable. """
     _eq_is_data_eq = False
 
-    def __init__(self, type_: Type[T] = None, default_value: T = _UNDEFINED,
+    def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
                  name: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if self.has_default_value and type_ is None:
@@ -63,20 +63,20 @@ class Variable(DessiaObject):
         """ WRITE DOCSTRING. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({"type_": serialize_annotation(self.type_), "position": self.position})
-        if self.default_value is not _UNDEFINED:
+        if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ WRITE DOCSTRING. """
-        default_value = dict_.get("default_value", _UNDEFINED)
+        default_value = dict_.get("default_value", UNDEFINED)
         return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
-        return self.default_value is not _UNDEFINED
+        return self.default_value is not UNDEFINED
 
     def is_file_type(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
@@ -103,7 +103,7 @@ class Variable(DessiaObject):
         if self.has_default_value:
             copied_default_value = deepcopy_value(self.default_value, memo=memo)
         else:
-            copied_default_value = _UNDEFINED
+            copied_default_value = UNDEFINED
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
