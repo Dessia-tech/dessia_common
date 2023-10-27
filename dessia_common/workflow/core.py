@@ -18,7 +18,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        is_typing, pretty_annotation, UNDEFINED, Schema)
+                                        is_typing, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -556,12 +556,8 @@ class Workflow(Block):
     @property
     def method_schemas(self):
         """ New support of method schemas. """
-        default_arguments = {}
         attributes = []
         annotations = {}
-        titles = {}
-        descriptions = {}
-        editable_attributes = {}
         free_inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
         # TODO free_inputs is a quickfix and I would want to find another solution.
         #  Set imposed variable values in inputs ?
@@ -571,11 +567,6 @@ class Workflow(Block):
             attributes.append(input_address)
             annotations[input_address] = input_.type_
 
-            # Editable and Default values
-            if input_.has_default_value:
-                default_arguments[input_address] = input_.default_value
-            editable_attributes[input_address] = input_ not in self.imposed_variable_values
-
             # Title & Description
             description = EMPTY_PARSED_ATTRIBUTE
             title = prettyname(input_.name)
@@ -583,12 +574,17 @@ class Workflow(Block):
                 block = self.block_from_variable(input_)
                 description = block.parse_input_doc(input_)
                 title = block.input_name(input_)
-            descriptions[input_address] = description
-            titles[input_address] = title
 
-        schema = Schema(annotations=annotations, attributes=attributes, default_arguments=default_arguments,
-                        titles=titles, editable_attributes=editable_attributes,
-                        documentation=self.description, descriptions=descriptions)
+            # Editable and Default values
+            editable = input_ not in self.imposed_variable_values
+            if input_.has_default_value:
+                attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
+                                                  editable=editable, documentation=description))
+            else:
+                attributes.append(SchemaAttribute(name=input_address, title=title, editable=editable,
+                                                  documentation=description))
+
+        schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
         schemas = {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
 
         # properties = {}

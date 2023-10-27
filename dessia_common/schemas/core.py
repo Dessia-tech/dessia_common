@@ -222,20 +222,21 @@ class Schema:
         return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
 
     @classmethod
-    def from_type(cls, annotation: Type[T], attribute: SchemaAttribute) -> 'Schema':
+    def from_type(cls, annotation: Type[T], attribute_name: str) -> 'Schema':
         """
         Compute a full schema (not property) from an annotation.
 
         It is useful in order to provide forms for object of a single type.
         """
-        annotations = {attribute.name: annotation}
+        annotations = {attribute_name: annotation}
+        attribute = SchemaAttribute(attribute_name)
         return cls(annotations=annotations, attributes=[attribute])
 
     @classmethod
-    def from_serialized_type(cls, type_: str, attribute: SchemaAttribute) -> 'Schema':
+    def from_serialized_type(cls, type_: str, attribute_name: str) -> 'Schema':
         """ Compute a Schema directly from the serialized value of the annotation. """
         annotation = deserialize_annotation(type_)
-        return cls.from_type(annotation=annotation, attribute=attribute)
+        return cls.from_type(annotation=annotation, attribute_name=attribute_name)
 
     # def set_title(self, attribute: str, title: str):
     #     """ Set a title for given attribute. """
@@ -1486,14 +1487,16 @@ SERIALIZED_TO_SCHEMA_CLASS = {
 }
 
 
-def serialize_annotation(annotation: Type[T], attribute: SchemaAttribute = "") -> str:
+def serialize_annotation(annotation: Type[T], attribute_name: str = "") -> str:
     """ Make use of schema to serialize annotations. """
+    attribute = SchemaAttribute(attribute_name)
     schema = get_schema(annotation=annotation, attribute=attribute)
     return schema.serialized
 
 
-def pretty_annotation(annotation: Type[T], attribute: SchemaAttribute = "") -> str:
+def pretty_annotation(annotation: Type[T], attribute_name: str = "") -> str:
     """ Make use of schema to compute pretty annotations. """
+    attribute = SchemaAttribute(attribute_name)
     schema = get_schema(annotation=annotation, attribute=attribute)
     return schema.pretty_annotation
 
@@ -1574,8 +1577,7 @@ def serialize_typing(typing_, attribute: str = "") -> str:
     """ Make use of schema to serialized annotations. """
     warnings.warn("Function serialize_typing have been renamed serialize_annotation. Please use it instead.",
                   DeprecationWarning)
-    attribute = SchemaAttribute(attribute)
-    return serialize_annotation(annotation=typing_, attribute=attribute)
+    return serialize_annotation(annotation=typing_, attribute_name=attribute)
 
 
 def union_is_default_value(typing_: Type) -> bool:
