@@ -564,7 +564,6 @@ class Workflow(Block):
         for i, input_ in enumerate(free_inputs + self.detached_variables):
             # input_address = str(self.variable_indices(input_))
             input_address = str(i)
-            attributes.append(input_address)
             annotations[input_address] = input_.type_
 
             # Title & Description

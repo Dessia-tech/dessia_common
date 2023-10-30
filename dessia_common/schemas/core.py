@@ -85,7 +85,7 @@ class SchemaAttribute:
     """ TODO. """
 
     def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "",
-                 editable: bool = False, documentation: ParsedAttribute = None):
+                 editable: bool = True, documentation: ParsedAttribute = None):
         self.name = name
         self.default_value = default_value
         self._title = title
@@ -139,7 +139,7 @@ class Schema:
 
         self.property_schemas = {}
         for attribute in self.attributes:
-            if attribute in self.annotations:
+            if attribute.name in self.annotations:
                 annotation = self.annotations[attribute.name]
                 schema = get_schema(annotation=annotation, attribute=attribute)
                 self.property_schemas[attribute.name] = schema
@@ -176,7 +176,8 @@ class Schema:
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a.name: self.chunk(a) for a in self.attributes}
-        schema.update({"required": self.required, "properties": properties, "description": self.documentation})
+        required = [a.name for a in self.required]
+        schema.update({"required": required, "properties": properties, "description": self.documentation})
         schema.update(**kwargs)
         return schema
 
@@ -354,7 +355,7 @@ class MethodSchema(MemberSchema):
         docstring = method.__doc__
         super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=method.__name__)
 
-        self.required = [str(self.attributes.index(a)) for a in self.required]
+        self.required_indices = [str(self.attributes.index(a)) for a in self.required]
 
     @property
     def serialized(self) -> Dict[str, str]:
@@ -379,7 +380,7 @@ class MethodSchema(MemberSchema):
         """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
-        schema.update({"required": self.required, "properties": properties, "description": self.documentation})
+        schema.update({"required": self.required_indices, "properties": properties, "description": self.documentation})
         return schema
 
     def definition_json(self):
@@ -510,7 +511,12 @@ class TypingProperty(Property):
     @property
     def args_schemas(self) -> List[Property]:
         """ Get schema for each argument. """
-        return [get_schema(annotation=a, attribute=self.attribute) for i, a in enumerate(self.args)]
+        schemas = []
+        for i, arg in enumerate(self.args):
+            subattribute = SchemaAttribute(name=f"{self.attribute.name}/{i}", title=f"{self.attribute.title}/{i}",
+                                           editable=self.attribute.editable)
+            schemas.append(get_schema(annotation=arg, attribute=subattribute))
+        return schemas
 
     @cached_property
     def serialized(self) -> str:
@@ -915,8 +921,15 @@ class HeterogeneousSequence(TypingProperty):
         Otherwise, each argument is ordered and strictly defined by its type
         """
         if self.additional_items:
-            return [get_schema(annotation=self.args[0], attribute=self.attribute)]
-        return [get_schema(annotation=a, attribute=self.attribute) for i, a in enumerate(self.args)]
+            subattribute = SchemaAttribute(name=f"{self.attribute.name}/0", title=f"{self.attribute.title}/0",
+                                           editable=self.attribute.editable)
+            return [get_schema(annotation=self.args[0], attribute=subattribute)]
+        schemas = []
+        for i, arg in enumerate(self.args):
+            subattribute = SchemaAttribute(name=f"{self.attribute.name}/{i}", title=f"{self.attribute.title}/{i}",
+                                           editable=self.attribute.editable)
+            schemas.append(get_schema(annotation=arg, attribute=subattribute))
+        return schemas
 
     @cached_property
     def serialized(self) -> str:
