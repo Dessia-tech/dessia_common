@@ -15,16 +15,16 @@ steps:
   - git merge master
   - git push
 
-- name: merge testing on dev
-  image: alpine/git
-  when:
-    event: push
-    branch: testing
-  commands:
-  - git fetch origin dev
-  - git checkout dev
-  - git merge testing
-  - git push
+#- name: merge testing on dev
+#  image: alpine/git
+#  when:
+#    event: push
+#    branch: testing
+#  commands:
+#  - git fetch origin dev
+#  - git checkout dev
+#  - git merge testing
+#  - git push
 
 - name: notify
   when:
@@ -84,14 +84,14 @@ steps:
   - pip show plot_data
   - cd doc
   - make html
+  - cd ../scripts
+  - coverage run --source dessia_common ci_scripts.py
   - cd ../tests
-  - coverage run --source dessia_common ci_tests.py
-  - cd ../test_unittests
   - coverage run --source dessia_common -m unittest discover -v
   - cd ../tutorials
   - coverage run --source dessia_common ci_tutorials.py
   - cd ..
-  - coverage combine tests/.coverage test_unittests/.coverage tutorials/.coverage
+  - coverage combine scripts/.coverage tests/.coverage tutorials/.coverage
   - coverage json
   - coverage report
   - coverage html

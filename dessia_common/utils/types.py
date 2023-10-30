@@ -2,47 +2,27 @@
 # -*- coding: utf-8 -*-
 """ Types tools. """
 
-from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
-
-import sys
+import warnings
 from collections.abc import Iterator, Sequence
-from importlib import import_module
-
+from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
-
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.typings import Subclass, InstanceOf, MethodType, ClassMethodType
+from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
+from dessia_common.schemas.core import TYPING_EQUIVALENCES, union_is_default_value, is_typing, serialize_annotation
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 SIMPLE_TYPES = [int, str]
-TYPING_EQUIVALENCES = {int: 'number', float: 'number', bool: 'boolean', str: 'string'}
 
-TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str',
-                 list: 'list', tuple: 'tuple', dict: 'dict'}
+TYPES_STRINGS = {int: 'int', float: 'float', bool: 'boolean', str: 'str', list: 'list', tuple: 'tuple', dict: 'dict'}
 
 SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 
-TYPES_FROM_STRING = {'unicode': str, 'str': str, 'float': float, 'int': int, 'bool': bool}
-
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
-
-_PYTHON_CLASS_CACHE = {}
-
-
-def full_classname(object_, compute_for: str = 'instance'):
-    """ Get full class name of object_ (module + classname). """
-    if compute_for == 'instance':
-        return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
-    if compute_for == 'class':
-        try:
-            return f"{object_.__module__}.{object_.__name__}"
-        except:
-            print(object_)
-    raise NotImplementedError(f"Cannot compute {compute_for} full classname for object {object_}")
 
 
 def is_classname_transform(string: str):
-    """ Check if string is classname and return class if yes. """
+    """ Check if string is class name and return class if yes. """
     if '.' in string:
         split_string = string.split('.')
         if len(split_string) >= 2:
@@ -62,13 +42,6 @@ def is_jsonable(obj):
         return True
     except Exception:
         return False
-
-    # # If an error occurs try with json
-    # try:
-    #     json.dumps(obj)
-    #     return True
-    # except TypeError:
-    #     return False
 
 
 def is_serializable(_):
@@ -105,7 +78,7 @@ def is_tuple(obj) -> bool:
 
 
 def is_builtin(type_):
-    """ Return True if type_ is a simple python builtin, ie. int, float, bool or str. """
+    """ Return True if type_ is a simple python builtin (int, float, bool or str). """
     return type_ in TYPING_EQUIVALENCES
 
 
@@ -127,23 +100,6 @@ def is_dessia_file(obj):
     return isinstance(obj, (BinaryFile, StringFile))
 
 
-def get_python_class_from_class_name(full_class_name: str):
-    """ Get python class object corresponging to given classname. """
-    cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
-    # TODO : this is just quick fix, it will be modified soon with another.
-    sys.setrecursionlimit(3000)
-    if cached_value is not None:
-        return cached_value
-
-    module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
-
-    class_ = getattr(module, class_name)
-    # Storing in cache
-    _PYTHON_CLASS_CACHE[full_class_name] = class_
-    return class_
-
-
 def unfold_deep_annotation(typing_=None):
     """ Get origin (tuple, list,...) and arguments (type,...) from typing. """
     if is_typing(typing_):
@@ -153,71 +109,10 @@ def unfold_deep_annotation(typing_=None):
     return None, None
 
 
-def is_typing(object_: Any):
-    """ Return True if given object can be seen as a typing (has a module, an origin and arguments). """
-    has_module = hasattr(object_, '__module__')
-    has_origin = hasattr(object_, '__origin__')
-    has_args = hasattr(object_, '__args__')
-    return has_module and has_origin and has_args
-
-
 def serialize_typing(typing_):
     """ Compute a string from a type. """
-    if is_typing(typing_):
-        return serialize_typing_types(typing_)
-    if typing_ in [StringFile, BinaryFile, MethodType, ClassMethodType] or isinstance(typing_, type):
-        return full_classname(typing_, compute_for='class')
-    return str(typing_)
-
-
-def serialize_typing_types(typing_):
-    """ Compute a string from typings only. """
-    origin = get_origin(typing_)
-    args = get_args(typing_)
-    if origin is Union:
-        return serialize_union_typing(args)
-    if origin is list:
-        return f"List[{type_fullname(args[0])}]"
-    if origin is tuple:
-        argnames = ', '.join([type_fullname(a) for a in args])
-        return f'Tuple[{argnames}]'
-    # if origin is Iterator:
-    #     return f"Iterator[{type_fullname(args[0])}]"
-    if origin is dict:
-        key_type = type_fullname(args[0])
-        value_type = type_fullname(args[1])
-        return f'Dict[{key_type}, {value_type}]'
-    if origin is InstanceOf:
-        return f'InstanceOf[{type_fullname(args[0])}]'
-    if origin is Subclass:
-        return f'Subclass[{type_fullname(args[0])}]'
-    if origin is MethodType:
-        return f'MethodType[{type_fullname(args[0])}]'
-    if origin is ClassMethodType:
-        return f'ClassMethodType[{type_fullname(args[0])}]'
-    if origin is type:
-        return "typing.Type"
-    raise NotImplementedError(f"Serialization of typing {typing_} is not implemented")
-
-
-def serialize_union_typing(args):
-    """ Compute a string from union typing. """
-    if len(args) == 2 and type(None) in args:
-        # This is a false Union => Is a default value set to None
-        return serialize_typing(args[0])
-
-    # Types union
-    argnames = ', '.join([type_fullname(a) for a in args])
-    return f'Union[{argnames}]'
-
-
-def type_fullname(arg):
-    """ Get full classname from a typing. """
-    if arg.__module__ == 'builtins':
-        full_argname = '__builtins__.' + arg.__name__
-    else:
-        full_argname = serialize_typing(arg)
-    return full_argname
+    warnings.warn("Function serialize_typing is deprecated. Use serialize_annotation instead", DeprecationWarning)
+    return serialize_annotation(typing_)
 
 
 def type_from_argname(argname):
@@ -226,9 +121,7 @@ def type_from_argname(argname):
     if argname:
         if splitted_argname[0] == '__builtins__':
             argname = f"builtins.{splitted_argname[1]}"
-        # if splitted_argname[0] != '__builtins__':
         return get_python_class_from_class_name(argname)
-        # return literal_eval(splitted_argname[1])
     return Any
 
 
@@ -264,8 +157,6 @@ def deserialize_typing(serialized_typing: str):
             return List[type_from_argname(full_argname)]
         if toptype == 'Tuple':
             return deserialize_tuple_typing(full_argname)
-        # if toptype == "Iterator":
-        #     return Iterator[type_from_argname(full_argname)]
         if toptype == 'Dict':
             args = full_argname.split(', ')
             key_type = type_from_argname(args[0])
@@ -273,8 +164,6 @@ def deserialize_typing(serialized_typing: str):
             return Dict[key_type, value_type]
         if toptype == "InstanceOf":
             return InstanceOf[type_from_argname(full_argname)]
-        # if toptype == "Subclass":
-        #     return InstanceOf[type_from_argname(full_argname)]
         return get_python_class_from_class_name(serialized_typing)
     raise NotImplementedError(f'{serialized_typing} of type {type(serialized_typing)}')
 
@@ -388,20 +277,9 @@ def recursive_type(obj):
     return type_
 
 
-def union_is_default_value(typing_: Type) -> bool:
-    """
-    Union typings can be False positives.
-
-    An argument of a function that has a default_value set to None is Optional[T], which is an alias for
-    Union[T, NoneType]. This function checks if this is the case.
-    """
-    args = get_args(typing_)
-    return len(args) == 2 and type(None) in args
-
-
 def typematch(type_: Type, match_against: Type) -> bool:
     """
-    Return wether type_ matches against match_against.
+    Return whether type_ matches against match_against.
 
     match_against needs to be "wider" than type_, and the check is not bilateral
     """
@@ -431,7 +309,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
     """ Match type when type_ is a complex typing (List, Union, Tuple,...). """
     # Complex typing for the first type_. Cases : List, Tuple, Union
     if not is_typing(match_against):
-        # Type matching is unilateral and match against should be more open than type_
+        # Type matching is unilateral and match against should be wider than type_
         return False
 
     # Inspecting and healing types
@@ -443,11 +321,11 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
         return False
 
     if type_origin is list:
-        # Can only have one arg, should match
+        # Can only have one argument, should match
         return typematch(type_args[0], match_against_args[0])
 
     if type_origin is tuple:
-        # Order matters, all args should match
+        # Order matters, all arguments should match
         return all(typematch(a, b) for a, b in zip(type_args, match_against_args))
 
     if type_origin is dict:
@@ -455,7 +333,7 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
         return typematch(type_args[0], match_against_args[0]) and typematch(type_args[1], match_against_args[1])
 
     if type_origin is Union:
-        # type args must be a subset of match_against args set
+        # type arguments must be a subset of match_against arguments set
         type_argsset = set(type_args)
         match_against_argsset = set(match_against_args)
         return type_argsset.issubset(match_against_argsset)
@@ -466,12 +344,12 @@ def complex_first_type_match(type_: Type, match_against: Type) -> bool:
 
 def heal_type(type_: Type):
     """
-    Inspect type and returns its params.
+    Inspect type and returns its parameters.
 
-    For now, only checks wether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
+    For now, only checks whether the type is an 'Optional' / Union[T, NoneType], which should be flattened and not
     considered.
 
-    Returns the cleaned type, origin and args.
+    Returns the cleaned type, origin and arguments.
     """
     type_origin = get_origin(type_)
     type_args = get_args(type_)
@@ -485,7 +363,7 @@ def heal_type(type_: Type):
 
 
 def particular_typematches(type_: Type, match_against: Type) -> bool:
-    """ Check for specific cases of typematches and return a Boolean. """
+    """ Check for specific cases of type matches and return a Boolean. """
     if type_ is int and match_against is float:
         return True
     # Not refactoring this as a one-liner for now, as more cases should be added in the future.

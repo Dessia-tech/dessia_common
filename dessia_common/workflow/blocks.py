@@ -4,25 +4,23 @@
 
 import inspect
 import warnings
-
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints
-
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
 import itertools
-from dessia_common.core import DessiaFilter, FiltersList, split_argspecs, type_from_annotation, DessiaObject
-from dessia_common.utils.types import get_python_class_from_class_name, full_classname
-from dessia_common.utils.docstrings import parse_docstring, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
+from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
-from dessia_common.typings import JsonSerializable, MethodType, ClassMethodType
-from dessia_common.files import StringFile, BinaryFile
-from dessia_common.utils.helpers import concatenate
+from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
+                                   PlotDataType, MarkdownType)
+from dessia_common.files import StringFile, BinaryFile, generate_archive
+from dessia_common.utils.helpers import concatenate, full_classname
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
-
-from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue,\
-    set_block_variable_names_from_dict, Workflow
+from dessia_common.workflow.core import Block, Variable, TypedVariable, TypedVariableWithDefaultValue, Workflow
 from dessia_common.workflow.utils import ToScriptElement
+
+T = TypeVar("T")
 
 
 def set_inputs_from_function(method, inputs=None):
@@ -58,6 +56,21 @@ def output_from_function(function, name: str = "result output"):
     return Variable(name=name)
 
 
+def set_block_variable_names_from_dict(func):
+    """ Inspect function arguments to compute black variable names. """
+    def func_wrapper(cls, dict_):
+        obj = func(cls, dict_)
+        if 'input_names' in dict_:
+            for input_name, input_ in zip(dict_['input_names'], obj.inputs):
+                input_.name = input_name
+        if 'output_names' in dict_:
+            output_items = zip(dict_['output_names'], obj.outputs)
+            for output_name, output_ in output_items:
+                output_.name = output_name
+        return obj
+    return func_wrapper
+
+
 class BlockError(Exception):
     """ Specific BlockError Exception. """
 
@@ -88,25 +101,6 @@ class InstantiateModel(Block):
         other_classname = other.model_class.__class__.__name__
         return Block.equivalent(self, other) and classname == other_classname
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['model_class'] = full_classname(object_=self.model_class, compute_for='class')
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """ Custom dict_to_object method. """
-        if 'model_class_module' in dict_:  # TODO Retro-compatibility. Remove this in future versions
-            module_name = dict_['model_class_module']
-            classname = module_name + '.' + dict_['model_class']
-        else:
-            classname = dict_['model_class']
-        class_ = get_python_class_from_class_name(classname)
-        return cls(class_, name=dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """
         arguments = {var.name: values[var] for var in self.inputs}
@@ -136,12 +130,14 @@ class InstantiateModel(Block):
 
 class ClassMethod(Block):
     """
-    Run given classmethod during workflow execution. Handle static method as well.
+    Run given class method during workflow execution. Handle static method as well.
 
     :param method_type: Denotes the class and method to run.
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
+
+    _non_serializable_attributes = ["method"]
 
     def __init__(self, method_type: ClassMethodType[Type], name: str = '', position: Tuple[float, float] = None):
         self.method_type = method_type
@@ -168,31 +164,6 @@ class ClassMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_class and same_method
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({'method_type': method_type_dict})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ClassMethod':
-        """ Custom dict_to_object method. """
-        if 'method_type' in dict_:
-            classname = dict_['method_type']['class_']
-            method_name = dict_['method_type']['name']
-        else:
-            # Retro-compatibility
-            classname = dict_['model_class']
-            method_name = dict_['method_name']
-        class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
-        method_type = ClassMethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name, position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
         arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
@@ -200,9 +171,8 @@ class ClassMethod(Block):
 
     def _docstring(self):
         """ Parse given method's docstring. """
-        method = self.method_type.get_method()
-        docstring = method.__doc__
-        annotations = get_type_hints(method)
+        docstring = self.method.__doc__
+        annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
@@ -220,6 +190,16 @@ class ClassMethod(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class ModelMethod(Block):
     """
@@ -230,17 +210,19 @@ class ModelMethod(Block):
     :param position: Position of the block in canvas.
     """
 
+    _non_serializable_attributes = ["method"]
+
     def __init__(self, method_type: MethodType[Type], name: str = '', position: Tuple[float, float] = None):
         self.method_type = method_type
         inputs = [TypedVariable(type_=method_type.class_, name='model at input')]
-        method = method_type.get_method()
-        inputs = set_inputs_from_function(method, inputs)
+        self.method = method_type.get_method()
+        inputs = set_inputs_from_function(self.method, inputs)
 
         # Storing argument names
         self.argument_names = [i.name for i in inputs[1:]]
 
         return_output_name = f"method result of {method_type.name}"
-        return_output = output_from_function(function=method, name=return_output_name)
+        return_output = output_from_function(function=self.method, name=return_output_name)
 
         model_output_name = f"model at output {method_type.name}"
         model_output = TypedVariable(type_=method_type.class_, name=model_output_name)
@@ -262,35 +244,17 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({'method_type': method_type_dict})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'ModelMethod':
-        """ Custom dict_to_object method. """
-        if 'method_type' in dict_:
-            classname = dict_['method_type']['class_']
-            method_name = dict_['method_type']['name']
-        else:
-            # Retro-compatibility
-            classname = dict_['model_class']
-            method_name = dict_['method_name']
-        class_ = get_python_class_from_class_name(classname)
-        name = dict_['name']
-        method_type = MethodType(class_=class_, name=method_name)
-        return cls(method_type=method_type, name=name, position=dict_.get('position'))
-
-    def evaluate(self, values, **kwargs):
+    def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
-        return [getattr(values[self.inputs[0]], self.method_type.name)(**arguments), values[self.inputs[0]]]
+        method = getattr(values[self.inputs[0]], self.method_type.name)
+        try:
+            # Trying to inject progress callback to method
+            result = method(progress_callback=progress_callback, **arguments)
+        except TypeError:
+            result = method(**arguments)
+
+        return [result, values[self.inputs[0]]]
 
     def package_mix(self):
         """ Add block contribution to workflow's package_mix. """
@@ -298,9 +262,8 @@ class ModelMethod(Block):
 
     def _docstring(self):
         """ Parse given method's docstring. """
-        method = self.method_type.get_method()
-        docstring = method.__doc__
-        annotations = get_type_hints(method)
+        docstring = self.method.__doc__
+        annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
         block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
@@ -318,6 +281,16 @@ class ModelMethod(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class Sequence(Block):
     """
@@ -331,7 +304,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list, name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -341,27 +314,6 @@ class Sequence(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_arguments'] = self.number_arguments
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Pack values into a sequence. """
@@ -385,7 +337,7 @@ class Concatenate(Block):
     def __init__(self, number_arguments: int = 2, name: str = '', position: Tuple[float, float] = None):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [TypedVariable(type_=list, name='sequence')]
+        outputs = [TypedVariable(type_=List[T], name='sequence')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
@@ -395,27 +347,6 @@ class Concatenate(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_arguments'] = self.number_arguments
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_arguments'], dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values: Dict[Variable, Any], **kwargs):
         """ Concatenate elements that are in values. """
@@ -433,7 +364,7 @@ class WorkflowBlock(Block):
     Wrapper around workflow to put it in a block of another workflow.
 
     Even if a workflow is a block, it can't be used directly as it has a different behavior
-    than a Block in eq and hash which is problematic to handle in dicts for example.
+    than a Block in eq and hash which is problematic to handle in dictionaries for example.
 
     :param workflow: The WorkflowBlock's workflow
     :param name: Name of the block.
@@ -464,26 +395,8 @@ class WorkflowBlock(Block):
             return False
         return self.workflow == other.workflow
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'workflow': self.workflow.to_dict(use_pointers=use_pointers, memo=memo, path=f'{path}/workflow')})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'WorkflowBlock':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        workflow = Workflow.dict_to_object(dict_=dict_["workflow"])
-        return cls(workflow=workflow, name=dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
-        """ Format subworkflow arguments and run it. """
+        """ Format sub workflow arguments and run it. """
         arguments = {self.inputs.index(input_): v for input_, v in values.items()}
         workflow_run = self.workflow.run(arguments)
         return [workflow_run.output_value]
@@ -493,7 +406,7 @@ class WorkflowBlock(Block):
         return self.workflow.package_mix()
 
     def _docstring(self):
-        """ Recursively get docstring of subworkflow. """
+        """ Recursively get docstring of sub workflow. """
         workflow_docstrings = self.workflow._docstring()
         docstring = {}
         for block_docstring in workflow_docstrings:
@@ -518,7 +431,7 @@ class WorkflowBlock(Block):
 
 class ForEach(Block):
     """
-    A block to iterate on an input and perform an parallel for (iterations are not dependant).
+    A block to iterate on an input and perform an parallel for (iterations are not dependent).
 
     :param workflow_block: The WorkflowBlock on which iterate.
     :param iter_input_index: Index of iterable input in worklow_block.inputs
@@ -556,28 +469,8 @@ class ForEach(Block):
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
         return Block.equivalent(self, other) and wb_eq and input_eq
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        wb_dict = self.workflow_block.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/worklow_block")
-        dict_.update({'workflow_block': wb_dict, 'iter_input_index': self.iter_input_index})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        workflow_block = WorkflowBlock.dict_to_object(dict_=dict_['workflow_block'])
-        return cls(workflow_block=workflow_block, iter_input_index=dict_['iter_input_index'], name=dict_['name'],
-                   position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
-        """ Loop on input list and run subworkflow on each. """
+        """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
         output_values = []
         for value in values_workflow[self.iter_input]:
@@ -587,7 +480,7 @@ class ForEach(Block):
         return [output_values]
 
     def _docstring(self):
-        """ Recursively get docstring of subworkflow. """
+        """ Recursively get docstring of sub-workflow. """
         wb_docstring = self.workflow_block._docstring()
         block_docstring = {}
         for input_, workflow_input in zip(self.inputs, self.workflow_block.workflow.inputs):
@@ -628,26 +521,6 @@ class Unpacker(Block):
         """ Custom hash function. Related to 'equivalent' method. """
         return len(self.indices)
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['indices'] = self.indices
-        return dict_
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Unpacker':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['indices'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Unpack input list elements into n outputs. """
         return [values[self.inputs[0]][i] for i in self.indices]
@@ -674,16 +547,6 @@ class Flatten(Block):
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
         return 1
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Flatten':
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Extract the first element of a list and flatten it. """
@@ -714,28 +577,6 @@ class Product(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_list == other.number_list
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['number_list'] = self.number_list
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        number_list = dict_['number_list']
-        return cls(number_list=number_list, name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Compute the block: use itertools.product. """
@@ -775,29 +616,6 @@ class Filter(Block):
         hashes = [hash(f) for f in self.filters]
         return int(sum(hashes) % 10e5)
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        filters_dict = [f.to_dict(use_pointers=use_pointers, memo=memo, path=f"{path}/filters/{i}")
-                        for i, f in enumerate(self.filters)]
-        dict_.update({"filters": filters_dict, "logical_operator": self.logical_operator})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """ Custom dict_to_object method. """
-        filters = [DessiaFilter.dict_to_object(dict_=d, force_generic=force_generic, global_dict=global_dict,
-                                               pointers_memo=pointers_memo, path=f"{path}/filters/{i}")
-                   for i, d in enumerate(dict_['filters'])]
-        return cls(filters=filters, logical_operator=dict_["logical_operator"], name=dict_["name"],
-                   position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Apply given filters to input list. """
         filters_list = FiltersList(self.filters, self.logical_operator)
@@ -820,60 +638,35 @@ class Display(Block):
 
     _displayable_input = 0
     _non_editable_attributes = ['inputs']
+    _type = None
+    serialize = False
 
-    def __init__(self, inputs: List[Variable] = None, order: int = None, name: str = '',
-                 position: Tuple[float, float] = None):
-        if order is not None:
-            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
-                          "You can safely remove it from your block definition", DeprecationWarning)
-        self.order = order
-        if inputs is None:
-            self.warn_deprecation()
-            inputs = [TypedVariable(type_=DessiaObject, name='Model to Display')]
+    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
+                 selector: Optional[ViewType] = None, position: Tuple[float, float] = None):
         output = TypedVariable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
-        self._type = None
-        self._selector = None
-        self.serialize = False
-
-    @staticmethod
-    def warn_deprecation():
-        """ Warn Deprecation. """
-        warnings.warn("Display Block used as a generator for the displays of an object is deprecated."
-                      "ts display behavior will be faulty. Please use the specific block"
-                      "to generate wanted displays (MultiPlot, CadView, PlotData, Markdown)", DeprecationWarning)
+        self.load_by_default = load_by_default
+        self.selector = selector
 
     @property
     def type_(self) -> str:
         """ Get display's type_. """
         if self._type:
             return self._type
-        if self.__class__ is Display:
-            self.warn_deprecation()
-            return ""
         raise NotImplementedError(f"type_ attribute is not implemented for block of type '{type(self)}'")
-
-    @property
-    def selector(self) -> str:
-        """ Get display's selector. """
-        if self._selector:
-            return self._selector
-        if self.__class__ is Display:
-            self.warn_deprecation()
-            return ""
-        raise NotImplementedError(f"selector attribute is not implemented for block of type '{type(self)}'")
 
     def _display_settings(self, block_index: int, reference_path: str = "#") -> DisplaySetting:
         """ Compute block's display settings. """
         arguments = {"block_index": block_index, "reference_path": reference_path}
-        return DisplaySetting(selector=None, type_=self.type_, method="block_display",
-                              serialize_data=self.serialize, arguments=arguments)
+        return DisplaySetting(selector=self.selector.name, type_=self.type_, method="block_display",
+                              serialize_data=self.serialize, arguments=arguments,
+                              load_by_default=self.load_by_default)
 
     def evaluate(self, values, **kwargs):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
-        settings = object_._display_settings_from_selector(self.selector)
+        settings = object_._display_settings_from_selector(self.selector.name)
         return [attrmethod_getter(object_, settings.method)()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -882,9 +675,9 @@ class Display(Block):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
-class MultiPlot(Display):
+class DeprecatedMultiPlot(Display):
     """
-    Generate a Multiplot which axes will be the given attributes.
+    Generate a Multi plot which axes will be the given attributes.
 
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
@@ -892,16 +685,14 @@ class MultiPlot(Display):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attributes: List[str], order: int = None, name: str = '', position: Tuple[float, float] = None):
-        if order is not None:
-            warnings.warn("Display Block : order argument is deprecated and will be removed in a future version."
-                          "You can safely remove it from your block definition", DeprecationWarning)
-        self.order = order
+    type_ = "plot_data"
+
+    def __init__(self, attributes: List[str], load_by_default: bool = True,
+                 name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
-        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], name=name, position=position)
-        self.inputs[0].name = 'Input List'
-        self._type = "plot_data"
-        self._selector = None
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, position=position)
+        self.inputs[0].name = "Input List"
         self.serialize = True
 
     def equivalent(self, other):
@@ -912,23 +703,6 @@ class MultiPlot(Display):
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
         return sum(len(a) for a in self.attributes)
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """Serialize the block with custom logic."""
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_['attributes'] = self.attributes
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(attributes=dict_['attributes'], name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Create MultiPlot from block configuration. Handle reference path. """
@@ -952,7 +726,7 @@ class MultiPlot(Display):
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
         multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
                                             coords=[(0, 0), (0, 300)], name='Results plot')
-        return [[multiplot.to_dict()]]
+        return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -960,53 +734,225 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
 
-class CadView(Display):
+class MultiPlot(Display):
     """
-    Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...).
+    Generate a Multi plot which axes will be the given attributes.
 
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
+        Can be deep attributes with the '/' separator.
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
-        input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+    _type = "plot_data"
+    serialize = True
 
-        self._type = "babylon_data"
-        self._selector = "cad"
+    def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
+                 name: str = "", position: Tuple[float, float] = None):
+        self.attributes = attributes
+        Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, selector=selector, position=position)
+        self.inputs[0].name = "Input List"
+
+    def equivalent(self, other):
+        """ Return whether if the block is equivalent to the other given. """
+        same_attributes = self.attributes == other.attributes
+        return Block.equivalent(self, other) and same_attributes
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return sum(len(a) for a in self.attributes)
+
+    def evaluate(self, values, **kwargs):
+        """ Create MultiPlot from block configuration. Handle reference path. """
+        reference_path = kwargs.get("reference_path", "#")
+        import plot_data
+        objects = values[self.inputs[self._displayable_input]]
+        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                   for i, o in enumerate(objects)]
+        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                     for i, o in enumerate(objects)]
+        tooltip = plot_data.Tooltip(name='Tooltip', attributes=self.attributes)
+
+        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                        elements=samples2d, name='Scatter Plot')
+
+        parallelplot = plot_data.ParallelPlot(disposition='horizontal', axes=self.attributes,
+                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
+        plots = [scatterplot, parallelplot]
+        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
+        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
+                                            coords=[(0, 0), (0, 300)], name='Results plot')
+        return [multiplot.to_dict()]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "Multiplot")
+        if isinstance(selector, str):
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
+                                       load_by_default=load_by_default, position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
+        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+                         load_by_default=dict_["load_by_default"], position=dict_["position"])
+
+
+class DeprecatedCadView(Display):
+    """
+    Deprecated version of CadView block.
+
+    Steps to upgrade to new version (CadView) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type CadViewType instead of str
+    """
+
+    _type = "babylon_data"
+
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "cad",
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of CadView Block is deprecated and should not be used anymore."
+                      "Please upgrade to CadView new version, instead. (see docstrings)", DeprecationWarning)
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
+
+
+class CadView(Display):
+    """ Generate a DisplayObject that is displayable in 3D Viewer features (BabylonJS, ...). """
+
+    _type = "babylon_data"
+
+    def __init__(self, selector: CadViewType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "cad")
+        if isinstance(selector, str):
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                     position=dict_["position"])
+        selector = CadViewType.dict_to_object(selector)
+        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                       position=dict_["position"])
+
+
+class DeprecatedMarkdown(Display):
+    """
+    Deprecated version of Markdown block.
+
+    Steps to upgrade to new version (Markdown) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type MarkdownSelector instead of str.
+    """
+
+    _type = "markdown"
+
+    def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "markdown",
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of 'Markdown' Block is deprecated and should not be used anymore."
+                      "Please upgrade to 'Markdown' new version, instead. (see docstrings)", DeprecationWarning)
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, position=position)
 
 
 class Markdown(Display):
-    """
-    Generate the markdown representation of an object.
+    """ Generate a Markdown representation of an object. """
 
-    :param name: Name of the block.
-    :param position: Position of the block in canvas.
-    """
+    _type = "markdown"
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, selector: MarkdownType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
 
-        self._type = "markdown"
-        self._selector = "markdown"
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "markdown")
+        if isinstance(selector, str):
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedMarkdown(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = MarkdownType.dict_to_object(selector)
+        return Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
+
+
+class DeprecatedPlotData(Display):
+    """
+    Deprecated version of PlotData block.
+
+    Steps to upgrade to new version (PlotData) :
+    - Remove type_ argument from your __init__ call
+    - Argument 'selector' is now the first in the call and doesn't have default value anymore.
+    - Argument 'selector' is of type PlotDataSelector instead of str.
+    """
+
+    _type = "plot_data"
+    serialize = True
+
+    def __init__(self, name: str = '', load_by_default: bool = False, selector: str = "plot_data",
+                 position: Tuple[float, float] = None):
+        warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
+                      "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
+        input_ = TypedVariable(DessiaObject, name="Model to display")
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, position=position)
 
 
 class PlotData(Display):
-    """
-    Generate a DisplayObject that is displayable in PlotData features. Uses the the input object's plot_data method.
+    """ Generate a PlotData representation of an object. """
 
-    :param name: Name of the block.
-    :param position: Position of the block in canvas.
-    """
+    _type = "plot_data"
+    serialize = True
 
-    def __init__(self, name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, selector: PlotDataType[Type], name: str = "", load_by_default: bool = False,
+                 position: Tuple[float, float] = None):
+        if isinstance(selector, str):
+            raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
+                            " which is deprecated. See upgrading guide if needed.")
         input_ = TypedVariable(DessiaObject, name="Model to display")
-        Display.__init__(self, inputs=[input_], name=name, position=position)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
+                         name=name, position=position)
 
-        self._type = "plot_data"
-        self._selector = "plot_data"
-        self.serialize = True
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of Display blocks. """
+        selector = dict_.get("selector", "plot_data")
+        if isinstance(selector, str):
+            load_by_default = dict_.get("load_by_default", False)
+            return DeprecatedPlotData(name=dict_["name"], load_by_default=load_by_default, selector=selector,
+                                      position=dict_["position"])
+        selector = PlotDataType.dict_to_object(selector)
+        return PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
 
 
 class ModelAttribute(Block):
@@ -1032,27 +978,6 @@ class ModelAttribute(Block):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'attribute_name': self.attribute_name})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
         return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_name}')]
@@ -1062,61 +987,117 @@ class ModelAttribute(Block):
         script = f"ModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+   
+class GetModelAttribute(Block):
+    """
+    Fetch attribute of given object during workflow execution.
+
+    :param attribute_type: AttributeType variable that contain the model and the name of the attribute to select.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type = attribute_type
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
+        if type_:
+            outputs = [TypedVariable(type_=type_, name='Model attribute')]  
+        else:
+            outputs = [Variable(name='Model attribute')]
+        Block.__init__(self, inputs, outputs, name=name, position=position)
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        classname = self.attribute_type.class_.__name__
+        return len(classname) + 7 * len(self.attribute_type.name)
+
+    def equivalent(self, other):
+        """ Return whether the block is equivalent to the other given or not. """
+        classname = self.attribute_type.class_.__name__
+        other_classname = other.attribute_type.class_.__name__
+        same_model = classname == other_classname
+        same_method = self.attribute_type.name == other.attribute_type.name
+        return Block.equivalent(self, other) and same_model and same_method
+
+    def evaluate(self, values, **kwargs):
+        """ Get input object's deep attribute. """
+        return [get_in_object_from_path(values[self.inputs[0]], f'#/{self.attribute_type.name}')]
+
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        script = f"GetModelAttribute(attribute_type=AttributeType(" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
+                 f", {self.base_script()})"
+        imports = [full_classname(object_=self.attribute_type, compute_for='instance'),
+                   full_classname(object_=self.attribute_type.class_, compute_for='class'),
+                   self.full_classname]
+        return ToScriptElement(declaration=script, imports=imports)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
+
 
 class SetModelAttribute(Block):
     """
     Block to set an attribute value in a workflow.
 
-    :param attribute_name: Name of the attribute to set.
+    :param attribute_type: AttributeType variable that contain the model and the name of the attribute to select.
     :param name: Name of the block.
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = '', position: Tuple[float, float] = None):
-        self.attribute_name = attribute_name
-        inputs = [Variable(name='Model'), Variable(name=f'Value to insert for attribute {attribute_name}')]
-        outputs = [Variable(name=f'Model with changed attribute {attribute_name}')]
+    def __init__(self, attribute_type: AttributeType[Type], name: str = '', position: Tuple[float, float] = None):
+        self.attribute_type = attribute_type
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        type_ = get_attribute_type(self.attribute_type.name, parameters)
+        inputs = [TypedVariable(type_=self.attribute_type.class_, name='Model')]
+        if type_:
+            inputs.append(TypedVariable(type_=type_, name=f'Value to insert for attribute {self.attribute_type.name}'))
+        else:
+            inputs.append(Variable(name=f'Value to insert for attribute {self.attribute_type.name}'))
+        outputs = [TypedVariable(type_=self.attribute_type.class_,
+                                 name=f'Model with changed attribute {self.attribute_type.name}')]
         Block.__init__(self, inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
-        return 3 + len(self.attribute_name)
+        return 3 + len(self.attribute_type.name)
 
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
-
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'attribute_name': self.attribute_name})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['attribute_name'], dict_['name'], position=dict_.get('position'))
+        return Block.equivalent(self, other) and self.attribute_type.name == other.attribute_type.name
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
         model = values[self.inputs[0]]
-        setattr(model, self.attribute_name, values[self.inputs[1]])
+        setattr(model, self.attribute_type.name, values[self.inputs[1]])
         return [model]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"SetModelAttribute(attribute_name='{self.attribute_name}', {self.base_script()})"
+        script = f"SetModelAttribute(attribute_type=AttributeType(" \
+                 f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
+                 f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
+                       pointers_memo: Dict[str, Any] = None, path: str = '#'):
+        """ Backward compatibility for old versions of blocks. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["attribute_type"]:
+            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
+        return super().dict_to_object(dict_=dict_, force_generic=True, global_dict=global_dict,
+                                      pointers_memo=pointers_memo, path=path)
 
 
 class Sum(Block):
@@ -1141,32 +1122,11 @@ class Sum(Block):
         """ Returns whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'number_elements': self.number_elements})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(dict_['number_elements'], dict_['name'], position=dict_.get('position'))
-
     def evaluate(self, values, **kwargs):
         """
         Sum input values.
 
-        TODO : This cannot work, we are summing a dictionnary
+        TODO : This cannot work, we are summing a dictionary
         """
         return [sum(values)]
 
@@ -1184,7 +1144,7 @@ class Substraction(Block):
                        position=position)
 
     def evaluate(self, values, **kwargs):
-        """ Substract input values. """
+        """ Subtract input values. """
         return [values[self.inputs[0]] - values[self.inputs[1]]]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -1222,27 +1182,6 @@ class ConcatenateStrings(Block):
         same_separator = self.separator == other.separator
         return Block.equivalent(self, other) and same_number and same_separator
 
-    def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        dict_.update({'number_elements': self.number_elements, "separator": self.separator})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
-        """
-        Custom dict_to_object method.
-
-        TODO To remove ?
-        """
-        return cls(number_elements=dict_['number_elements'], separator=dict_["separator"], name=dict_['name'])
-
     def evaluate(self, values, **kwargs):
         """ Concatenate input strings with configured separator. """
         chunks = [values[i] for i in self.inputs]
@@ -1277,9 +1216,7 @@ class Export(Block):
         if not filename:
             filename = "export"
         self.filename = filename
-
         method = method_type.get_method()
-
         self.extension = extension
         self.text = text
 
@@ -1287,30 +1224,6 @@ class Export(Block):
         inputs = [TypedVariable(type_=method_type.class_, name="model_to_export"),
                   TypedVariableWithDefaultValue(type_=str, default_value=filename, name="filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
-
-    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
-        classname = full_classname(object_=self.method_type.class_, compute_for='class')
-        method_type_dict = {'class_': classname, 'name': self.method_type.name}
-        dict_.update({"method_type": method_type_dict, "extension": self.extension,
-                      "text": self.text, "filename": self.filename})
-        return dict_
-
-    @classmethod
-    @set_block_variable_names_from_dict
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
-                       global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Export':
-        """ Custom dict_to_object method. """
-        class_ = get_python_class_from_class_name(dict_['method_type']['class_'])
-        method_type = MethodType(class_=class_, name=dict_['method_type']['name'])
-        if "export_name" in dict_:
-            # RetroCompat
-            filename = dict_["export_name"]
-        else:
-            filename = dict_["filename"]
-        return cls(method_type=method_type, text=dict_['text'], filename=filename,
-                   extension=dict_["extension"], name=dict_["name"], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Generate to-be-exported stream from corresponding method. """
@@ -1360,11 +1273,7 @@ class Archive(Block):
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="zip archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
-        """
-        Serialize the block with custom logic.
-
-        TODO To remove ?
-        """
+        """ Serialize the block with custom logic. """
         dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
         dict_['number_exports'] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
@@ -1375,13 +1284,8 @@ class Archive(Block):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False,
                        global_dict=None, pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Custom dict_to_object method. """
-        if "export_name" in dict_:
-            # RetroCompat
-            filename = dict_["export_name"]
-        else:
-            filename = dict_["filename"]
-        return cls(number_exports=dict_["number_exports"], filename=filename, name=dict_['name'],
-                   position=dict_.get('position'))
+        return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
+                   name=dict_['name'], position=dict_.get('position'))
 
     def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """
@@ -1391,14 +1295,7 @@ class Archive(Block):
         with ZipFile(archive, 'w') as zip_archive:
             for input_ in self.inputs[:-1]:  # Filename is last block input
                 value = values[input_]
-                if isinstance(value, StringFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getvalue().encode('utf-8'))
-                elif isinstance(value, BinaryFile):
-                    with zip_archive.open(value.filename, 'w') as file:
-                        file.write(value.getbuffer())
-                else:
-                    raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+                generate_archive(zip_archive, value)
         return [archive]
 
     def _export_format(self, block_index: int) -> ExportFormat:
@@ -1411,3 +1308,15 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+def get_attribute_type(attribute_name: str, parameters):
+    """ Get type of attribute name of class."""
+    parameter = parameters.get(attribute_name)
+    if not parameter:
+        return None
+    if not hasattr(parameter, "annotation"):
+        return parameter
+    if parameter.annotation == inspect.Parameter.empty:
+        return None 
+    return parameter.annotation
