@@ -188,6 +188,14 @@ class Schema:
         If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
         """
+        return {a: s.default_value() for a, s in self.property_schemas.items()}
+
+    def default_value(self) -> Dict[str, Any]:
+        """
+        A user computed default value. It differs from 'default_dict',
+        as only user defined default_value are set here.
+        In 'default_dict' method, every property is set.
+        """
         return {a: s.default_value() for a, s in self.property_schemas.items() if s.has_default_value}
 
     def check_list(self) -> CheckList:
