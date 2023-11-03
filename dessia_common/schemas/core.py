@@ -709,6 +709,11 @@ class BuiltinProperty(Property):
             chunk["default_value"] = self.default_value()
         return chunk
 
+    def default_value(self):
+        if self.has_default_value:
+            return self.attribute.default_value
+        return None
+
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
@@ -736,6 +741,16 @@ class MeasureProperty(BuiltinProperty):
         chunk = Property.to_dict(self)
         chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
         return chunk
+
+    def default_value(self):
+        if self.has_default_value:
+            if isinstance(self.attribute.default_value, float):
+                default_measure = Measure(self.attribute.default_value)
+            else:
+                raise ValueError(f"Default value for attribute '{self.attribute.name}' "
+                                 f"must be of type 'float' or 'Measure'. Got '{type(self.attribute.default_value)}'")
+            return default_measure.to_dict()
+        return {"object_class": f"{Measure.__module__}.{Measure.__class__.__name__}", "value": None}
 
 
 File = Union[StringFile, BinaryFile]
@@ -815,9 +830,9 @@ class CustomClass(Property):
         chunk.update({"type": "object", "standalone_in_db": self.standalone_in_db, "classes": [self.serialized]})
         return chunk
 
-    def default_value(self) -> CoreDessiaObject:
+    def default_value(self) -> Optional[Dict[str, Any]]:
         """ Default value for an object. """
-        return object_default(default_value=super().default_value(), class_schema=self.schema)
+        return object_default(default_value=self.attribute.default_value, class_schema=self.schema)
 
     def check_list(self) -> CheckList:
         """
@@ -882,7 +897,7 @@ class UnionProperty(TypingProperty):
 
     def default_value(self) -> T:
         """ Default value for an object. """
-        return object_default(super().default_value())
+        return object_default(default_value=self.attribute.default_value)
 
     def check_list(self) -> CheckList:
         """
@@ -980,9 +995,8 @@ class HeterogeneousSequence(TypingProperty):
 
         Return serialized user default if defined, else a Tuple of Nones with the right size.
         """
-        default_value = super().default_value()
-        if default_value is not UNDEFINED:
-            return default_value
+        if self.has_default_value:
+            return self.attribute.default_value
         return tuple(s.default_value() for s in self.args_schemas)
 
     def check_list(self) -> CheckList:
@@ -1184,9 +1198,9 @@ class InstanceOfProperty(TypingProperty):
                       "standalone_in_db": self.standalone_in_db})
         return chunk
 
-    def default_value(self) -> BaseClass:
+    def default_value(self) -> Dict[str, Any]:
         """ Default value of an object. """
-        return object_default(default_value=super().default_value(), class_schema=self.schema)
+        return object_default(default_value=self.attribute.default_value, class_schema=self.schema)
 
     def check_list(self) -> CheckList:
         """ Check validity of InstanceOf Type Hint. """
@@ -1276,7 +1290,7 @@ class AttributeTypeProperty(TypingProperty):
     def default_value(self) -> Dict[str, Any]:
         """ Sets AttributeType object_class and argument class_ if it is different from Type. """
         if self.has_default_value:
-            return super().default_value().to_dict()
+            return self.attribute.default_value.to_dict()
         
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
             classname = full_classname(object_=self.class_, compute_for="class")
@@ -1366,6 +1380,11 @@ class ClassProperty(TypingProperty):
     def __init__(self, annotation: Type[Class], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
+        if annotation is Type:
+            self.class_ = Type
+        else:
+            self.class_ = self.args[0]
+
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[Class]:
         """ Deserialize Type annotation. Support undefined and defined argument. """
@@ -1379,6 +1398,17 @@ class ClassProperty(TypingProperty):
         chunk = super().to_dict()
         chunk.update({"type": "object", "is_class": True, "properties": {"name": {"type": "string"}}})
         return chunk
+
+    def default_value(self) -> Dict[str, Any]:
+        """ Sets AttributeType object_class and argument class_ if it is different from Type. """
+        if self.has_default_value:
+            return self.attribute.default_value.to_dict()
+
+        if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
+            classname = full_classname(object_=self.class_, compute_for="class")
+        else:
+            classname = None
+        return {"object_class": full_classname(object_=self.origin, compute_for="class"), "class_": classname}
 
     def check_list(self) -> CheckList:
         """
@@ -1569,7 +1599,8 @@ def custom_class_schema(annotation: Type[T], attribute: SchemaAttribute) -> Prop
     return schema_type(annotation=annotation, attribute=attribute)
 
 
-def object_default(default_value: CoreDessiaObject = UNDEFINED, class_schema: ClassSchema = None):
+def object_default(default_value: CoreDessiaObject = UNDEFINED, class_schema: ClassSchema = None) \
+        -> Optional[Dict[str, Any]]:
     """
     Default value of an object.
 
