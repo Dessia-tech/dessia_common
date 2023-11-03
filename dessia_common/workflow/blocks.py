@@ -14,7 +14,7 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
                                    PlotDataType, MarkdownType)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
-from dessia_common.utils.helpers import concatenate, full_classname
+from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, Workflow
@@ -99,6 +99,15 @@ class InstantiateModel(Block):
         classname = self.model_class.__class__.__name__
         other_classname = other.model_class.__class__.__name__
         return Block.equivalent(self, other) and classname == other_classname
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'InstantiateModel':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        model_class = get_python_class_from_class_name(dict_["model_class"])
+        block = cls(model_class=model_class, name=dict_["name"], position=dict_["position"])
+        block.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
+        block.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """

@@ -358,7 +358,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         obj = class_(**subobjects)
     else:
         obj = subobjects
-
     return obj
 
 
