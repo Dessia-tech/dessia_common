@@ -62,6 +62,8 @@ class ExcelReader:
 
                     obj_data = {a: v[i] for i, a in enumerate(attr) if a in attr_init}
                     obj = obj_class(**obj_data)
+                    if not obj.name:
+                        obj.name = ""
                     list_obj.append(obj)
 
                 list_instantiated_obj[key] = list_obj
@@ -103,6 +105,7 @@ class ExcelReader:
                         list_obj.append(obj)
 
                     list_instantiated_obj[key] = list_obj
+                    continue
 
                 try:
                     hyperlink_list = [v2.hyperlink.location.split('!')[0] for val in values[2:] for v in val.values()
