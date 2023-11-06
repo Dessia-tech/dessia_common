@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-
+from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
@@ -461,9 +461,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
         if isinstance(argument, int) and type_ == float:
             # Explicit conversion in this case
             return float(argument)
-        # else ...
-        msg = f"Given built-in type and argument are incompatible: " \
-              f"{type(argument)} and {type_} in {argument}"
+        msg = f"Given built-in type and argument are incompatible: {type(argument)} and {type_} in {argument}"
         raise TypeError(msg)
 
     if type_ is Any:
@@ -476,7 +474,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    if issubclass(type_, Measure):
+        return argument
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):
