@@ -135,6 +135,7 @@ class XLSXWriter:
                 str_v = str(value)
             else:
                 str_v = f'List of {len(value)} items'
+                cell_link = f'#{value[0].__class__.__name__}!A2'
 
         elif isinstance(value, set):
             str_v = f'Set of {len(value)} items'
@@ -215,18 +216,23 @@ class XLSXWriter:
         """ Generate the whole file. """
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
-        self.write_class_header_to_row(self.object, self.main_sheet, 3)
-        self.write_object_to_row(self.object, self.main_sheet, 4)
+        self.write_class_header_to_row(self.object, self.main_sheet, 3) # ici ici
+        self.write_object_to_row(self.object, self.main_sheet, 4) # ici
         self.autosize_sheet_columns(self.main_sheet, 5, 30)
 
         for class_name, obj_paths in self.paths.items():
             sheet = self.classes_to_sheets[class_name]
 
+            sheet['A1'] = 'Module'
+            sheet['B1'] = 'Class'
+            obj_info = list(obj_paths.keys())[0]
+            sheet['A2'] = obj_info.__module__
+            sheet['B2'] = obj_info.__class__.__name__
+
             for obj, path in obj_paths.items():
                 _, row_number, path = self.object_to_sheet_row[obj]
-                self.write_object_to_row(obj, sheet, row_number, path)
-            self.write_class_header_to_row(obj, sheet, 1)
-
+                self.write_object_to_row(obj, sheet, row_number+2, path)
+            self.write_class_header_to_row(obj, sheet, 3)
             sheet.auto_filter.ref = f"A1:{openpyxl.utils.cell.get_column_letter(sheet.max_column)}{len(obj_paths) + 1}"
             self.autosize_sheet_columns(sheet, 5, 30)
 
