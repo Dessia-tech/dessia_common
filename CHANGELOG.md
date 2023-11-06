@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Documentation : Rewrite from scratch
 - Workflow : Variables now have a pretty type to display on frontend
-- - WorkflowState: add memory usage monitoring & markdown
+- WorkflowState: add memory usage monitoring & markdown
 
 
 ### Removed
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Workflow : Block input and output names have been enhanced
+- Workflow : Inputs now have entries for Imposed Variable Values
 
 
 ## 0.14.0

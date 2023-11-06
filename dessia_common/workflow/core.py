@@ -260,8 +260,7 @@ class Workflow(Block):
 
         self._utd_graph = False
 
-        inputs = [v for v in self.variables if v not in self.imposed_variable_values
-                  and len(nx.ancestors(self.graph, v)) == 0]
+        inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
 
         self.description = description
         self.documentation = documentation
@@ -570,10 +569,7 @@ class Workflow(Block):
         """ New support of method schemas. """
         attributes = []
         annotations = {}
-        free_inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
-        # TODO free_inputs is a quickfix and I would want to find another solution.
-        #  Set imposed variable values in inputs ?
-        for i, input_ in enumerate(free_inputs + self.detached_variables):
+        for i, input_ in enumerate(self.inputs + self.detached_variables):
             # input_address = str(self.variable_indices(input_))
             input_address = str(i)
             annotations[input_address] = input_.type_
@@ -635,11 +631,11 @@ class Workflow(Block):
         dict_ = Block.to_dict(self, use_pointers=False)
 
         output = self.variable_indices(self.output)
-        dict_.update({'blocks': [b.to_dict(use_pointers=False) for b in self.blocks],
-                      'pipes': [self.pipe_variable_indices(p) for p in self.pipes],
-                      'output': output,
-                      'nonblock_variables': [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
-                      'package_mix': self.package_mix()})
+        dict_.update({"blocks": [b.to_dict(use_pointers=False) for b in self.blocks],
+                      "pipes": [self.pipe_variable_indices(p) for p in self.pipes],
+                      "output": output,
+                      "nonblock_variables": [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
+                      "package_mix": self.package_mix()})
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
@@ -651,8 +647,8 @@ class Workflow(Block):
                 ser_value = serialize(value)
             imposed_variable_values[str(var_index)] = ser_value
 
-        dict_.update({'description': self.description, 'documentation': self.documentation,
-                      'imposed_variable_values': imposed_variable_values})
+        dict_.update({"description": self.description, "documentation": self.documentation,
+                      "imposed_variable_values": imposed_variable_values})
         return dict_
 
     @classmethod
@@ -692,45 +688,23 @@ class Workflow(Block):
             name = None
             arguments_values = {}
             for i, input_ in enumerate(self.inputs):
-                has_default = input_.has_default_value
-                if not has_default or (has_default and i in dict_):
-                    value = dict_[i]
-                    path_value = f'{path}/inputs/{i}'
-                    deserialized_value = deserialize_argument(type_=input_.type_, argument=value,
-                                                              global_dict=global_dict,
-                                                              pointers_memo=pointers_memo, path=path_value)
+                overwritten = input_.has_default_value and i in dict_
+                imposed = input_ in self.imposed_variable_values
+                if (not input_.has_default_value or overwritten) and not imposed:
+                    path_value = f"{path}/inputs/{i}"
+                    value = deserialize_argument(type_=input_.type_, argument=dict_[i], global_dict=global_dict,
+                                                 pointers_memo=pointers_memo, path=path_value)
                     if input_.name == "Result Name":
-                        name = deserialize_argument(type_=input_.type_, argument=value, global_dict=global_dict,
-                                                    pointers_memo=pointers_memo, path=path_value)
-                    arguments_values[i] = deserialized_value
+                        name = value
+                    arguments_values[i] = value
             if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):
                 # Hot fixing name not attached
                 name = dict_[len(self.inputs)]
-            return {'input_values': arguments_values, 'name': name}
-        raise NotImplementedError(f"Method {method} not in Workflow allowed methods")
+            return {"input_values": arguments_values, "name": name}
+        raise NotImplementedError(f"Method '{method}' is not allowed for Workflow. Expected 'run' or 'start_run'.")
 
-    def _run_dict(self) -> Dict:
-        dict_ = {}
-
-        copied_ivv = {}
-        for variable, value in self.imposed_variable_values.items():
-            variable_index = self.variables.index(variable)
-            copied_ivv[variable_index] = value
-
-        cached_ivv = self.imposed_variable_values
-        self.imposed_variable_values = {}
-        copied_workflow = self.copy()
-        self.imposed_variable_values = cached_ivv
-        # We need to clear the imposed_variables_values and then copy the workflow in order
-        # to have the good input indices in the loop bellow
-
-        for input_index, input_ in enumerate(copied_workflow.inputs):
-            variable_index = copied_workflow.variables.index(input_)
-            if variable_index in copied_ivv:
-                dict_[input_index] = serialize(copied_ivv[variable_index])
-            elif input_.has_default_value:
-                dict_[input_index] = serialize(input_.default_value)
-        return dict_
+    def _run_dict(self) -> JsonSerializable:
+        return {self.variables.index(i): i.default_value for i in self.inputs if i.has_default_value}
 
     def _start_run_dict(self) -> Dict:
         return {}
@@ -1104,7 +1078,7 @@ class Workflow(Block):
 
         log_msg = "Starting workflow run at {}"
         log_line = log_msg.format(time.strftime("%d/%m/%Y %H:%M:%S UTC", time.gmtime(start_time)))
-        log += (log_line + '\n')
+        log += (log_line + "\n")
         if verbose:
             print(log_line)
 
