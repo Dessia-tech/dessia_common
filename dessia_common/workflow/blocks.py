@@ -105,8 +105,7 @@ class InstantiateModel(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         model_class = get_python_class_from_class_name(dict_["model_class"])
         block = cls(model_class=model_class, name=dict_["name"], position=dict_["position"])
-        block.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
-        block.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+        block.dict_to_inputs(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -171,6 +170,14 @@ class ClassMethod(Block):
         same_class = classname == other_classname
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_class and same_method
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ClassMethod':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
@@ -249,6 +256,14 @@ class ModelMethod(Block):
         same_method = self.method_type.name == other.method_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelMethod':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
@@ -286,15 +301,6 @@ class ModelMethod(Block):
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
 
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
-        """ Backward compatibility for old versions of blocks. """
-        # Backward compatibility dessia_common < 0.14.0
-        if "object_class" not in dict_["method_type"]:
-            dict_["method_type"]["object_class"] = "dessia_common.typings.MethodType"
-        kwargs["force_generic"] = True
-        return super().dict_to_object(dict_=dict_, **kwargs)
-
 
 class Sequence(Block):
     """
@@ -318,6 +324,13 @@ class Sequence(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sequence':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(number_arguments=dict_["number_arguments"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Pack values into a sequence. """
@@ -351,6 +364,13 @@ class Concatenate(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Concatenate':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(number_arguments=dict_["number_arguments"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values: Dict[Variable, Any], **kwargs):
         """ Concatenate elements that are in values. """
@@ -398,6 +418,14 @@ class WorkflowBlock(Block):
         if not Block.equivalent(self, other):
             return False
         return self.workflow == other.workflow
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'WorkflowBlock':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        workflow = Workflow.dict_to_object(dict_["workflow"])
+        block = cls(workflow=workflow, name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Format sub workflow arguments and run it. """
@@ -473,6 +501,15 @@ class ForEach(Block):
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
         return Block.equivalent(self, other) and wb_eq and input_eq
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ForEach':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        workflow_block = WorkflowBlock.dict_to_object(dict_["workflow_block"])
+        block = cls(workflow_block=workflow_block, iter_input_index=dict_["iter_input_index"],
+                    name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def evaluate(self, values, **kwargs):
         """ Loop on input list and run sub workflow on each. """
         values_workflow = {var2: values[var1] for var1, var2 in zip(self.inputs, self.workflow_block.inputs)}
@@ -521,6 +558,13 @@ class Unpacker(Block):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.indices == other.indices
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Unpacker':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(indices=dict_["indices"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
         return len(self.indices)
@@ -552,6 +596,13 @@ class Flatten(Block):
         """ Custom hash function. Related to 'equivalent' method. """
         return 1
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Flatten':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def evaluate(self, values, **kwargs):
         """ Extract the first element of a list and flatten it. """
         output = []
@@ -581,6 +632,13 @@ class Product(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_list == other.number_list
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Product':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(number_list=dict_["number_list"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Compute the block: use itertools.product. """
@@ -614,6 +672,15 @@ class Filter(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.filters == other.filters
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Filter':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        filters = [DessiaFilter.dict_to_object(f) for f in dict_["filters"]]
+        block = cls(filters=filters, logical_operator=dict_["logical_operator"],
+                    name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -797,7 +864,7 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'MultiPlot':
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "Multiplot")
         if isinstance(selector, str):
@@ -805,8 +872,10 @@ class MultiPlot(Display):
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
         selector = PlotDataType.dict_to_object(selector)
-        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
-                         load_by_default=dict_["load_by_default"], position=dict_["position"])
+        block = MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+                          load_by_default=dict_["load_by_default"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
 
 class DeprecatedCadView(Display):
@@ -845,7 +914,7 @@ class CadView(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'CadView':
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "cad")
         if isinstance(selector, str):
@@ -853,8 +922,10 @@ class CadView(Display):
             return DeprecatedCadView(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                      position=dict_["position"])
         selector = CadViewType.dict_to_object(selector)
-        return CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                       position=dict_["position"])
+        block = CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                        position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
 
 class DeprecatedMarkdown(Display):
@@ -893,7 +964,7 @@ class Markdown(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Markdown':
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "markdown")
         if isinstance(selector, str):
@@ -901,8 +972,10 @@ class Markdown(Display):
             return DeprecatedMarkdown(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                       position=dict_["position"])
         selector = MarkdownType.dict_to_object(selector)
-        return Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                        position=dict_["position"])
+        block = Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                         position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
 
 class DeprecatedPlotData(Display):
@@ -943,7 +1016,7 @@ class PlotData(Display):
                          name=name, position=position)
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'PlotData':
         """ Backward compatibility for old versions of Display blocks. """
         selector = dict_.get("selector", "plot_data")
         if isinstance(selector, str):
@@ -951,8 +1024,10 @@ class PlotData(Display):
             return DeprecatedPlotData(name=dict_["name"], load_by_default=load_by_default, selector=selector,
                                       position=dict_["position"])
         selector = PlotDataType.dict_to_object(selector)
-        return PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
-                        position=dict_["position"])
+        block = PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
+                         position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
 
 class ModelAttribute(Block):
@@ -977,6 +1052,13 @@ class ModelAttribute(Block):
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelAttribute':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(attribute_name=dict_["attribute_name"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
@@ -1018,6 +1100,14 @@ class GetModelAttribute(Block):
         same_method = self.attribute_type.name == other.attribute_type.name
         return Block.equivalent(self, other) and same_model and same_method
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'GetModelAttribute':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        attribute_type = AttributeType.dict_to_object(dict_["attribute_type"])
+        block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
         return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_type.name}")]
@@ -1031,15 +1121,6 @@ class GetModelAttribute(Block):
                    full_classname(object_=self.attribute_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
-        """ Backward compatibility for old versions of blocks. """
-        # Backward compatibility dessia_common < 0.14.0
-        if "object_class" not in dict_["attribute_type"]:
-            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
-        kwargs["force_generic"] = True
-        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class SetModelAttribute(Block):
@@ -1068,6 +1149,14 @@ class SetModelAttribute(Block):
         """ Returns whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.attribute_type.name == other.attribute_type.name
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SetModelAttribute':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        attribute_type = AttributeType.dict_to_object(dict_["attribute_type"])
+        block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
         model = values[self.inputs[0]]
@@ -1080,14 +1169,6 @@ class SetModelAttribute(Block):
                  f"{self.attribute_type.class_.__name__}, name=\"{self.attribute_type.name}\")" \
                  f", {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
-        """ Backward compatibility for old versions of blocks. """
-        # Backward compatibility dessia_common < 0.14.0
-        if "object_class" not in dict_["attribute_type"]:
-            dict_["attribute_type"]["object_class"] = "dessia_common.typings.AttributeType"
-        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class Sum(Block):
@@ -1111,6 +1192,13 @@ class Sum(Block):
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
         return Block.equivalent(self, other) and self.number_elements == other.number_elements
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sum':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(number_elements=dict_["number_elements"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """
@@ -1142,6 +1230,13 @@ class Substraction(Block):
         script = f"Substraction({self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Substraction':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
+
 
 class ConcatenateStrings(Block):
     """
@@ -1170,6 +1265,14 @@ class ConcatenateStrings(Block):
         same_number = self.number_elements == other.number_elements
         same_separator = self.separator == other.separator
         return Block.equivalent(self, other) and same_number and same_separator
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ConcatenateStrings':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        block = cls(number_elements=dict_["number_elements"], separator=dict_["separator"],
+                    name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Concatenate input strings with configured separator. """
@@ -1213,6 +1316,15 @@ class Export(Block):
         inputs = [Variable(type_=method_type.class_, name="Model"),
                   Variable(type_=str, default_value=filename, name="Filename")]
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Export':
+        """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        block = cls(method_type=method_type, text=dict_["text"], extension=dict_["extension"],
+                    filename=dict_["filename"], name=dict_["name"], position=dict_["position"])
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Generate to-be-exported stream from corresponding method. """
@@ -1273,8 +1385,10 @@ class Archive(Block):
     @set_block_variable_names_from_dict
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
         """ Custom dict_to_object method. """
-        return cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
-                   name=dict_["name"], position=dict_.get("position"))
+        block = cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
+                    name=dict_["name"], position=dict_.get("position"))
+        block.dict_to_inputs(dict_)
+        return block
 
     def evaluate(self, values, **kwargs):
         """ Generate archive stream for input streams. """

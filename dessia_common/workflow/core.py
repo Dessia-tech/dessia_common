@@ -175,6 +175,18 @@ class Block(DessiaObject):
         """ Always return True for now. """
         return True
 
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        """
+        Enable inputs and outputs overwritting in order to allow input renaming
+        as well as default value persistence.
+
+        If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
+        """
+        if "inputs" in dict_:
+            self.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
+        if "outputs" in dict_:
+            self.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+
 
 class Pipe(DessiaObject):
     """
