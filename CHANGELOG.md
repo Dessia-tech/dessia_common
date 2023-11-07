@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.14.1
 
+## Changed
+
+- Multiplot block takes selector as a string
+
 ### Fixed
 
-- 'reference_path' is now passed on by Display block while evaluating 
+- 'reference_path' is now passed on by Display block while evaluating
 
 ## 0.14.0
 
