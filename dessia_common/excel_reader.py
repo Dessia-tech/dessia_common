@@ -68,6 +68,8 @@ class ExcelReader:
 
             obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
             obj = obj_class(**obj_data)
+            if not obj.name:
+                obj.name = ""
             list_obj.append(obj)
 
         list_instantiated_obj[key] = list_obj
@@ -96,6 +98,8 @@ class ExcelReader:
 
                 obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
                 obj = obj_class(**obj_data)
+                if not obj.name:
+                    obj.name = ""
                 list_obj.append(obj)
 
             list_instantiated_obj[key] = list_obj
@@ -158,6 +162,8 @@ class ExcelReader:
                 for v in values[2].values():
                     obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
                     obj = obj_class(**obj_data)
+                    if not obj.name:
+                        obj.name = ""
                     list_obj.append(obj)
 
                 list_instantiated_obj[key] = list_obj
