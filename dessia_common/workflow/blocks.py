@@ -748,8 +748,9 @@ class DeprecatedMultiPlot(Display):
 
 class MultiPlot(Display):
     """
-    Generate a Multi plot which axes will be the given attributes.
+    Generate a Multiplot which axes will be the given attributes. Will show a Scatter and a Parallel Plot.
 
+    :param selector_name: Name of the selector to be displayed in object page. Must be unique throughout workflow.
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
     :param name: Name of the block.
@@ -759,9 +760,10 @@ class MultiPlot(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
+    def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
+        selector = PlotDataType(class_=None, name=selector_name)
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=selector, position=position)
         self.inputs[0].name = "Input List"
@@ -808,13 +810,16 @@ class MultiPlot(Display):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Backward compatibility for old versions of Display blocks. """
-        selector = dict_.get("selector", "Multiplot")
-        if isinstance(selector, str):
+        selector = dict_.get("selector", None)
+        if selector is None:
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
-        selector = PlotDataType.dict_to_object(selector)
-        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+        if isinstance(selector, str):
+            selector_name = selector
+        else:
+            selector_name = selector["name"]
+        return MultiPlot(selector_name=selector_name, attributes=dict_["attributes"], name=dict_["name"],
                          load_by_default=dict_["load_by_default"], position=dict_["position"])
 
 
