@@ -667,7 +667,19 @@ class Display(Block):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector.name)
-        return [attrmethod_getter(object_, settings.method)()]
+        method = settings.method
+        if "progress_callback" in kwargs:
+            # User methods do not necessarily implement progress callback
+            del kwargs["progress_callback"]
+        try:
+            return [attrmethod_getter(object_, method)(**kwargs)]
+        except TypeError as exc:
+            arguments = list(kwargs.keys())
+            warnings.warn(f"Workflow : method '{method}' was called without generic arguments "
+                          f"('{', '.join(arguments)}') because one of them is not set in method's signature.\n\n "
+                          f"Original exception : \n{repr(exc)}")
+            # Cover cases where kwargs do not correspond to method signature (missing reference_path, for ex)
+            return [attrmethod_getter(object_, method)()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
