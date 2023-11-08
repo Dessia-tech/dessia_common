@@ -23,16 +23,16 @@ MIN_NOTE = 9.3
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
 
-UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
+UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error", "protected-access"]
 
 MAX_ERROR_BY_TYPE = {
     "protected-access": 48,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 7,  # Reduce by dropping vectored objects
-    "too-many-branches": 11,  # Huge refactor needed. Will be reduced by schema refactor
+    "too-many-branches": 10,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "too-many-arguments": 21,  # Huge refactor needed
+    "too-many-arguments": 20,  # Huge refactor needed
     "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 5,  # TODO : will reduced in a future work (when tests are ready)

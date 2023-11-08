@@ -1,5 +1,5 @@
 """ Typing for dessia_common. """
-from typing import TypeVar, Generic, Dict, Any, Tuple
+from typing import TypeVar, Generic, Dict, Any, Tuple, get_type_hints
 
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
@@ -28,6 +28,12 @@ class MethodType(Generic[T]):
     def get_method(self):
         """ Helper to get real method from class_ and method name. """
         return getattr(self.class_, self.name)
+
+    def output_type(self):
+        """ Helper to get method output type. """
+        method = self.get_method()
+        hints = get_type_hints(method)
+        return hints.get("return", None)
 
     def to_dict(self):
         """ Write Method Type as a dictionary. """

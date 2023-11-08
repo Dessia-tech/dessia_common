@@ -3,7 +3,6 @@
 """ Gathers all workflow relative features. """
 
 import ast
-import inspect
 import time
 import datetime
 from functools import cached_property
@@ -20,7 +19,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,\
-    serialize_annotation, is_typing, SCHEMA_HEADER
+    serialize_annotation, is_typing, SCHEMA_HEADER, pretty_annotation
 
 from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -29,7 +28,7 @@ from dessia_common.utils.helpers import prettyname
 
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
-from dessia_common.displays import DisplaySetting, DisplayObject
+from dessia_common.displays import DisplaySetting
 from dessia_common.breakdown import ExtractionError
 from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
@@ -83,25 +82,24 @@ class Variable(DessiaObject):
         return NotImplementedError(msg)
 
 
+T = TypeVar("T")
+
+
 class TypedVariable(Variable):
     """ Variable for workflow with a typing. """
 
     has_default_value: bool = False
 
-    def __init__(self, type_: Type[Any], name: str = '', position: Tuple[float, float] = None):
+    def __init__(self, type_: Type[T], name: str = '', position: Tuple[float, float] = None):
         Variable.__init__(self, name=name, position=position)
         self.type_ = type_
+        self.pretty_type = pretty_annotation(annotation=type_)
 
     def to_dict(self, use_pointers=True, memo=None, path: str = '#', id_method=True, id_memo=None,
                 **kwargs):
         """ Serializes the object with specific logic. """
         dict_ = super().to_dict(use_pointers, memo, path)
-        if inspect.isclass(self.type_) and issubclass(self.type_, DisplayObject):
-            # TODO QUICKFIX
-            serialized = "dessia_common.displays.DisplayObject"
-        else:
-            serialized = serialize_annotation(self.type_)
-        dict_.update({'type_': serialized})
+        dict_.update({"type_": serialize_annotation(self.type_), "pretty_type": self.pretty_type})
         return dict_
 
     @classmethod
@@ -151,9 +149,6 @@ class VariableWithDefaultValue(Variable):
         warnings.warn("VariableWithDefaultValue is deprecated and shouldn't be used anymore. ")
         Variable.__init__(self, name=name, position=position)
         self.default_value = default_value
-
-
-T = TypeVar("T")
 
 
 class TypedVariableWithDefaultValue(TypedVariable):
@@ -422,9 +417,20 @@ class Workflow(Block):
     def handle_block(self, block):
         """ Perform some initialization action on a block and its variables. """
         if isinstance(block, Workflow):
+            # Protecting direct Workflow blocks
             raise ValueError("Using workflow as blocks is forbidden, use WorkflowBlock wrapper instead")
+
+        # Populating variables with block variables
         self.variables.extend(block.inputs)
         self.variables.extend(block.outputs)
+
+        # Memorizing block incoming pipes
+        if block in self.display_blocks:
+            for i, input_ in enumerate(block.inputs):
+                incoming_pipe = self.variable_input_pipe(input_)
+                if incoming_pipe and i == block._displayable_input:
+                    incoming_pipe.memorize = True
+
         try:
             self.coordinates[block] = (0, 0)
         except ValueError as err:
@@ -606,7 +612,6 @@ class Workflow(Block):
             for i, input_ in enumerate(block.inputs):
                 incoming_pipe = self.variable_input_pipe(input_)
                 if i == block._displayable_input:
-                    incoming_pipe.memorize = True
                     reference_path = f"{reference_path}/values/{self.pipes.index(incoming_pipe)}"
             block_index = self.blocks.index(block)
             settings = block._display_settings(block_index=block_index, reference_path=reference_path)
@@ -2014,8 +2019,7 @@ class WorkflowRun(WorkflowState):
     def __init__(self, workflow: Workflow, input_values, output_value, values,
                  activated_items: Dict[Union[Pipe, Block, Variable], bool],
                  log: str = "", execution_info: ExecutionInfo = None, name: str = ""):
-
-        filtered_values = {p: values[p] for p in workflow.memorized_pipes}
+        filtered_values = {p: values[p] for p in workflow.memorized_pipes if p in values}
         WorkflowState.__init__(self, workflow=workflow, input_values=input_values,
                                activated_items=activated_items, values=filtered_values,
                                output_value=output_value, log=log, execution_info=execution_info, name=name)
@@ -2128,6 +2132,7 @@ class WorkflowRun(WorkflowState):
                                    workflow_name=self.workflow.name,
                                    output_table=output_table,
                                    execution_info=execution_info)
+
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """
