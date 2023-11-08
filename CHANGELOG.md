@@ -5,33 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## 0.15.0
+
 
 ### Added
 
 - Documentation : Rewrite from scratch
+- Workflow : Variables now have a pretty type to display on frontend
 - WorkflowState: add memory usage monitoring & markdown
 - Workflow : add documentation to workflow when export in .py
 
-
-### Removed
-
-- Workflow : jointjs plot
-
-
-## 0.15.0
-
-### Added
-
-- Workflow : Variables now have a pretty type to display on frontend
 
 ### Changed
 
 - Workflow : Block input and output names have been enhanced
 
 
-## 0.14.0
+### Removed
 
+- Workflow : jointjs plot
+
+## 0.14.1
+
+### Changed
+
+- Multiplot block takes selector as a string
+
+### Fixed
+
+- 'reference_path' is now passed on by Display block while evaluating
+
+## 0.14.0
 
 ### Added
 

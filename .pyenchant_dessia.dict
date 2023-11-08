@@ -63,6 +63,7 @@ matchable
 matplotlib
 Minkowski
 Mongodb
+Multiplot
 nbv
 ndarray
 networkx
