@@ -261,13 +261,7 @@ class StandaloneObject(MovingObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
-        self.samples = []
-        for i in range(500):
-            abscissa = round((i % 17) / 2.3, 3)
-            sample = {"cx": abscissa,
-                      "cy": 100 + abscissa * i / 100,
-                      "label": f"label{i % 5}"}
-            self.samples.append(plot_data.Sample(values=sample, name=f"Point{i}"))
+        self._samples = None
 
         MovingObject.__init__(self, name=name)
 
@@ -389,28 +383,43 @@ class StandaloneObject(MovingObject):
         return plot_data.PrimitiveGroup(primitives=[contour], name="Contour")
 
     @plot_data_view("Scatter Plot")
-    def scatter_plot(self):
+    def scatter_plot(self, **kwargs):
         """ Test plot data decorator for scatter plots. """
+        reference_path = kwargs.get("reference_path", "#")
         attributes = ["cx", "cy"]
         tooltip = plot_data.Tooltip(attributes=attributes, name="Tooltips")
-
-        return plot_data.Scatter(elements=self.samples, tooltip=tooltip, x_variable=attributes[0],
+        samples = self.random_samples(reference_path)
+        return plot_data.Scatter(elements=samples, tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name="Scatter Plot")
 
     @plot_data_view("Parallel Plot")
-    def parallel_plot(self):
+    def parallel_plot(self, reference_path: str = "#"):
         """ Test plot data decorator for parallel plots. """
-        return plot_data.ParallelPlot(elements=self.samples, axes=["cx", "cy", "label"], name="Parallel Plot")
+        samples = self.random_samples(reference_path)
+        return plot_data.ParallelPlot(elements=samples, axes=["cx", "cy", "label"], name="Parallel Plot")
 
     @plot_data_view("Multiplot", load_by_default=True)
-    def multiplot(self):
+    def multiplot(self, reference_path: str = "#"):
         """ Test plot data decorator for multiple plots. """
-        scatter_plot = self.scatter_plot()
-        parallel_plot = self.parallel_plot()
+        scatter_plot = self.scatter_plot(reference_path=reference_path)
+        parallel_plot = self.parallel_plot(reference_path=reference_path)
         objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        return plot_data.MultiplePlots(elements=parallel_plot.elements, plots=objects, sizes=sizes,
+        samples = self.random_samples(reference_path=reference_path)
+        return plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
                                        coords=[(0, 0), (300, 0)], name="Multiple Plot")
+
+    def random_samples(self, reference_path: str = "#"):
+        """ A dummy method to generate plot_data Samples for testing purpose. """
+        if self._samples is None:
+            samples = []
+            for i in range(500):
+                abscissa = round((i % 17) / 2.3, 3)
+                values = {"cx": abscissa, "cy": 100 + abscissa * i / 100, "label": f"label{i % 5}"}
+                samples.append(plot_data.Sample(values=values, reference_path=f"{reference_path}/path/to/element/{i}",
+                                                name=f"Point{i}"))
+            self._samples = samples
+        return self._samples
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -658,7 +667,7 @@ class Generator(DessiaObject):
 
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ""):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
         self.models = models
