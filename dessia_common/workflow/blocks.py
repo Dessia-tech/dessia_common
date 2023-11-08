@@ -806,7 +806,7 @@ class MultiPlot(Display):
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
-                id_method=True, id_memo=None) -> JsonSerializable:
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Overwrite to_dict method in order to handle difference of behaviors about selector. """
         dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
         dict_.update({"selector_name": self.selector.name, "attributes": self.attributes, "name": self.name,
