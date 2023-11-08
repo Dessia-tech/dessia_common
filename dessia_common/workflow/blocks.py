@@ -637,7 +637,7 @@ class Display(Block):
     """ Abstract block class for display behaviors. """
 
     _displayable_input = 0
-    _non_editable_attributes = ['inputs']
+    _non_editable_attributes = ["inputs"]
     _type = None
     serialize = False
 
@@ -667,7 +667,19 @@ class Display(Block):
         """ Run method defined by selector's display_setting and compute corresponding DisplayObject. """
         object_ = values[self.inputs[0]]
         settings = object_._display_settings_from_selector(self.selector.name)
-        return [attrmethod_getter(object_, settings.method)()]
+        method = settings.method
+        if "progress_callback" in kwargs:
+            # User methods do not necessarily implement progress callback
+            del kwargs["progress_callback"]
+        try:
+            return [attrmethod_getter(object_, method)(**kwargs)]
+        except TypeError as exc:
+            arguments = list(kwargs.keys())
+            warnings.warn(f"Workflow : method '{method}' was called without generic arguments "
+                          f"('{', '.join(arguments)}') because one of them is not set in method's signature.\n\n "
+                          f"Original exception : \n{repr(exc)}")
+            # Cover cases where kwargs do not correspond to method signature (missing reference_path, for ex)
+            return [attrmethod_getter(object_, method)()]
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -736,8 +748,9 @@ class DeprecatedMultiPlot(Display):
 
 class MultiPlot(Display):
     """
-    Generate a Multi plot which axes will be the given attributes.
+    Generate a Multiplot which axes will be the given attributes. Will show a Scatter and a Parallel Plot.
 
+    :param selector_name: Name of the selector to be displayed in object page. Must be unique throughout workflow.
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
     :param name: Name of the block.
@@ -747,12 +760,16 @@ class MultiPlot(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, selector: PlotDataType[Type], attributes: List[str], load_by_default: bool = True,
+    def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, selector=selector, position=position)
+                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
         self.inputs[0].name = "Input List"
+
+    def __deepcopy__(self, memo=None):
+        return MultiPlot(selector_name=self.selector.name, attributes=self.attributes,
+                         load_by_default=self.load_by_default, name=self.name, position=self.position)
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -792,17 +809,32 @@ class MultiPlot(Display):
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None) -> JsonSerializable:
+        """ Overwrite to_dict method in order to handle difference of behaviors about selector. """
+        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
+        dict_.update({"selector_name": self.selector.name, "attributes": self.attributes, "name": self.name,
+                      "load_by_default": self.load_by_default, "position": self.position})
+        return dict_
+
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Backward compatibility for old versions of Display blocks. """
-        selector = dict_.get("selector", "Multiplot")
-        if isinstance(selector, str):
+        selector_name = dict_.get("selector_name", None)
+        selector = dict_.get("selector", None)
+        if selector is None and selector_name is None:
+            # Backward compatibility < 0.14.0
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
-        selector = PlotDataType.dict_to_object(selector)
-        return MultiPlot(selector=selector, attributes=dict_["attributes"], name=dict_["name"],
+        if selector is not None and selector_name is None:
+            if isinstance(selector, str):
+                selector_name = selector
+            else:
+                # Backward compatibility 0.14.0 < v < 0.14.1
+                selector_name = selector["name"]
+        return MultiPlot(selector_name=selector_name, attributes=dict_["attributes"], name=dict_["name"],
                          load_by_default=dict_["load_by_default"], position=dict_["position"])
 
 

@@ -55,6 +55,7 @@ lte
 Mahalanobis
 matplotlib
 Minkowski
+Multiplot
 nbv
 ndarray
 networkx
