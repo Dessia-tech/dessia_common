@@ -637,7 +637,7 @@ class Display(Block):
     """ Abstract block class for display behaviors. """
 
     _displayable_input = 0
-    _non_editable_attributes = ['inputs']
+    _non_editable_attributes = ["inputs"]
     _type = None
     serialize = False
 
