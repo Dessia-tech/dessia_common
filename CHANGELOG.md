@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## 0.15.0
+
 
 ### Added
 
@@ -14,15 +16,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WorkflowState: add memory usage monitoring & markdown
 
 
-### Removed
-
-- Workflow : jointjs plot
-
-
 ### Changed
 
 - Workflow : Block input and output names have been enhanced
 - Workflow : Inputs now have entries for Imposed Variable Values
+
+
+### Removed
+
+- Workflow : jointjs plot
+
+## 0.14.1
+
+### Changed
+
+- Multiplot block takes selector as a string
+
+### Fixed
+
+- 'reference_path' is now passed on by Display block while evaluating
 
 
 ## 0.14.0
@@ -97,6 +109,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pylint : Fix iterator error
 - Object : Add Backward Compatibality over method_dict to cover old frontend calls
 - Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
+
+
+### Build
+
+- CI : Upload coverage is now optional
 
 
 ## 0.13.3
