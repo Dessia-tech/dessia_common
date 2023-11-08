@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import openpyxl
 import importlib
 import inspect
+
+import openpyxl
 
 
 class ExcelReader:
@@ -20,7 +21,7 @@ class ExcelReader:
         module = importlib.import_module(module_name)
         obj_class = getattr(module, class_name)
 
-        attr_init = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
+        init_attributes = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
         list_obj = []
         for v in values[2].values():
             for k, val_attr in enumerate(v):
@@ -30,7 +31,7 @@ class ExcelReader:
                         val_replace = val_replace[0]
                     v[k] = val_replace
 
-            obj_data = {a: v[i] for i, a in enumerate(attr) if a in attr_init}
+            obj_data = {a: v[i] for i, a in enumerate(attr) if a in init_attributes}
             obj = obj_class(**obj_data)
             if not obj.name:
                 obj.name = ""
@@ -46,27 +47,26 @@ class ExcelReader:
 
         module = importlib.import_module(module_name)
         obj_class = getattr(module, class_name)
+
+        init_attributes = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
         list_obj = []
-        for v in values[2].values():
-            for i, v2 in enumerate(v):
-                if isinstance(v2, openpyxl.cell.cell.Cell):
-                    splited = v2.hyperlink.location.split('!')
+        for value in values[2].values():
+            for i, val in enumerate(value):
+                if isinstance(val, openpyxl.cell.cell.Cell):
+                    splited = val.hyperlink.location.split('!')
                     sub_module_name = self.workbook[splited[0].replace("#", "")]["A2"].value
                     sub_class_name = self.workbook[splited[0].replace("#", "")]["B2"].value
                     sheet_target = self.workbook[splited[0].replace("#", "")]
                     sub_attr = [val for val in
-                                sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True)][
-                        0]
+                                sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True)][0]
                     sub_module = importlib.import_module(sub_module_name)
                     sub_obj_class = getattr(sub_module, sub_class_name)
 
                     moment_value = [cell.value for cell in sheet_target[int(splited[1][1:]) + 2][1:]]
 
-                    v[i] = sub_obj_class(
-                        **{a: moment_value[i] if i < len(moment_value) else None for i, a in
-                           enumerate(sub_attr)})
+                    value[i] = sub_obj_class(**{a: moment_value[i] if i < len(moment_value) else None for i, a in enumerate(sub_attr)})
 
-            obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
+            obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
             obj = obj_class(**obj_data)
             if not obj.name:
                 obj.name = ""
@@ -88,15 +88,15 @@ class ExcelReader:
             module = importlib.import_module(module_name)
             obj_class = getattr(module, class_name)
             list_obj = []
-            for v in values[2].values():
-                for k, val_attr in enumerate(v):
+            for value in values[2].values():
+                for k, val_attr in enumerate(value):
                     if isinstance(val_attr, openpyxl.cell.cell.Cell):
                         val_replace = list_instantiated_obj[val_attr.hyperlink.location.split('!')[0]]
                         if isinstance(val_replace, list) and not 'List of' in val_attr.value:
                             val_replace = val_replace[0]
-                        v[k] = val_replace
+                        value[k] = val_replace
 
-                obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
+                obj_data = {a: value[i] if i < len(value) else None for i, a in enumerate(attr)}
                 obj = obj_class(**obj_data)
                 if not obj.name:
                     obj.name = ""
@@ -114,10 +114,10 @@ class ExcelReader:
         for sheet in self.workbook.worksheets:
             cell_value = []
             cell_value.append((sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value))
-            attr = []
+            attributes = []
             for value in sheet.iter_cols(min_row=3, max_row=3, min_col=2, values_only=True):
-                attr.append(value[0])
-            cell_value.append(attr)
+                attributes.append(value[0])
+            cell_value.append(attributes)
             data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=4, min_col=2, values_only=True)):
                 tuple_val = []
@@ -159,8 +159,8 @@ class ExcelReader:
                 module = importlib.import_module(module_name)
                 obj_class = getattr(module, class_name)
                 list_obj = []
-                for v in values[2].values():
-                    obj_data = {a: v[i] if i < len(v) else None for i, a in enumerate(attr)}
+                for value in values[2].values():
+                    obj_data = {a: value[i] if i < len(value) else None for i, a in enumerate(attr)}
                     obj = obj_class(**obj_data)
                     if not obj.name:
                         obj.name = ""
