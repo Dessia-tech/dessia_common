@@ -388,14 +388,14 @@ class StandaloneObject(MovingObject):
         reference_path = kwargs.get("reference_path", "#")
         attributes = ["cx", "cy"]
         tooltip = plot_data.Tooltip(attributes=attributes, name="Tooltips")
-        samples = self.random_samples(reference_path)
+        samples = self._random_samples(reference_path)
         return plot_data.Scatter(elements=samples, tooltip=tooltip, x_variable=attributes[0],
                                  y_variable=attributes[1], name="Scatter Plot")
 
     @plot_data_view("Parallel Plot")
     def parallel_plot(self, reference_path: str = "#"):
         """ Test plot data decorator for parallel plots. """
-        samples = self.random_samples(reference_path)
+        samples = self._random_samples(reference_path)
         return plot_data.ParallelPlot(elements=samples, axes=["cx", "cy", "label"], name="Parallel Plot")
 
     @plot_data_view("Multiplot", load_by_default=True)
@@ -405,11 +405,11 @@ class StandaloneObject(MovingObject):
         parallel_plot = self.parallel_plot(reference_path=reference_path)
         objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        samples = self.random_samples(reference_path=reference_path)
+        samples = self._random_samples(reference_path=reference_path)
         return plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
                                        coords=[(0, 0), (300, 0)], name="Multiple Plot")
 
-    def random_samples(self, reference_path: str = "#"):
+    def _random_samples(self, reference_path: str = "#"):
         """ A dummy method to generate plot_data Samples for testing purpose. """
         if self._samples is None:
             samples = []
