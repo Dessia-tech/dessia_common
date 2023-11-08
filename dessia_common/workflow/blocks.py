@@ -767,6 +767,12 @@ class MultiPlot(Display):
                          name=name, selector=PlotDataType(class_=DessiaObject, name=selector), position=position)
         self.inputs[0].name = "Input List"
 
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
+        return MultiPlot(selector=self.selector.name, attributes=self.attributes, load_by_default=self.load_by_default,
+                         name=self.name, position=self.position)
+
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
         same_attributes = self.attributes == other.attributes
@@ -804,6 +810,14 @@ class MultiPlot(Display):
         """ Write block config into a chunk of script. """
         script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None) -> JsonSerializable:
+        """ Overwrite to_dict method in order to handle difference of behaviors about selector. """
+        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
+        dict_.update({"selector": self.selector.name, "attributes": self.attributes, "name": self.name,
+                      "load_by_default": self.load_by_default, "position": self.position})
+        return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
