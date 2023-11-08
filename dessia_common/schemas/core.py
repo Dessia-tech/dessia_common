@@ -576,7 +576,7 @@ class TypingProperty(Property):
         return tuple(deserialize_annotation(a) for a in args)
 
     @classmethod
-    def unfold_serialized_annotation(cls, serialized: str) -> Tuple[str | Any,...]:
+    def unfold_serialized_annotation(cls, serialized: str):
         """ Get Typing and Arguments as strings. """
         return re.match(cls.SERIALIZED_REGEXP, serialized).groups()
 
