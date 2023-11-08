@@ -516,9 +516,6 @@ class Workflow(Block):
 
     def __deepcopy__(self, memo=None):
         """ Return the deep copy. """
-        if memo is None:
-            memo = {}
-
         blocks = [b.__deepcopy__() for b in self.blocks]
         output_adress = self.variable_indices(self.output)
         if output_adress is None:

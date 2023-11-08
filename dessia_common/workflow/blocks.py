@@ -750,7 +750,7 @@ class MultiPlot(Display):
     """
     Generate a Multiplot which axes will be the given attributes. Will show a Scatter and a Parallel Plot.
 
-    :param selector: Name of the selector to be displayed in object page. Must be unique throughout workflow.
+    :param selector_name: Name of the selector to be displayed in object page. Must be unique throughout workflow.
     :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
         Can be deep attributes with the '/' separator.
     :param name: Name of the block.
@@ -760,18 +760,16 @@ class MultiPlot(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, selector: str, attributes: List[str], load_by_default: bool = True,
+    def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
                  name: str = "", position: Tuple[float, float] = None):
         self.attributes = attributes
         Display.__init__(self, inputs=[TypedVariable(List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector), position=position)
+                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
         self.inputs[0].name = "Input List"
 
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        return MultiPlot(selector=self.selector.name, attributes=self.attributes, load_by_default=self.load_by_default,
-                         name=self.name, position=self.position)
+    def __deepcopy__(self, memo=None):
+        return MultiPlot(selector_name=self.selector.name, attributes=self.attributes,
+                         load_by_default=self.load_by_default, name=self.name, position=self.position)
 
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
@@ -815,7 +813,7 @@ class MultiPlot(Display):
                 id_method=True, id_memo=None) -> JsonSerializable:
         """ Overwrite to_dict method in order to handle difference of behaviors about selector. """
         dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
-        dict_.update({"selector": self.selector.name, "attributes": self.attributes, "name": self.name,
+        dict_.update({"selector_name": self.selector.name, "attributes": self.attributes, "name": self.name,
                       "load_by_default": self.load_by_default, "position": self.position})
         return dict_
 
@@ -823,18 +821,20 @@ class MultiPlot(Display):
     def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
                        pointers_memo: Dict[str, Any] = None, path: str = '#'):
         """ Backward compatibility for old versions of Display blocks. """
+        selector_name = dict_.get("selector_name", None)
         selector = dict_.get("selector", None)
-        if selector is None:
+        if selector is None and selector_name is None:
             # Backward compatibility < 0.14.0
             load_by_default = dict_.get("load_by_default", False)
             return DeprecatedMultiPlot(attributes=dict_["attributes"], name=dict_["name"],
                                        load_by_default=load_by_default, position=dict_["position"])
-        if isinstance(selector, str):
-            selector_name = selector
-        else:
-            # Backward compatibility 0.14.0 < v < 0.14.1
-            selector_name = selector["name"]
-        return MultiPlot(selector=selector_name, attributes=dict_["attributes"], name=dict_["name"],
+        if selector is not None and selector_name is None:
+            if isinstance(selector, str):
+                selector_name = selector
+            else:
+                # Backward compatibility 0.14.0 < v < 0.14.1
+                selector_name = selector["name"]
+        return MultiPlot(selector_name=selector_name, attributes=dict_["attributes"], name=dict_["name"],
                          load_by_default=dict_["load_by_default"], position=dict_["position"])
 
 

@@ -33,7 +33,7 @@ optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name
 parallel_optimization = ForEach(workflow_block=optimization_workflow_block, iter_input_index=0, name='ForEach')
 
 multiplot_attributes = ['standalone_subobject/intarg', 'standalone_subobject/name', 'standalone_subobject/floatarg']
-multiplot = MultiPlot(selector="Multiplot", attributes=multiplot_attributes, name='Multiplot')
+multiplot = MultiPlot(selector_name="Multiplot", attributes=multiplot_attributes, name='Multiplot')
 
 unpacker = Unpacker(indices=[0], name="Unpacker")
 
