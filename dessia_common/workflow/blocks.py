@@ -22,6 +22,8 @@ from dessia_common.workflow.utils import ToScriptElement
 
 T = TypeVar("T")
 
+Position = Tuple[float, float]
+
 
 def set_inputs_from_function(method, inputs=None):
     """ Inspect given method argspecs and sets block inputs from it. """
@@ -83,7 +85,7 @@ class InstantiateModel(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, model_class: Type, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, model_class: Type, name: str = "Instantiate Model", position:  Position = (0, 0)):
         self.model_class = model_class
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
@@ -146,7 +148,7 @@ class ClassMethod(Block):
 
     _non_serializable_attributes = ["method"]
 
-    def __init__(self, method_type: ClassMethodType[Type], name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, method_type: ClassMethodType[Type], name: str = "Class Method", position:  Position = (0, 0)):
         self.method_type = method_type
         inputs = []
 
@@ -226,7 +228,7 @@ class ModelMethod(Block):
 
     _non_serializable_attributes = ["method"]
 
-    def __init__(self, method_type: MethodType[Type], name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, method_type: MethodType[Type], name: str = "Model Method", position:  Position = (0, 0)):
         self.method_type = method_type
         inputs = [Variable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
@@ -311,7 +313,7 @@ class Sequence(Block):
     :param position: Position in canvas.
     """
 
-    def __init__(self, number_arguments: int, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, number_arguments: int, name: str = "Sequence", position:  Position = (0, 0)):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
@@ -351,7 +353,7 @@ class Concatenate(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, number_arguments: int = 2, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, number_arguments: int = 2, name: str = "Concatenate", position:  Position = (0, 0)):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
@@ -395,7 +397,7 @@ class WorkflowBlock(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, workflow: Workflow, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, workflow: Workflow, name: str = "Workflow Block", position:  Position = (0, 0)):
         self.workflow = workflow
         # TODO: configuring port internal connections
         self.input_connections = None
@@ -471,8 +473,8 @@ class ForEach(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = "",
-                 position: Tuple[float, float] = None):
+    def __init__(self, workflow_block: 'WorkflowBlock', iter_input_index: int, name: str = "For Each",
+                 position:  Position = (0, 0)):
         self.workflow_block = workflow_block
         self.iter_input_index = iter_input_index
         self.iter_input = self.workflow_block.inputs[iter_input_index]
@@ -549,7 +551,7 @@ class Unpacker(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, indices: List[int], name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, indices: List[int], name: str = "Unpacker", position:  Position = (0, 0)):
         self.indices = indices
         outputs = [Variable(name=f"Element {i}") for i in indices]
         Block.__init__(self, inputs=[Variable(name="Sequence")], outputs=outputs, name=name, position=position)
@@ -587,7 +589,7 @@ class Flatten(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, name: str = "Flatten", position:  Position = (0, 0)):
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Flattened sequence")]
         Block.__init__(self, inputs, outputs, name=name, position=position)
@@ -619,7 +621,7 @@ class Flatten(Block):
 class Product(Block):
     """ A block to generate the product combinations. """
 
-    def __init__(self, number_list: int, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, number_list: int, name: str = "Product", position:  Position = (0, 0)):
         self.number_list = number_list
         inputs = [Variable(name=f"Sequence {i}") for i in range(self.number_list)]
         output_variable = Variable(name="Product")
@@ -661,8 +663,8 @@ class Filter(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = "",
-                 position: Tuple[float, float] = None):
+    def __init__(self, filters: List[DessiaFilter], logical_operator: str = "and", name: str = "Filter",
+                 position:  Position = (0, 0)):
         self.filters = filters
         self.logical_operator = logical_operator
         inputs = [Variable(name="Sequence")]
@@ -709,11 +711,11 @@ class Display(Block):
 
     _displayable_input = 0
     _non_editable_attributes = ["inputs"]
-    _type = None
+    _type = (0, 0)
     serialize = False
 
-    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "",
-                 selector: Optional[ViewType] = None, position: Tuple[float, float] = None):
+    def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "Display",
+                 selector: Optional[ViewType] = None, position:  Position = (0, 0)):
         output = Variable(type_=DisplayObject, name="Display Object")
         Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
 
@@ -771,7 +773,7 @@ class DeprecatedMultiPlot(Display):
     type_ = "plot_data"
 
     def __init__(self, attributes: List[str], load_by_default: bool = True,
-                 name: str = "", position: Tuple[float, float] = None):
+                 name: str = "", position:  Position = (0, 0)):
         self.attributes = attributes
         Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
                          name=name, position=position)
@@ -832,7 +834,7 @@ class MultiPlot(Display):
     serialize = True
 
     def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
-                 name: str = "", position: Tuple[float, float] = None):
+                 name: str = "Multiplot", position:  Position = (0, 0)):
         self.attributes = attributes
         Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
@@ -923,7 +925,7 @@ class DeprecatedCadView(Display):
     _type = "babylon_data"
 
     def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "cad",
-                 position: Tuple[float, float] = None):
+                 position:  Position = (0, 0)):
         warnings.warn("This version of CadView Block is deprecated and should not be used anymore."
                       "Please upgrade to CadView new version, instead. (see docstrings)", DeprecationWarning)
         input_ = Variable(type_=DessiaObject, name="Model to display")
@@ -936,8 +938,8 @@ class CadView(Display):
 
     _type = "babylon_data"
 
-    def __init__(self, selector: CadViewType[Type], name: str = "", load_by_default: bool = False,
-                 position: Tuple[float, float] = None):
+    def __init__(self, selector: CadViewType[Type], name: str = "Cad View", load_by_default: bool = False,
+                 position:  Position = (0, 0)):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
@@ -973,7 +975,7 @@ class DeprecatedMarkdown(Display):
     _type = "markdown"
 
     def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "markdown",
-                 position: Tuple[float, float] = None):
+                 position:  Position = (0, 0)):
         warnings.warn("This version of 'Markdown' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'Markdown' new version, instead. (see docstrings)", DeprecationWarning)
         input_ = Variable(type_=DessiaObject, name="Model to display")
@@ -986,8 +988,8 @@ class Markdown(Display):
 
     _type = "markdown"
 
-    def __init__(self, selector: MarkdownType[Type], name: str = "", load_by_default: bool = False,
-                 position: Tuple[float, float] = None):
+    def __init__(self, selector: MarkdownType[Type], name: str = "Markdown", load_by_default: bool = False,
+                 position:  Position = (0, 0)):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
@@ -1024,7 +1026,7 @@ class DeprecatedPlotData(Display):
     serialize = True
 
     def __init__(self, name: str = "", load_by_default: bool = False, selector: str = "plot_data",
-                 position: Tuple[float, float] = None):
+                 position:  Position = (0, 0)):
         warnings.warn("This version of 'PlotData' Block is deprecated and should not be used anymore."
                       "Please upgrade to 'PlotData' new version, instead. (see docstrings)", DeprecationWarning)
         input_ = Variable(type_=DessiaObject, name="Model to display")
@@ -1038,8 +1040,8 @@ class PlotData(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, selector: PlotDataType[Type], name: str = "", load_by_default: bool = False,
-                 position: Tuple[float, float] = None):
+    def __init__(self, selector: PlotDataType[Type], name: str = "Plot Data", load_by_default: bool = False,
+                 position:  Position = (0, 0)):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
@@ -1071,7 +1073,7 @@ class ModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_name: str, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, attribute_name: str, name: str = "Model Attribute", position:  Position = (0, 0)):
         self.attribute_name = attribute_name
         inputs = [Variable(name="Model")]
         outputs = [Variable(name="Attribute value")]
@@ -1111,7 +1113,7 @@ class GetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, attribute_type: AttributeType[Type], name: str = "Get Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
@@ -1164,7 +1166,7 @@ class SetModelAttribute(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, attribute_type: AttributeType[Type], name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, attribute_type: AttributeType[Type], name: str = "Set Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
         parameters = inspect.signature(self.attribute_type.class_).parameters
         inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
@@ -1212,7 +1214,7 @@ class Sum(Block):
     :param position: Position of the block in the workflow
     """
 
-    def __init__(self, number_elements: int = 2, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, number_elements: int = 2, name: str = "Sum", position:  Position = (0, 0)):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
         Block.__init__(self, inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
@@ -1249,7 +1251,7 @@ class Sum(Block):
 class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
-    def __init__(self, name: str = "", position: Tuple[float, float] = None):
+    def __init__(self, name: str = "Substraction", position:  Position = (0, 0)):
         Block.__init__(self, [Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
                        position=position)
 
@@ -1280,8 +1282,8 @@ class ConcatenateStrings(Block):
     :param position: Position of the block in canvas.
     """
 
-    def __init__(self, number_elements: int = 2, separator: str = "", name: str = "",
-                 position: Tuple[float, float] = None):
+    def __init__(self, number_elements: int = 2, separator: str = "", name: str = "Concatenate Strings",
+                 position:  Position = (0, 0)):
         self.number_elements = number_elements
         self.separator = separator
         inputs = [Variable(name=f"Substring {i + 1}", type_=str, default_value="") for i in range(number_elements)]
@@ -1335,7 +1337,7 @@ class Export(Block):
     """
 
     def __init__(self, method_type: MethodType[Type], text: bool, extension: str,
-                 filename: str = "export", name: str = "", position: Tuple[float, float] = None):
+                 filename: str = "export", name: str = "Export", position:  Position = (0, 0)):
         self.method_type = method_type
         if not filename:
             filename = "export"
@@ -1395,8 +1397,8 @@ class Archive(Block):
     :param name: Name of the block.
     """
 
-    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "",
-                 position: Tuple[float, float] = None):
+    def __init__(self, number_exports: int = 1, filename: str = "archive", name: str = "Archive",
+                 position:  Position = (0, 0)):
         self.number_exports = number_exports
         self.filename = filename
         self.extension = "zip"
