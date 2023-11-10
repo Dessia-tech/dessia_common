@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import collections.abc
 from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints, Callable, Union, \
-    TypeVar, TypedDict, Optional, Any
+    TypeVar, TypedDict, Optional, Any, Generic
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
@@ -81,7 +81,7 @@ class ParsedDocstring(TypedDict):
     attributes: Dict[str, ParsedAttribute]
 
 
-class SchemaAttribute:
+class SchemaAttribute(Generic[T]):
     """ TODO. """
 
     def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "",
@@ -1257,7 +1257,13 @@ class AttributeTypeProperty(TypingProperty):
         super().__init__(annotation=annotation, attribute=attribute)
 
         self.class_ = self.args[0]
-        self.class_schema = get_schema(annotation=self.class_, attribute=attribute)
+        if self.class_ is Type:
+            subdefault = UNDEFINED
+        else:
+            subdefault = self.class_
+        subattribute = SchemaAttribute(name=f"{attribute.name}/class", default_value=subdefault, title="Class",
+                                       editable=attribute.editable)
+        self.class_schema = get_schema(annotation=Type[self.class_], attribute=subattribute)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[AttributeType]:
@@ -1377,7 +1383,7 @@ class ClassProperty(TypingProperty):
     Non DessiaObject sub-classes validated against this type.
     """
 
-    def __init__(self, annotation: Type[Class], attribute: SchemaAttribute):
+    def __init__(self, annotation: Type[Class], attribute: SchemaAttribute[str]):
         super().__init__(annotation=annotation, attribute=attribute)
 
         if annotation is Type:
@@ -1399,16 +1405,14 @@ class ClassProperty(TypingProperty):
         chunk.update({"type": "object", "is_class": True, "properties": {"name": {"type": "string"}}})
         return chunk
 
-    def default_value(self) -> Dict[str, Any]:
+    def default_value(self) -> str:
         """ Sets AttributeType object_class and argument class_ if it is different from Type. """
         if self.has_default_value:
-            return self.attribute.default_value.to_dict()
+            return full_classname(self.attribute.default_value, compute_for="class")
 
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
-            classname = full_classname(object_=self.class_, compute_for="class")
-        else:
-            classname = None
-        return {"object_class": full_classname(object_=self.origin, compute_for="class"), "class_": classname}
+            return full_classname(object_=self.class_, compute_for="class")
+        return ""
 
     def check_list(self) -> CheckList:
         """
