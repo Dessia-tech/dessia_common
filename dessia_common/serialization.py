@@ -170,7 +170,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         if value in memo:
             path_value, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {'$ref': path}, memo
+            return {'$ref': path_value}, memo
         serialized = value.to_dict()
 
         if id_method:
