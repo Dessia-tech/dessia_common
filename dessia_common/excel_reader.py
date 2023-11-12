@@ -24,7 +24,7 @@ class ExcelReader:
         return target[0].replace("#", ''), target[1]
 
     def replace_attribute(self, cell, values):
-        container = ["Dict", "List", "Set"]
+        container = ["Dict", "List", "Set", "Tuple"]
         target = self.get_location(cell)
         dict_keys = []
         if "Dict" in cell.value:
@@ -46,6 +46,19 @@ class ExcelReader:
 
         return val_replace
 
+    @staticmethod
+    def get_attributes_and_types(obj_class):
+        init_signature = inspect.signature(obj_class.__init__)
+        init_parameters = init_signature.parameters
+
+        attribute_types = {}
+
+        for attr_name, param in init_parameters.items():
+            if attr_name != 'self':
+                attribute_types[attr_name] = param.annotation if param.annotation != param.empty else None
+
+        return attribute_types
+
     def instantaite_main_obj(self, list_instantiated_obj, key, values):
         module_name = values[0][0]
         class_name = values[0][1]
@@ -53,7 +66,7 @@ class ExcelReader:
         module = importlib.import_module(module_name)
         obj_class = getattr(module, class_name)
 
-        init_attributes = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
+        init_attributes = self.get_attributes_and_types(obj_class)
         list_obj = []
         for value in values[2].values():
             for k, val_attr in enumerate(value):
@@ -78,12 +91,12 @@ class ExcelReader:
         module = importlib.import_module(module_name)
         obj_class = getattr(module, class_name)
 
-        init_attributes = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
+        init_attributes = self.get_attributes_and_types(obj_class)
         list_obj = []
         for value in values[2].values():
             for i, val in enumerate(value):
                 if isinstance(val, openpyxl.cell.cell.Cell):
-                    sheet_target_title, row_target  = self.get_location(val)
+                    sheet_target_title, row_target = self.get_location(val)
                     sub_module_name = self.workbook[sheet_target_title]["A2"].value
                     sub_class_name = self.workbook[sheet_target_title]["B2"].value
                     sheet_target = self.workbook[sheet_target_title]
@@ -168,8 +181,6 @@ class ExcelReader:
         list_instantiated_obj = {}
         cell_values = self.process_workbook()
         stack = list(cell_values.items())
-        # if cell_values.keys().__len__() == 1:
-        #     print("yes cell_values.keys().__len__() == 1")
         while stack:
             key, values = stack.pop()
 
@@ -183,7 +194,6 @@ class ExcelReader:
                 if len(values[2].keys()) > 1:
                     print("")
                     list_instantiated_obj = self.process_hyperlinks(list_instantiated_obj, key, values)
-                    continue
                 else:
                     list_instantiated_obj = self.process_other_cases(list_instantiated_obj, key, values, stack)
 
