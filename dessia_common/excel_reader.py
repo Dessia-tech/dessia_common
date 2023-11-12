@@ -14,6 +14,37 @@ class ExcelReader:
         self.read_objects = {}
         self.main_sheet = self.workbook.worksheets[0].title
 
+    @staticmethod
+    def get_location(cell):
+        if cell.hyperlink.location:
+            target = cell.hyperlink.location.split('!')
+        elif cell.hyperlink.target:
+            target = cell.hyperlink.target.split('!')
+        return target[0].replace("#", ''), target[1]
+
+    def replace_attribute(self, cell, values):
+        container = ["Dict", "List", "Set"]
+        target = self.get_location(cell)
+        dict_keys = []
+        if "Dict" in cell.value:
+            real_attr_val = {}
+            sheet = self.workbook[target]
+            column = sheet["A"]
+            for row in column[3:]:
+                dict_keys.append(row.value.split('.')[1])
+
+            for key, value in zip(dict_keys, values):
+                real_attr_val[key] = value
+
+            return real_attr_val
+
+        if isinstance(values, list) and (not any(type in cell.value for type in container)):
+            val_replace = values[0]
+        else:
+            val_replace = values
+
+        return val_replace
+
     def instantaite_main_obj(self, list_instantiated_obj, key, values):
         module_name = values[0][0]
         class_name = values[0][1]
@@ -26,10 +57,8 @@ class ExcelReader:
         for v in values[2].values():
             for k, val_attr in enumerate(v):
                 if isinstance(val_attr, openpyxl.cell.cell.Cell):
-                    val_replace = list_instantiated_obj[val_attr.hyperlink.location.split('!')[0]]
-                    if isinstance(val_replace, list) and not 'List of' in val_attr.value:
-                        val_replace = val_replace[0]
-                    v[k] = val_replace
+                    val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
+                    v[k] = self.replace_attribute(val_attr, val_replace)
 
             obj_data = {a: v[i] for i, a in enumerate(attr) if a in init_attributes}
             obj = obj_class(**obj_data)
@@ -53,16 +82,16 @@ class ExcelReader:
         for value in values[2].values():
             for i, val in enumerate(value):
                 if isinstance(val, openpyxl.cell.cell.Cell):
-                    splited = val.hyperlink.location.split('!')
-                    sub_module_name = self.workbook[splited[0].replace("#", "")]["A2"].value
-                    sub_class_name = self.workbook[splited[0].replace("#", "")]["B2"].value
-                    sheet_target = self.workbook[splited[0].replace("#", "")]
+                    sheet_target_title, row_target  = self.get_location(val)
+                    sub_module_name = self.workbook[sheet_target_title]["A2"].value
+                    sub_class_name = self.workbook[sheet_target_title]["B2"].value
+                    sheet_target = self.workbook[sheet_target_title]
                     sub_attr = [val for val in
                                 sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True)][0]
                     sub_module = importlib.import_module(sub_module_name)
                     sub_obj_class = getattr(sub_module, sub_class_name)
 
-                    moment_value = [cell.value for cell in sheet_target[int(splited[1][1:]) + 2][1:]]
+                    moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
 
                     value[i] = sub_obj_class(**{a: moment_value[i] if i < len(moment_value) else None for i, a in enumerate(sub_attr)})
 
@@ -76,7 +105,7 @@ class ExcelReader:
         return list_instantiated_obj
 
     def process_other_cases(self, list_instantiated_obj, key, values, stack):
-        hyperlink_list = [v2.hyperlink.location.split('!')[0] for val in values[2:] for v in val.values() for v2 in v if
+        hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
                           isinstance(v2, openpyxl.cell.cell.Cell)]
         list_processed_list_key = list(list_instantiated_obj.keys())
         if hyperlink_list == list_processed_list_key or all(
@@ -91,10 +120,8 @@ class ExcelReader:
             for value in values[2].values():
                 for k, val_attr in enumerate(value):
                     if isinstance(val_attr, openpyxl.cell.cell.Cell):
-                        val_replace = list_instantiated_obj[val_attr.hyperlink.location.split('!')[0]]
-                        if isinstance(val_replace, list) and not 'List of' in val_attr.value:
-                            val_replace = val_replace[0]
-                        value[k] = val_replace
+                        val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
+                        value[k] = self.replace_attribute(val_attr, val_replace)
 
                 obj_data = {a: value[i] if i < len(value) else None for i, a in enumerate(attr)}
                 obj = obj_class(**obj_data)

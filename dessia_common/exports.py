@@ -130,6 +130,7 @@ class XLSXWriter:
         cell_link = None
         if isinstance(value, dict):
             str_v = f'Dict of {len(value)} items'
+            cell_link = f'#{list(value.values())[0].__class__.__name__}!A2'
         elif isinstance(value, list):
             if is_builtins_list(value):
                 str_v = str(value)
@@ -139,6 +140,7 @@ class XLSXWriter:
 
         elif isinstance(value, set):
             str_v = f'Set of {len(value)} items'
+            cell_link = f'#{value[0].__class__.__name__}!A2'
         elif isinstance(value, float):
             str_v = round(value, 6)
         elif is_hashable(value) and value in self.object_to_sheet_row:
