@@ -55,13 +55,13 @@ class ExcelReader:
 
         init_attributes = list(inspect.signature(obj_class.__init__).parameters.keys())[1:]
         list_obj = []
-        for v in values[2].values():
-            for k, val_attr in enumerate(v):
+        for value in values[2].values():
+            for k, val_attr in enumerate(value):
                 if isinstance(val_attr, openpyxl.cell.cell.Cell):
                     val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
-                    v[k] = self.replace_attribute(val_attr, val_replace)
+                    value[k] = self.replace_attribute(val_attr, val_replace)
 
-            obj_data = {a: v[i] for i, a in enumerate(attr) if a in init_attributes}
+            obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
             obj = obj_class(**obj_data)
             if not obj.name:
                 obj.name = ""
@@ -93,7 +93,8 @@ class ExcelReader:
 
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
 
-                    value[i] = sub_obj_class(**{a: moment_value[i] if i < len(moment_value) else None for i, a in enumerate(sub_attr)})
+                    value[i] = sub_obj_class(**{a: moment_value[i] if i < len(moment_value) else None
+                                                for i, a in enumerate(sub_attr)})
 
             obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
             obj = obj_class(**obj_data)
@@ -134,17 +135,19 @@ class ExcelReader:
             stack.extend(list({key: values}.items()))
         return list_instantiated_obj
 
-    def read_object(self, only_main_object: bool = True):
-        list_instantiated_obj = {}
-
+    def process_workbook(self):
         cell_values = {}
+
         for sheet in self.workbook.worksheets:
             cell_value = []
             cell_value.append((sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value))
+
             attributes = []
             for value in sheet.iter_cols(min_row=3, max_row=3, min_col=2, values_only=True):
                 attributes.append(value[0])
+
             cell_value.append(attributes)
+
             data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=4, min_col=2, values_only=True)):
                 tuple_val = []
@@ -155,9 +158,15 @@ class ExcelReader:
                     else:
                         tuple_val.append(cell_val.value)
                 data[i] = tuple_val
+
             cell_value.append(data.copy())
             cell_values[sheet.title] = cell_value
 
+        return cell_values
+
+    def read_object(self, only_main_object: bool = True):
+        list_instantiated_obj = {}
+        cell_values = self.process_workbook()
         stack = list(cell_values.items())
         # if cell_values.keys().__len__() == 1:
         #     print("yes cell_values.keys().__len__() == 1")
