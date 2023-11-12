@@ -218,8 +218,8 @@ class XLSXWriter:
         """ Generate the whole file. """
         # name_column_width = 0
         self.write_object_id(self.main_sheet)
-        self.write_class_header_to_row(self.object, self.main_sheet, 3) # ici ici
-        self.write_object_to_row(self.object, self.main_sheet, 4) # ici
+        self.write_class_header_to_row(self.object, self.main_sheet, 3)
+        self.write_object_to_row(self.object, self.main_sheet, 4)
         self.autosize_sheet_columns(self.main_sheet, 5, 30)
 
         for class_name, obj_paths in self.paths.items():

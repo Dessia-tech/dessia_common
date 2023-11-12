@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+""" ExcelReader for DessiaObject. """
 import importlib
 import inspect
 
@@ -86,8 +87,7 @@ class ExcelReader:
                     sub_module_name = self.workbook[sheet_target_title]["A2"].value
                     sub_class_name = self.workbook[sheet_target_title]["B2"].value
                     sheet_target = self.workbook[sheet_target_title]
-                    sub_attr = [val for val in
-                                sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True)][0]
+                    sub_attr = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
                     sub_module = importlib.import_module(sub_module_name)
                     sub_obj_class = getattr(sub_module, sub_class_name)
 
@@ -171,7 +171,7 @@ class ExcelReader:
             if any([any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
                     value.values()]):
 
-                if values[2].keys().__len__() > 1:
+                if len(values[2].keys()) > 1:
                     print("")
                     list_instantiated_obj = self.process_hyperlinks(list_instantiated_obj, key, values)
                     continue
