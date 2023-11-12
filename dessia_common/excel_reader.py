@@ -151,7 +151,7 @@ class ExcelReader:
             data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=4, min_col=2, values_only=True)):
                 tuple_val = []
-                for j, val in enumerate(value):
+                for j, _ in enumerate(value):
                     cell_val = sheet.cell(row=i + 4, column=j + 2)
                     if cell_val.hyperlink:
                         tuple_val.append(cell_val)
@@ -177,8 +177,8 @@ class ExcelReader:
                 list_instantiated_obj = self.instantaite_main_obj(list_instantiated_obj, key, values)
                 break
 
-            if any([any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
-                    value.values()]):
+            if any((any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
+                    value.values())):
 
                 if len(values[2].keys()) > 1:
                     print("")
