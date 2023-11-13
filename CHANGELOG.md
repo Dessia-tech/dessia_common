@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.14.2
+
+###  Fix
+
+- Set right path in pointers for non DessiaObject equal elements
+
 
 ## 0.14.1
 
@@ -95,19 +101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
-
-## 0.13.3
-
-### Changed
-
-- package_version is removed from serialization
-- License changed from GPL to Lesser GPL
-- Add rotation speed in measures
-
-### Fix
-
-- Workflow name correction: correct the name if it contains an apostrophe.
-
 ## 0.13.5 [released 09/25/2023]
 
 ### Fix
@@ -120,8 +113,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.13.3 [released 05/04/2023]
 
+### Changed
+
+- Add rotation speed in measures
+- License changed from GPL to Lesser GPL
+- package_version is removed from serialization
+
 ### Fix
+
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
+- Workflow name correction: correct the name if it contains an apostrophe.
 
 ## 0.13.2 [released 03/01/2023]
 
