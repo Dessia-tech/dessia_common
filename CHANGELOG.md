@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+## 0.13.6
+
+###  Fix
+
+- Set right path in pointers for non DessiaObject object's
+
 ## 0.13.5 [released 09/25/2023]
 
 ### Fix
