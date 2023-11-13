@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ###  Fix
 
-- Set right path in pointers for non DessiaObject object's
+- Set right path in pointers for non DessiaObject equal elements
 
 ## 0.13.5 [released 09/25/2023]
 
