@@ -43,4 +43,3 @@ c = Point(0)
 
 container = Container([a, b, c])
 line = Line(a, c)
-d = container.to_dict()
