@@ -7,6 +7,8 @@ bool
 boolean
 boolarg
 builtins
+centroid
+centroids
 classmethod
 classname
 clist
@@ -17,6 +19,9 @@ config
 csv
 cvar
 dataset
+Dataset
+datasets
+Datasets
 datatools
 dbscan
 dectree
@@ -70,6 +75,9 @@ networkx
 numpy
 Openpyxl
 optimizer
+Optimizer
+optimizers
+Optimizers
 orjson
 Pycharm
 rtype
@@ -85,6 +93,9 @@ stringified
 stringify
 Stringify
 subclass
+Subclass
+subclasses
+Subclasses
 submodule
 subobjects
 subscriptable

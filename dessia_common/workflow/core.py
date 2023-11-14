@@ -46,6 +46,7 @@ VariableAddress = Union[int, Tuple[int, int, int]]
 
 class Variable(DessiaObject):
     """ New version of workflow variable. """
+    
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
@@ -60,22 +61,24 @@ class Variable(DessiaObject):
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
-        """ WRITE DOCSTRING. """
+        """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position})
+        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
+                      "pretty_type": pretty_annotation(self.type_)})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
-        """ WRITE DOCSTRING. """
+        """ Customize serialization method in order to handle undefined default value. """
         default_value = dict_.get("default_value", UNDEFINED)
         return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
+        """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.default_value is not UNDEFINED
 
     def is_file_type(self) -> bool:
@@ -177,8 +180,7 @@ class Block(DessiaObject):
 
     def dict_to_inputs(self, dict_: JsonSerializable):
         """
-        Enable inputs and outputs overwriting in order to allow input renaming
-        as well as default value persistence.
+        Enable inputs and outputs overwriting in order to allow input renaming as well as default value persistence.
 
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """

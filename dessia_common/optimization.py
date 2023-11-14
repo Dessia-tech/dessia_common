@@ -51,7 +51,7 @@ class BoundedAttributeValue(DessiaObject):
         return self.min_value + dimless_value * self.interval_length
 
     def dimensionless_value(self, value: float):
-        """ Method to compute the dimensionless value out of the dimensioned one. """
+        """ Method to compute the dimensionless value out of the given one. """
         return (value - self.min_value) / self.interval_length
 
 

@@ -89,7 +89,7 @@ class SchemaAttribute:
     :param default_value: UNDEFINED if no default value is set in user code.
         None can be a valid default value and should be handled as such.
     :param title: A pretty label for the attribute that is to be shown as input title in frontend.
-    :param editable: Whether attribute should be editable in frontend or not. Can be dependant on context.
+    :param editable: Whether attribute should be editable in frontend or not. Can be dependent on context.
     :param documentation: Parsed documentation for given attribute.
     """
 
@@ -187,6 +187,7 @@ class Schema:
         return [a.name for a in self.attributes if self.property_schemas[a.name].standalone_in_db]
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
@@ -205,8 +206,9 @@ class Schema:
 
     def default_value(self) -> Dict[str, Any]:
         """
-        A user computed default value. It differs from 'default_dict',
-        as only user defined default_value are set here.
+        A user computed default value.
+
+        It differs from 'default_dict', as only user defined default_value are set here.
         In 'default_dict' method, every property is set.
         """
         return {a: s.default_value() for a, s in self.property_schemas.items() if s.has_default_value}
@@ -453,6 +455,7 @@ class Property:
 
     @property
     def has_default_value(self):
+        """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.attribute.default_value != UNDEFINED
 
     @classmethod
@@ -670,7 +673,7 @@ class AnnotatedProperty(ProxyProperty):
         """
         Check validity of DynamicDict Type Hint.
 
-        Checks performed : None. TODO : Arg validity
+        Checks performed : None. TODO : Argument validity
         """
         raise NotImplementedError(self._not_implemented_msg)
 
@@ -703,6 +706,7 @@ class BuiltinProperty(Property):
         return chunk
 
     def default_value(self):
+        """ Force None default value when undefined. """
         if self.has_default_value:
             return self.attribute.default_value
         return None
@@ -736,6 +740,7 @@ class MeasureProperty(BuiltinProperty):
         return chunk
 
     def default_value(self):
+        """ Handle measures default values defined as floats, Measure object and force a value when undefined. """
         if self.has_default_value:
             if isinstance(self.attribute.default_value, float):
                 default_measure = Measure(self.attribute.default_value)
@@ -859,7 +864,7 @@ class UnionProperty(TypingProperty):
 
     @cached_property
     def pretty_annotation(self) -> str:
-        """ Generic prettification with 'Union' enforced, because Union annotation has no __name__ attribute. """
+        """ Generic prettifying with 'Union' enforced, because Union annotation has no __name__ attribute. """
         return compute_pretty_schema_annotation(serialized_typing="Union", args_schemas=self.args_schemas)
 
     @property
@@ -986,7 +991,7 @@ class HeterogeneousSequence(TypingProperty):
         """
         Default value for a Tuple.
 
-        Return serialized user default if defined, else a Tuple of Nones with the right size.
+        Return serialized user default if defined, else a right-sized Tuple filled with None values .
         """
         if self.has_default_value:
             return self.attribute.default_value
