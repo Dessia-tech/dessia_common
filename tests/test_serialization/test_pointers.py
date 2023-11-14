@@ -1,5 +1,5 @@
 import unittest
-from non_dessia_object_subobjects import container, line
+from tests.test_serialization.non_dessia_object_subobjects import container, line
 from dessia_common import REF_MARKER
 
 
