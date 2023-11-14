@@ -8,7 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.15.0
 
-
 ### Added
 
 - Documentation : Rewrite from scratch
@@ -17,16 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WorkflowState: add memory usage monitoring & markdown
 - Workflow : add documentation to workflow when export in .py
 
-
 ### Changed
 
 - Workflow : Block input and output names have been enhanced
 - Workflow : Inputs now have entries for Imposed Variable Values
 
-
 ### Removed
 
 - Workflow : jointjs plot
+
+
+## 0.14.2
+
+###  Fix
+
+- Set right path in pointers for non DessiaObject equal elements
+
 
 ## 0.14.1
 
@@ -118,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
+<<<<<<< HEAD
 ## 0.13.3
 
 ### Changed
@@ -131,6 +137,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow name correction: correct the name if it contains an apostrophe.
 
 ## 0.13.5 [09/25/2023]
+=======
+## 0.13.5 [released 09/25/2023]
+>>>>>>> origin/master
 
 ### Fix
 - add python 3.9 minimum requirement to avoid install issues
@@ -142,8 +151,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.13.3 [05/04/2023]
 
+### Changed
+
+- Add rotation speed in measures
+- License changed from GPL to Lesser GPL
+- package_version is removed from serialization
+
 ### Fix
+
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
+- Workflow name correction: correct the name if it contains an apostrophe.
 
 ## 0.13.2 [03/01/2023]
 
