@@ -18,9 +18,10 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        is_typing, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
+                                        deserialize_annotation, is_typing, pretty_annotation, UNDEFINED,
+                                        Schema, SchemaAttribute)
 
-from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
@@ -73,7 +74,7 @@ class Variable(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
         default_value = dict_.get("default_value", UNDEFINED)
-        return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
+        return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
 
     @property

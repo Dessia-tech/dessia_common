@@ -10,6 +10,8 @@ That way, we can avoid cyclic imports.
 
 import sys
 from importlib import import_module
+from ast import literal_eval
+from typing import Type
 
 _PYTHON_CLASS_CACHE = {}
 
@@ -48,7 +50,7 @@ def prettyname(name: str) -> str:
     return pretty_name
 
 
-def full_classname(object_, compute_for: str = 'instance'):
+def full_classname(object_, compute_for: str = 'instance') -> str:
     """ Get full class name of object_ (module + class name). """
     if compute_for == 'instance':
         return f"{object_.__class__.__module__}.{object_.__class__.__name__}"
@@ -57,17 +59,18 @@ def full_classname(object_, compute_for: str = 'instance'):
     raise NotImplementedError(f"Cannot compute '{compute_for}' full classname for object '{object_}'")
 
 
-def get_python_class_from_class_name(full_class_name: str):
+def get_python_class_from_class_name(full_class_name: str) -> Type:
     """ Get python class object corresponding to given class name. """
     cached_value = _PYTHON_CLASS_CACHE.get(full_class_name, None)
-    # TODO : this is just quick fix, it will be modified soon with another.
-    sys.setrecursionlimit(3000)
+    sys.setrecursionlimit(3000)  # TODO : this is just quick fix, we haven't found the real reason behind it.
     if cached_value is not None:
         return cached_value
 
-    module_name, class_name = full_class_name.rsplit('.', 1)
-    module = import_module(module_name)
+    if "." not in full_class_name:
+        return literal_eval(full_class_name)
+    module_name, class_name = full_class_name.rsplit(".", 1)
 
+    module = import_module(module_name)
     class_ = getattr(module, class_name)
     # Storing in cache
     _PYTHON_CLASS_CACHE[full_class_name] = class_
