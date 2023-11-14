@@ -94,7 +94,7 @@ class Variable(DessiaObject):
         """
         Copy a Variable.
 
-        :param deep: Deepcopy if set to true, shallow copy if false. Defaults to False.
+        :param deep: Deep copy if set to true, shallow copy if false. Defaults to False.
         :param memo: A memo that keeps track of already encountered objects, defaults to None.
         :return: A copy of the object
         """
@@ -177,7 +177,7 @@ class Block(DessiaObject):
 
     def dict_to_inputs(self, dict_: JsonSerializable):
         """
-        Enable inputs and outputs overwritting in order to allow input renaming
+        Enable inputs and outputs overwriting in order to allow input renaming
         as well as default value persistence.
 
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.

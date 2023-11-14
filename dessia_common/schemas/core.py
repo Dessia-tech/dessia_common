@@ -119,7 +119,7 @@ class Schema:
     """
     Abstraction of a Schema.
 
-    It takes annotations witten as a dict and then writes into a Dict the recursive structure of an object
+    It takes annotations written as a dict and then writes into a Dict the recursive structure of an object
     that can be handled by dessia_common.
     This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
     for example.
@@ -330,9 +330,9 @@ class ClassSchema(MemberSchema):
         """ Return True if class is standalone. """
         return self.class_._standalone_in_db
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Write the whole schema. """
-        schema = super().to_dict()
+        schema = super().to_dict(**kwargs)
         classname = full_classname(object_=self.class_, compute_for="class")
         schema.update({"classes": [classname], "standalone_in_db": self.standalone_in_db})
         # TODO Check if we can get rid of this and use Property schema to simplify frontend
@@ -384,7 +384,7 @@ class MethodSchema(MemberSchema):
         except NotImplementedError:
             return None
 
-    def to_dict(self):
+    def to_dict(self, **kwargs):
         """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
         properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
@@ -429,14 +429,6 @@ class Property:
     def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
         self.annotation = annotation
         self.attribute = attribute
-        # self.definition_default = definition_default
-
-        # if title == "":
-        #     title = prettyname(attribute)
-        # self.title = title
-        #
-        # self.editable = editable
-        # self.description = description
 
     @property
     def schema(self):

@@ -174,6 +174,10 @@ class ClassMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ClassMethod':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
+        # Backward compatibility dessia_common < 0.14.0
+        if "object_class" not in dict_["method_type"]:
+            dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
+
         method_type = ClassMethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
@@ -204,15 +208,6 @@ class ClassMethod(Block):
                    full_classname(object_=self.method_type.class_, compute_for="class"),
                    self.full_classname]
         return ToScriptElement(declaration=script, imports=imports)
-
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs):
-        """ Backward compatibility for old versions of blocks. """
-        # Backward compatibility dessia_common < 0.14.0
-        if "object_class" not in dict_["method_type"]:
-            dict_["method_type"]["object_class"] = "dessia_common.typings.ClassMethodType"
-        kwargs["force_generic"] = True
-        return super().dict_to_object(dict_=dict_, **kwargs)
 
 
 class ModelMethod(Block):
