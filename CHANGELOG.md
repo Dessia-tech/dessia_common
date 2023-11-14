@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Documentation : Rewrite from scratch
+- forms : Update with last volmdlr
 - Workflow : Variables now have a pretty type to display on frontend
 - WorkflowState: add memory usage monitoring & markdown
 - Workflow : add documentation to workflow when export in .py
