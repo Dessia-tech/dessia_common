@@ -123,23 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
-<<<<<<< HEAD
-## 0.13.3
-
-### Changed
-
-- package_version is removed from serialization
-- License changed from GPL to Lesser GPL
-- Add rotation speed in measures
-
-### Fix
-
-- Workflow name correction: correct the name if it contains an apostrophe.
-
 ## 0.13.5 [09/25/2023]
-=======
-## 0.13.5 [released 09/25/2023]
->>>>>>> origin/master
 
 ### Fix
 - add python 3.9 minimum requirement to avoid install issues
