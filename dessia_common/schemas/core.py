@@ -441,6 +441,9 @@ class Property:
     @cached_property
     def serialized(self) -> str:
         """ Stringified annotation. """
+        if isinstance(self.annotation, type):
+            # TODO Hot fix for DisplayObjects (and other non dessia_object annotations). Is this ok ?
+            return full_classname(self.annotation, compute_for="class")
         return str(self.annotation)
 
     @cached_property

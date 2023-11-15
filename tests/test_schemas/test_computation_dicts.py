@@ -27,7 +27,7 @@ DICTIONARY = SchemaAttribute(name="dictionary")
 
 class TestDicts(unittest.TestCase):
     @parameterized.expand([
-        (DynamicDict(annotation=Dict[str, int], attribute=DICT_ATTRIBUTE), "Dict[str, int]"),
+        (DynamicDict(annotation=Dict[str, int], attribute=DICTIONARY), "Dict[str, int]"),
     ])
     def test_simple_dicts(self, schema, expected_typing):
         computed_schema = schema.to_dict()
