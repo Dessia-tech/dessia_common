@@ -3,6 +3,7 @@
 """ ExcelReader for DessiaObject. """
 import importlib
 import inspect
+# from ast import literal_eval
 
 import openpyxl
 
@@ -177,7 +178,7 @@ class ExcelReader:
 
         return cell_values
 
-    def read_object(self, only_main_object: bool = True):
+    def read_object(self):
         list_instantiated_obj = {}
         cell_values = self.process_workbook()
         stack = list(cell_values.items())
@@ -188,11 +189,12 @@ class ExcelReader:
                 list_instantiated_obj = self.instantaite_main_obj(list_instantiated_obj, key, values)
                 break
 
-            if any((any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
-                    value.values())):
+            is_instance_of_Cell = any(
+                (any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
+                 value.values()))
+            if is_instance_of_Cell:
 
                 if len(values[2].keys()) > 1:
-                    print("")
                     list_instantiated_obj = self.process_hyperlinks(list_instantiated_obj, key, values)
                 else:
                     list_instantiated_obj = self.process_other_cases(list_instantiated_obj, key, values, stack)
@@ -214,9 +216,7 @@ class ExcelReader:
 
                 list_instantiated_obj[key] = list_obj
 
-        if only_main_object:
-            return list_instantiated_obj[self.main_sheet][0]
-        return list_instantiated_obj
+        return list_instantiated_obj[self.main_sheet][0]
 
     def close(self):
         self.workbook.close()
