@@ -45,7 +45,7 @@ class TestStartSchema(unittest.TestCase):
         ("editable", True),
         ("type", "string"),
         ("default_value", "Shared Name"),
-        ("description", None)
+        ("description", "")
     ])
     def test_properties(self, key, value):
         properties = self.schema["properties"]

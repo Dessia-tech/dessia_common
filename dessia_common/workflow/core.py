@@ -707,7 +707,13 @@ class Workflow(Block):
         raise NotImplementedError(f"Method '{method}' is not allowed for Workflow. Expected 'run' or 'start_run'.")
 
     def _run_dict(self) -> JsonSerializable:
-        return {self.variables.index(i): i.default_value for i in self.inputs if i.has_default_value}
+        dict_ = {}
+        for input_ in self.inputs:
+            if input_.has_default_value:
+                dict_[str(self.variables.index(input_))] = serialize(input_.default_value)
+            if input_ in self.imposed_variable_values:
+                dict_[str(self.variables.index(input_))] = serialize(self.imposed_variable_values[input_])
+        return dict_
 
     def _start_run_dict(self) -> Dict:
         return {}

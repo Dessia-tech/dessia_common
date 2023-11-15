@@ -58,7 +58,7 @@ class TestSequences(unittest.TestCase):
         self.assertEqual(computed_schema["items"]["type"], "array")
         self.assertEqual(computed_schema["items"]["python_typing"], "List[dessia_common.forms.StandaloneObject]")
         self.assertEqual(computed_schema["items"]["title"], "Nested Sequence/0")
-        self.assertEqual(computed_schema["items"]["editable"], False)
+        self.assertEqual(computed_schema["items"]["editable"], True)
         self.assertEqual(computed_schema["items"]["description"], "")
 
         self.assertEqual(computed_schema["items"]["items"]["type"], "object")

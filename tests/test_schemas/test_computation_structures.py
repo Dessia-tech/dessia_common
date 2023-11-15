@@ -31,22 +31,22 @@ class TestStructures(unittest.TestCase):
         (
             AttributeTypeProperty(annotation=AttributeType[StandaloneObject], attribute=ATTRIBUTE),
             "attributes", "AttributeType[dessia_common.forms.StandaloneObject]",
-            "dessia_common.forms.StandaloneObject"
+            "Type[dessia_common.forms.StandaloneObject]"
         ),
         (
             AttributeTypeProperty(annotation=ClassAttributeType[StandaloneObject], attribute=ATTRIBUTE),
             "class_attributes", "ClassAttributeType[dessia_common.forms.StandaloneObject]",
-            "dessia_common.forms.StandaloneObject"
+            "Type[dessia_common.forms.StandaloneObject]"
         ),
         (
             MethodTypeProperty(annotation=MethodType[StandaloneObject], attribute=METHOD),
             "methods", "MethodType[dessia_common.forms.StandaloneObject]",
-            "dessia_common.forms.StandaloneObject"
+            "Type[dessia_common.forms.StandaloneObject]"
         ),
         (
             MethodTypeProperty(annotation=ClassMethodType[StandaloneObject], attribute=METHOD),
             "class_methods", "ClassMethodType[dessia_common.forms.StandaloneObject]",
-            "dessia_common.forms.StandaloneObject"
+            "Type[dessia_common.forms.StandaloneObject]"
         )
     ])
     def test_attributes(self, schema, expected_type, expected_typing, expected_class):

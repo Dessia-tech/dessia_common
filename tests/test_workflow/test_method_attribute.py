@@ -48,7 +48,7 @@ class TestGetModelAttribute(unittest.TestCase):
     def test_outputs(self, type_, name):
         block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
         output = block.outputs[0]
-        variable = Variable(type_=type_, name="Model")
+        variable = Variable(type_=type_, name="Attribute")
         self.assertEqual(output.type_, variable.type_)
         self.assertEqual(output.name, variable.name)
 
@@ -89,7 +89,7 @@ class TestSetModelAttribute(unittest.TestCase):
     ])
     def test_outputs(self, type_, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        output_variable = Variable(type_=DummyClassForTesting, name="Model")
+        output_variable = Variable(type_=DummyClassForTesting, name="Attribute")
         output = block.outputs[0]
         value_input = block.inputs[1]
         self.assertEqual(output.type_, output_variable.type_)
