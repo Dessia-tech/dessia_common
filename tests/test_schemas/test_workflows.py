@@ -21,11 +21,7 @@ class TestRunSchema(unittest.TestCase):
         ("editable", True),
         ("type", "number"),
         ("default_value", 3),
-        ("description", {
-            "desc": "value that will be added to model's intarg attribute",
-            "type_": "int",
-            "annotation": "<class 'int'>"
-        })
+        ("description", "value that will be added to model's intarg attribute")
     ])
     def test_properties(self, key, value):
         properties = self.schema["properties"]

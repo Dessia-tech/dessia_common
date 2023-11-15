@@ -24,7 +24,7 @@ class TestFaulty(unittest.TestCase):
 
 INT_LIST = SchemaAttribute(name="integer_list", title="Sequence")
 NESTED_LIST = SchemaAttribute(name="nested_list", title="Nested Sequence")
-TWO_ELEMENT_TUPLE = SchemaAttribute(name="two_element_tuple", title="Nested Sequence")
+TWO_ELEMENT_TUPLE = SchemaAttribute(name="two_element_tuple", title="Sequence")
 
 
 class TestSequences(unittest.TestCase):

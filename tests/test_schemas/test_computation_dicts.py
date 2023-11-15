@@ -22,7 +22,7 @@ class TestFaulty(unittest.TestCase):
         self.assertEqual(errors[0].level, "error")
 
 
-DICT_ATTRIBUTE = SchemaAttribute(name="dictionary")
+DICTIONARY = SchemaAttribute(name="dictionary")
 
 
 class TestDicts(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestDicts(unittest.TestCase):
     def test_simple_dicts(self, schema, expected_typing):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["title"], "")
+        self.assertEqual(computed_schema["title"], "Dictionary")
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["patternProperties"][".*"]["type"], "number")
 
