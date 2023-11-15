@@ -47,12 +47,10 @@ class TestGetModelAttribute(unittest.TestCase):
     ])
     def test_outputs(self, type_, name):
         block = GetModelAttribute(AttributeType(DummyClassForTesting, name))
-        if type_:
-            variable = Variable(type_=type_, name="Model")
-            self.assertTrue(block.outputs[0].type_ == variable.type_)
-        else:
-            variable = Variable(name="Model")
-            self.assertTrue(block.outputs[0]._data_eq(variable))
+        output = block.outputs[0]
+        variable = Variable(type_=type_, name="Model")
+        self.assertEqual(output.type_, variable.type_)
+        self.assertEqual(output.name, variable.name)
 
     @parameterized.expand([
         "int_",
@@ -74,9 +72,7 @@ class TestGetModelAttribute(unittest.TestCase):
         self.assertTrue(block.equivalent(block.__deepcopy__()))
 
 
-class TestSetModelAttribute(unittest.TestCase):          
-    def setUp(self):
-        pass
+class TestSetModelAttribute(unittest.TestCase):
 
     @parameterized.expand([
         (int, "int_"),
@@ -93,15 +89,13 @@ class TestSetModelAttribute(unittest.TestCase):
     ])
     def test_outputs(self, type_, name):
         block = SetModelAttribute(AttributeType(DummyClassForTesting, name))
-        typed_variable_output = Variable(type_=DummyClassForTesting, name="Model")
-        self.assertEqual(block.outputs[0].type_, typed_variable_output.type_)
-        if type_:
-            typed_variable_input = Variable(type_=type_, name="Value")
-            self.assertEqual(block.inputs[1].type_, typed_variable_input.type_)
-        else:
-            variable_input = Variable(name=f"Value to insert for attribute {name}")
-            self.assertTrue(block.inputs[1]._data_eq(variable_input))
-        pass
+        output_variable = Variable(type_=DummyClassForTesting, name="Model")
+        output = block.outputs[0]
+        value_input = block.inputs[1]
+        self.assertEqual(output.type_, output_variable.type_)
+        value_variable = Variable(type_=type_, name="Value")
+        self.assertEqual(value_input.type_, value_variable.type_)
+        self.assertEqual(value_input.name, value_variable.name)
 
     @parameterized.expand([
         "int_",
