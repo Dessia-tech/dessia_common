@@ -1,4 +1,4 @@
-from dessia_common.schemas.core import ClassProperty, MethodTypeProperty, AttributeTypeProperty
+from dessia_common.schemas.core import ClassProperty, MethodTypeProperty, AttributeTypeProperty, SchemaAttribute
 from dessia_common.forms import StandaloneObject
 from dessia_common.typings import MethodType, ClassMethodType, AttributeType, ClassAttributeType
 from typing import Type
@@ -7,11 +7,16 @@ import unittest
 from parameterized import parameterized
 
 
+CUSTOM_CLASS = SchemaAttribute(name="custom_class")
+ATTRIBUTE = SchemaAttribute(name="attribute")
+METHOD = SchemaAttribute(name="method")
+
+
 class TestStructures(unittest.TestCase):
     @parameterized.expand([
-        (ClassProperty(annotation=Type, attribute="custom_class"), 'Type'),
+        (ClassProperty(annotation=Type, attribute=CUSTOM_CLASS), 'Type'),
         (
-            ClassProperty(annotation=Type[StandaloneObject], attribute="custom_class"),
+            ClassProperty(annotation=Type[StandaloneObject], attribute=CUSTOM_CLASS),
             'Type[dessia_common.forms.StandaloneObject]'
         )
     ])
@@ -24,22 +29,22 @@ class TestStructures(unittest.TestCase):
 
     @parameterized.expand([
         (
-            AttributeTypeProperty(annotation=AttributeType[StandaloneObject], attribute="attribute"),
+            AttributeTypeProperty(annotation=AttributeType[StandaloneObject], attribute=ATTRIBUTE),
             "attributes", "AttributeType[dessia_common.forms.StandaloneObject]",
             "dessia_common.forms.StandaloneObject"
         ),
         (
-            AttributeTypeProperty(annotation=ClassAttributeType[StandaloneObject], attribute="attribute"),
+            AttributeTypeProperty(annotation=ClassAttributeType[StandaloneObject], attribute=ATTRIBUTE),
             "class_attributes", "ClassAttributeType[dessia_common.forms.StandaloneObject]",
             "dessia_common.forms.StandaloneObject"
         ),
         (
-            MethodTypeProperty(annotation=MethodType[StandaloneObject], attribute="method"),
+            MethodTypeProperty(annotation=MethodType[StandaloneObject], attribute=METHOD),
             "methods", "MethodType[dessia_common.forms.StandaloneObject]",
             "dessia_common.forms.StandaloneObject"
         ),
         (
-            MethodTypeProperty(annotation=ClassMethodType[StandaloneObject], attribute="method"),
+            MethodTypeProperty(annotation=ClassMethodType[StandaloneObject], attribute=METHOD),
             "class_methods", "ClassMethodType[dessia_common.forms.StandaloneObject]",
             "dessia_common.forms.StandaloneObject"
         )
