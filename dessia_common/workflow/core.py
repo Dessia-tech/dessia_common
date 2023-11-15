@@ -18,9 +18,10 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        is_typing, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
+                                        deserialize_annotation, is_typing, pretty_annotation, UNDEFINED,
+                                        Schema, SchemaAttribute)
 
-from dessia_common.utils.types import deserialize_typing, recursive_type, typematch, is_sequence, is_dessia_file
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
@@ -46,6 +47,7 @@ VariableAddress = Union[int, Tuple[int, int, int]]
 
 class Variable(DessiaObject):
     """ New version of workflow variable. """
+
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
@@ -60,22 +62,24 @@ class Variable(DessiaObject):
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
-        """ WRITE DOCSTRING. """
+        """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position})
+        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
+                      "pretty_type": pretty_annotation(self.type_)})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
-        """ WRITE DOCSTRING. """
+        """ Customize serialization method in order to handle undefined default value. """
         default_value = dict_.get("default_value", UNDEFINED)
-        return cls(type_=deserialize_typing(dict_["type_"]), default_value=default_value,
+        return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
                    name=dict_["name"], position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
+        """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.default_value is not UNDEFINED
 
     def is_file_type(self) -> bool:
@@ -94,7 +98,7 @@ class Variable(DessiaObject):
         """
         Copy a Variable.
 
-        :param deep: Deepcopy if set to true, shallow copy if false. Defaults to False.
+        :param deep: Deep copy if set to true, shallow copy if false. Defaults to False.
         :param memo: A memo that keeps track of already encountered objects, defaults to None.
         :return: A copy of the object
         """
@@ -177,8 +181,7 @@ class Block(DessiaObject):
 
     def dict_to_inputs(self, dict_: JsonSerializable):
         """
-        Enable inputs and outputs overwritting in order to allow input renaming
-        as well as default value persistence.
+        Enable inputs and outputs overwriting in order to allow input renaming as well as default value persistence.
 
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """
@@ -1196,7 +1199,8 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, documentation=documentation," \
+                      f" name=\"{self.name}\")\n"
 
         self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
@@ -1213,6 +1217,7 @@ class Workflow(Block):
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
+               f'documentation = """{self.documentation}"""\n\n' \
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):

@@ -9,7 +9,6 @@ class TestRunSchema(unittest.TestCase):
 
     @parameterized.expand([
         ("required", ["0", "3", "5"]),
-        ("classes", "dessia_common.workflow.core.Workflow"),
         ("method", True),
         ("type", "object")
     ])
@@ -40,7 +39,6 @@ class TestStartSchema(unittest.TestCase):
 
     @parameterized.expand([
         ("required", []),
-        ("python_typing", "dessia_common.typings.MethodType")
     ])
     def test_items(self, key, value):
         self.assertEqual(self.schema[key], value)

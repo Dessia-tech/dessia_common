@@ -1,15 +1,18 @@
-from dessia_common.schemas.core import DynamicDict
+from dessia_common.schemas.core import DynamicDict, SchemaAttribute
 from typing import Dict
 from dessia_common.forms import StandaloneObject
 
 import unittest
 from parameterized import parameterized
 
+INT_ATTRIBUTE = SchemaAttribute(name="wrong_key_type_dict")
+NESTED_ATTRIBUTE = SchemaAttribute(name="nested_dict")
+
 
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (DynamicDict(annotation=Dict[int, int], attribute="wrong_key_type_dict"), 1),
-        (DynamicDict(annotation=Dict[str, Dict[str, StandaloneObject]], attribute="nested_dict"), 1)
+        (DynamicDict(annotation=Dict[int, int], attribute=INT_ATTRIBUTE), 1),
+        (DynamicDict(annotation=Dict[str, Dict[str, StandaloneObject]], attribute=NESTED_ATTRIBUTE), 1)
     ])
     def test_schema_check(self, schema, expected_number):
         checked_schema = schema.check_list()
@@ -19,9 +22,12 @@ class TestFaulty(unittest.TestCase):
         self.assertEqual(errors[0].level, "error")
 
 
+DICT_ATTRIBUTE = SchemaAttribute(name="dictionary")
+
+
 class TestDicts(unittest.TestCase):
     @parameterized.expand([
-        (DynamicDict(annotation=Dict[str, int], attribute="dictionnary"), "Dict[str, int]"),
+        (DynamicDict(annotation=Dict[str, int], attribute=DICT_ATTRIBUTE), "Dict[str, int]"),
     ])
     def test_simple_dicts(self, schema, expected_typing):
         computed_schema = schema.to_dict()
