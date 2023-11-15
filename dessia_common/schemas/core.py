@@ -1431,6 +1431,12 @@ class GenericTypeProperty(Property):
         """ Deserialize Generic Type annotation. """
         raise NotImplementedError("Annotation deserialization not implemented for Generic Types")
 
+    @cached_property
+    def serialized(self) -> Optional[str]:
+        if self.annotation is None:
+            return None
+        return "typing.Type"
+
     def to_dict(self) -> Dict[str, Any]:
         """ Write Type as a Dict. """
         chunk = super().to_dict()
@@ -1552,6 +1558,8 @@ def pretty_annotation(annotation: Type[T], attribute_name: str = "") -> str:
 
 def deserialize_annotation(serialized: str) -> Type[T]:
     """ From a string denoting an annotation, get deserialize value. """
+    if serialized is None:
+        return None
     if "[" in serialized:
         return TypingProperty.annotation_from_serialized(serialized)
     if serialized in SERIALIZED_TO_SCHEMA_CLASS:
