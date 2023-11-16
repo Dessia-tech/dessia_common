@@ -1440,6 +1440,7 @@ class GenericTypeProperty(Property):
 
     @cached_property
     def serialized(self) -> Optional[str]:
+        """ Serialize None as itself as json will dump it as null. Otherwise, serialize as typing.Type. """
         if self.annotation is None:
             return None
         return "typing.Type"
