@@ -142,7 +142,6 @@ setup(
         "networkx",
         "pandas",
         "mypy_extensions",
-        "scipy<1.10.1",
         "pyDOE",
         "pyDOE2",
         "dectree",
