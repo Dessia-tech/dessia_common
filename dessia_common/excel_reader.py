@@ -3,7 +3,7 @@
 """ ExcelReader for DessiaObject. """
 import importlib
 import inspect
-# from ast import literal_eval
+from ast import literal_eval
 
 import openpyxl
 
@@ -60,28 +60,42 @@ class ExcelReader:
 
         return attribute_types
 
+    @staticmethod
+    def get_data(value, attrributes, init_attributes):
+        object_data = {}
+        for i, attribute in enumerate(attrributes):
+            if attribute in init_attributes:
+                if isinstance(value[i], str):
+                    try:
+                        object_data[attribute] = literal_eval(value[i])
+                    except (ValueError, SyntaxError):
+                        object_data[attribute] = value[i]
+                else:
+                    object_data[attribute] = value[i]
+        return object_data
+
     def instantaite_main_obj(self, list_instantiated_obj, key, values):
         module_name = values[0][0]
         class_name = values[0][1]
-        attr = values[1]
+        attributes = values[1]
         module = importlib.import_module(module_name)
         obj_class = getattr(module, class_name)
 
         init_attributes = self.get_attributes_and_types(obj_class)
-        list_obj = []
+        objects = []
         for value in values[2].values():
             for k, val_attr in enumerate(value):
                 if isinstance(val_attr, openpyxl.cell.cell.Cell):
                     val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
                     value[k] = self.replace_attribute(val_attr, val_replace)
 
-            obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
-            obj = obj_class(**obj_data)
+            object_data = self.get_data(value, attributes, init_attributes)
+            obj = obj_class(**object_data)
             if not obj.name:
                 obj.name = ""
-            list_obj.append(obj)
+            objects.append(obj)
 
-        list_instantiated_obj[key] = list_obj
+        list_instantiated_obj[key] = objects
         return list_instantiated_obj
 
     def process_hyperlinks(self, list_instantiated_obj, key, values):
@@ -93,7 +107,7 @@ class ExcelReader:
         obj_class = getattr(module, class_name)
 
         init_attributes = self.get_attributes_and_types(obj_class)
-        list_obj = []
+        objects = []
         for value in values[2].values():
             for i, val in enumerate(value):
                 if isinstance(val, openpyxl.cell.cell.Cell):
@@ -104,19 +118,18 @@ class ExcelReader:
                     sub_attr = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
                     sub_module = importlib.import_module(sub_module_name)
                     sub_obj_class = getattr(sub_module, sub_class_name)
+                    sub_init_attributes = self.get_attributes_and_types(sub_obj_class)
 
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
-
-                    value[i] = sub_obj_class(**{a: moment_value[i] if i < len(moment_value) else None
-                                                for i, a in enumerate(sub_attr)})
+                    value[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
 
             obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
-            obj = obj_class(**obj_data)
-            if not obj.name:
-                obj.name = ""
-            list_obj.append(obj)
+            object_ = obj_class(**obj_data)
+            if not object_.name:
+                object_.name = ""
+            objects.append(object_)
 
-        list_instantiated_obj[key] = list_obj
+        list_instantiated_obj[key] = objects
         return list_instantiated_obj
 
     def process_other_cases(self, list_instantiated_obj, key, values, stack):
@@ -202,19 +215,20 @@ class ExcelReader:
             else:
                 module_name = values[0][0]
                 class_name = values[0][1]
-                attr = values[1]
+                attributes = values[1]
 
                 module = importlib.import_module(module_name)
                 obj_class = getattr(module, class_name)
-                list_obj = []
+                init_attributes = self.get_attributes_and_types(obj_class)
+                objects = []
                 for value in values[2].values():
-                    obj_data = {a: value[i] if i < len(value) else None for i, a in enumerate(attr)}
-                    obj = obj_class(**obj_data)
-                    if not obj.name:
-                        obj.name = ""
-                    list_obj.append(obj)
+                    obj_data = self.get_data(value, attributes, init_attributes)
+                    object_ = obj_class(**obj_data)
+                    if not object_.name:
+                        object_.name = ""
+                    objects.append(object_)
 
-                list_instantiated_obj[key] = list_obj
+                list_instantiated_obj[key] = objects
 
         return list_instantiated_obj[self.main_sheet][0]
 
