@@ -1322,7 +1322,8 @@ class Workflow(Block):
                       f"{nbvs_str}\n" \
                       f"{pipes_str}\n" \
                       f"{prefix}workflow = " \
-                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, name=\"{self.name}\")\n"
+                      f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, documentation=documentation," \
+                      f" name=\"{self.name}\")\n"
 
         self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
@@ -1339,6 +1340,7 @@ class Workflow(Block):
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
+               f'documentation = """{self.documentation}"""\n\n' \
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):

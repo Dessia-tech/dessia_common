@@ -2,8 +2,8 @@
 from dessia_common.workflow.core import TypedVariable, TypedVariableWithDefaultValue, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, GetModelAttribute, ForEach,\
     MultiPlot, Unpacker, WorkflowBlock
-from dessia_common.forms import Generator, Optimizer, StandaloneObject
-from dessia_common.typings import MethodType, AttributeType, PlotDataType
+from dessia_common.forms import Generator, Optimizer
+from dessia_common.typings import MethodType, AttributeType
 
 instanciate_generator = InstantiateModel(model_class=Generator, name='Instantiate Generator')
 
@@ -33,8 +33,7 @@ optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name
 parallel_optimization = ForEach(workflow_block=optimization_workflow_block, iter_input_index=0, name='ForEach')
 
 multiplot_attributes = ['standalone_subobject/intarg', 'standalone_subobject/name', 'standalone_subobject/floatarg']
-multiplot_selector = PlotDataType(class_=StandaloneObject, name="Multiplot")
-multiplot = MultiPlot(selector=multiplot_selector, attributes=multiplot_attributes, name='Multiplot')
+multiplot = MultiPlot(selector_name="Multiplot", attributes=multiplot_attributes, name='Multiplot')
 
 unpacker = Unpacker(indices=[0], name="Unpacker")
 
