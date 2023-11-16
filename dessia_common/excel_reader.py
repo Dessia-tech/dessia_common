@@ -163,54 +163,77 @@ class ExcelReader:
         return list_instantiated_obj
 
     def process_workbook(self):
-        cell_values = {}
+        """
+        Process the workbook's sheets and extract information.
+
+        This function iterates through each sheet in the workbook and gathers specific data from each sheet.
+        It collects module and class names along with attributes and associated data.
+
+        Returns:
+        dict: A dictionary containing information extracted from the workbook sheets.
+              Each key represents the sheet title, and its value is a list consisting of:
+              - Tuple containing module and class names extracted from cells (row=2, column=1) and (row=2, column=2).
+              - List of attributes extracted from row 3, starting from column 2.
+              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per attributes.
+        """
+        extracted_data = {}
 
         for sheet in self.workbook.worksheets:
-            cell_value = []
-            cell_value.append((sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value))
+            sheet_data = []
+            sheet_data.append((sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value))
 
             attributes = []
             for value in sheet.iter_cols(min_row=3, max_row=3, min_col=2, values_only=True):
                 attributes.append(value[0])
 
-            cell_value.append(attributes)
+            sheet_data.append(attributes)
 
-            data = {}
+            row_data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=4, min_col=2, values_only=True)):
-                tuple_val = []
+                column_values = []
                 for j, _ in enumerate(value):
-                    cell_val = sheet.cell(row=i + 4, column=j + 2)
-                    if cell_val.hyperlink:
-                        tuple_val.append(cell_val)
+                    cell_value = sheet.cell(row=i + 4, column=j + 2)
+                    if cell_value.hyperlink:
+                        column_values.append(cell_value)
                     else:
-                        tuple_val.append(cell_val.value)
-                data[i] = tuple_val
+                        column_values.append(cell_value.value)
+                row_data[i] = column_values
 
-            cell_value.append(data.copy())
-            cell_values[sheet.title] = cell_value
+            sheet_data.append(row_data.copy())
+            extracted_data[sheet.title] = sheet_data
 
-        return cell_values
+        return extracted_data
 
     def read_object(self):
-        list_instantiated_obj = {}
+        """
+        Read and process data to instantiate objects from the workbook.
+
+        Reads the processed workbook data, instantiates objects, and organizes them based on the provided classes and
+        modules.
+
+        Returns:
+        object: The instantiated object obtained from the main sheet's data.
+        """
+        instantiated_objects = {}
         cell_values = self.process_workbook()
         stack = list(cell_values.items())
+
         while stack:
             key, values = stack.pop()
 
             if key == self.main_sheet:
-                list_instantiated_obj = self.instantaite_main_obj(list_instantiated_obj, key, values)
+                instantiated_objects = self.instantaite_main_obj(instantiated_objects, key, values)
                 break
 
-            is_instance_of_Cell = any(
-                (any(isinstance(v, openpyxl.cell.cell.Cell) for v in val) for value in values[2:] for val in
+            is_cell_instance = any(
+                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for val in
                  value.values()))
-            if is_instance_of_Cell:
+            if is_cell_instance:
 
                 if len(values[2].keys()) > 1:
-                    list_instantiated_obj = self.process_hyperlinks(list_instantiated_obj, key, values)
+                    instantiated_objects = self.process_hyperlinks(instantiated_objects, key, values)
                 else:
-                    list_instantiated_obj = self.process_other_cases(list_instantiated_obj, key, values, stack)
+                    instantiated_objects = self.process_other_cases(instantiated_objects, key, values, stack)
 
             else:
                 module_name = values[0][0]
@@ -228,9 +251,9 @@ class ExcelReader:
                         object_.name = ""
                     objects.append(object_)
 
-                list_instantiated_obj[key] = objects
+                instantiated_objects[key] = objects
 
-        return list_instantiated_obj[self.main_sheet][0]
+        return instantiated_objects[self.main_sheet][0]
 
     def close(self):
         self.workbook.close()
