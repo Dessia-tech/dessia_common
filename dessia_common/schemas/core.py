@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import collections.abc
 from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints, Callable, Union, \
-    TypeVar, TypedDict, Optional, Any, Generic
+    TypeVar, TypedDict, Optional, Any
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
