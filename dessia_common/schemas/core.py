@@ -747,6 +747,8 @@ class MeasureProperty(BuiltinProperty):
         if self.has_default_value:
             if isinstance(self.attribute.default_value, float):
                 default_measure = Measure(self.attribute.default_value)
+            elif isinstance(self.attribute.default_value, dict):
+                default_measure = Measure(self.attribute.default_value["value"])
             else:
                 raise ValueError(f"Default value for attribute '{self.attribute.name}' "
                                  f"must be of type 'float' or 'Measure'. Got '{type(self.attribute.default_value)}'")
