@@ -1,28 +1,41 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ ExcelReader for DessiaObject. """
-import importlib
+
 import inspect
 from ast import literal_eval
 
 import openpyxl
+
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
 class ExcelReader:
     def __init__(self, filepath):
         self.filepath = filepath
         self.workbook = openpyxl.load_workbook(filepath)
-        self.object_class = None
-        self.read_objects = {}
+        self.sheet_titles = [sheet.title for sheet in self.workbook.worksheets]
         self.main_sheet = self.workbook.worksheets[0].title
 
-    @staticmethod
-    def get_location(cell):
+    def get_location(self, cell):
+        """
+        Retrieve the location of a cell's hyperlink.
+
+        Args:
+        - cell: The cell containing the hyperlink.
+
+        Returns:
+        - tuple: A tuple containing the sheet name and cell address referred to by the hyperlink.
+        """
         if cell.hyperlink.location:
             target = cell.hyperlink.location.split('!')
         elif cell.hyperlink.target:
             target = cell.hyperlink.target.split('!')
-        return target[0].replace("#", ''), target[1]
+
+        sheet_name = target[0].replace("#", '')
+        if target[0].replace("#", '') not in self.sheet_titles:
+            raise ValueError(f"The sheet '{sheet_name}' referenced by the hyperlink does not exist.")
+        return sheet_name, target[1]
 
     def replace_attribute(self, cell, values):
         container = ["Dict", "List", "Set", "Tuple"]
@@ -49,6 +62,15 @@ class ExcelReader:
 
     @staticmethod
     def get_attributes_and_types(obj_class):
+        """
+        Retrieve attributes and their corresponding types from the __init__ method of a class.
+
+        Args:
+        - obj_class: The class object.
+
+        Returns:
+        - dict: A dictionary containing attributes and their respective types defined in the class constructor.
+        """
         init_signature = inspect.signature(obj_class.__init__)
         init_parameters = init_signature.parameters
 
@@ -61,9 +83,20 @@ class ExcelReader:
         return attribute_types
 
     @staticmethod
-    def get_data(value, attrributes, init_attributes):
+    def get_data(value, attributes, init_attributes):
+        """
+        Extracts relevant data based on attributes and initial attributes for object instantiation.
+
+        Args:
+        - value (list): List containing values corresponding to attributes.
+        - attributes (list): List of attributes related to the object.
+        - init_attributes (list): List of initial attributes for object instantiation.
+
+        Returns:
+        - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
+        """
         object_data = {}
-        for i, attribute in enumerate(attrributes):
+        for i, attribute in enumerate(attributes):
             if attribute in init_attributes:
                 if isinstance(value[i], str):
                     try:
@@ -74,37 +107,50 @@ class ExcelReader:
                     object_data[attribute] = value[i]
         return object_data
 
-    def instantaite_main_obj(self, list_instantiated_obj, key, values):
+    def instantiate_main_objects(self, instantiated_objects_list, key, values):
+        """
+        Instantiate main objects based on provided values and attributes.
+
+        Args:
+        - instantiated_objects_list (dict): Dictionary containing instantiated objects.
+        - key (str): Key to identify the instantiated objects.
+        - values (list): List containing module name, class name, and attributes.
+
+        Returns:
+        - dict: Updated dictionary of instantiated objects.
+        """
+
         module_name = values[0][0]
         class_name = values[0][1]
-        attributes = values[1]
-        module = importlib.import_module(module_name)
-        obj_class = getattr(module, class_name)
+        object_attributes = values[1]
+        full_class_name = f"{module_name}.{class_name}"
+        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
-        init_attributes = self.get_attributes_and_types(obj_class)
+        initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
-        for value in values[2].values():
-            for k, val_attr in enumerate(value):
-                if isinstance(val_attr, openpyxl.cell.cell.Cell):
-                    val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
-                    value[k] = self.replace_attribute(val_attr, val_replace)
 
-            object_data = self.get_data(value, attributes, init_attributes)
-            obj = obj_class(**object_data)
-            if not obj.name:
-                obj.name = ""
-            objects.append(obj)
+        for value_set in values[2].values():
+            for index, attr_value in enumerate(value_set):
+                if isinstance(attr_value, openpyxl.cell.cell.Cell):
+                    replaced_value = instantiated_objects_list[self.get_location(attr_value)[0]]
+                    value_set[index] = self.replace_attribute(attr_value, replaced_value)
 
-        list_instantiated_obj[key] = objects
-        return list_instantiated_obj
+            object_data = self.get_data(value_set, object_attributes, initial_attributes)
+            object_ = obj_class(**object_data)
+            if not object_.name:
+                object_.name = ""
+            objects.append(object_)
+
+        instantiated_objects_list[key] = objects
+        return instantiated_objects_list
 
     def process_hyperlinks(self, list_instantiated_obj, key, values):
         module_name = values[0][0]
         class_name = values[0][1]
         attr = values[1]
 
-        module = importlib.import_module(module_name)
-        obj_class = getattr(module, class_name)
+        full_class_name = f"{module_name}.{class_name}"
+        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         init_attributes = self.get_attributes_and_types(obj_class)
         objects = []
@@ -116,8 +162,8 @@ class ExcelReader:
                     sub_class_name = self.workbook[sheet_target_title]["B2"].value
                     sheet_target = self.workbook[sheet_target_title]
                     sub_attr = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
-                    sub_module = importlib.import_module(sub_module_name)
-                    sub_obj_class = getattr(sub_module, sub_class_name)
+                    sub_full_class_name = f"{sub_module_name}.{sub_class_name}"
+                    sub_obj_class = get_python_class_from_class_name(full_class_name=sub_full_class_name)
                     sub_init_attributes = self.get_attributes_and_types(sub_obj_class)
 
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
@@ -142,8 +188,8 @@ class ExcelReader:
             class_name = values[0][1]
             attr = values[1]
 
-            module = importlib.import_module(module_name)
-            obj_class = getattr(module, class_name)
+            full_class_name = f"{module_name}.{class_name}"
+            obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
             list_obj = []
             for value in values[2].values():
                 for k, val_attr in enumerate(value):
@@ -222,7 +268,7 @@ class ExcelReader:
             key, values = stack.pop()
 
             if key == self.main_sheet:
-                instantiated_objects = self.instantaite_main_obj(instantiated_objects, key, values)
+                instantiated_objects = self.instantiate_main_objects(instantiated_objects, key, values)
                 break
 
             is_cell_instance = any(
@@ -239,9 +285,9 @@ class ExcelReader:
                 module_name = values[0][0]
                 class_name = values[0][1]
                 attributes = values[1]
+                full_class_name = f"{module_name}.{class_name}"
+                obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
-                module = importlib.import_module(module_name)
-                obj_class = getattr(module, class_name)
                 init_attributes = self.get_attributes_and_types(obj_class)
                 objects = []
                 for value in values[2].values():
@@ -256,4 +302,9 @@ class ExcelReader:
         return instantiated_objects[self.main_sheet][0]
 
     def close(self):
+        """
+        Closes the workbook.
+
+        This method closes the associated workbook, ensuring any changes made are saved and resources are released.
+        """
         self.workbook.close()
