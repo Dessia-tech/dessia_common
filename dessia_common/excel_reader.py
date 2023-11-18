@@ -209,6 +209,17 @@ class ExcelReader:
         return list_instantiated_obj
 
     def process_simple_sheet(self, list_instantiated_obj, key, values):
+        """
+        Process a sheet without hyperlinks containing simple cell values to instantiate objects.
+
+        Args:
+        instantiated_objects (dict): A dictionary containing instantiated objects.
+        key (str): The key representing the current sheet being processed.
+        values (list): A list of values containing module name, class name, attributes, and data.
+
+        Returns:
+        dict: The updated dictionary of instantiated objects after processing the sheet.
+        """
         module_name = values[0][0]
         class_name = values[0][1]
         attributes = values[1]
@@ -304,17 +315,6 @@ class ExcelReader:
                 instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
 
         return instantiated_objects[self.main_sheet][0]
-
-    def read_catalog(self):
-        instantiated_objects = {}
-        cell_values = self.process_workbook()
-        stack = list(cell_values.items())
-
-        while stack:
-            key, values = stack.pop()
-            instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
-
-        return instantiated_objects
 
     def close(self):
         """
