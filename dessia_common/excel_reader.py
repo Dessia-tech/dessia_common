@@ -208,6 +208,25 @@ class ExcelReader:
             stack.extend(list({key: values}.items()))
         return list_instantiated_obj
 
+    def process_simple_sheet(self, list_instantiated_obj, key, values):
+        module_name = values[0][0]
+        class_name = values[0][1]
+        attributes = values[1]
+        full_class_name = f"{module_name}.{class_name}"
+        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
+
+        init_attributes = self.get_attributes_and_types(obj_class)
+        objects = []
+        for value in values[2].values():
+            obj_data = self.get_data(value, attributes, init_attributes)
+            object_ = obj_class(**obj_data)
+            if not object_.name:
+                object_.name = ""
+            objects.append(object_)
+
+        list_instantiated_obj[key] = objects
+        return list_instantiated_obj
+
     def process_workbook(self):
         """
         Process the workbook's sheets and extract information.
@@ -282,24 +301,20 @@ class ExcelReader:
                     instantiated_objects = self.process_other_cases(instantiated_objects, key, values, stack)
 
             else:
-                module_name = values[0][0]
-                class_name = values[0][1]
-                attributes = values[1]
-                full_class_name = f"{module_name}.{class_name}"
-                obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
-
-                init_attributes = self.get_attributes_and_types(obj_class)
-                objects = []
-                for value in values[2].values():
-                    obj_data = self.get_data(value, attributes, init_attributes)
-                    object_ = obj_class(**obj_data)
-                    if not object_.name:
-                        object_.name = ""
-                    objects.append(object_)
-
-                instantiated_objects[key] = objects
+                instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
 
         return instantiated_objects[self.main_sheet][0]
+
+    def read_catalog(self):
+        instantiated_objects = {}
+        cell_values = self.process_workbook()
+        stack = list(cell_values.items())
+
+        while stack:
+            key, values = stack.pop()
+            instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
+
+        return instantiated_objects
 
     def close(self):
         """
