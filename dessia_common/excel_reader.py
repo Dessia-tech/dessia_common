@@ -37,7 +37,23 @@ class ExcelReader:
             raise ValueError(f"The sheet '{sheet_name}' referenced by the hyperlink does not exist.")
         return sheet_name, target[1]
 
-    def replace_attribute(self, cell, values):
+    def update_attribute_values(self, cell, values):
+        """
+        Updates attribute values based on the provided cell and values.
+
+        Args:
+        - cell: The cell containing information about the data type.
+        - values: The values to be replaced.
+
+        Returns:
+        - Depending on the data type of the cell:
+          - For 'Dict' type: Returns a dictionary with keys extracted from the cell
+            and replaced values from the 'values' parameter.
+          - For other types (excluding 'List', 'Set', 'Tuple'): Replaces the values with
+            the first element of 'values' if 'values' is a list and 'cell.value' does not
+            contain any of the container types.
+          - Otherwise, returns 'values' itself.
+        """
         container = ["Dict", "List", "Set", "Tuple"]
         target = self.get_location(cell)
         dict_keys = []
@@ -133,7 +149,7 @@ class ExcelReader:
             for index, attr_value in enumerate(value_set):
                 if isinstance(attr_value, openpyxl.cell.cell.Cell):
                     replaced_value = instantiated_objects[self.get_location(attr_value)[0]]
-                    value_set[index] = self.replace_attribute(attr_value, replaced_value)
+                    value_set[index] = self.update_attribute_values(attr_value, replaced_value)
 
             object_data = self.get_data(value_set, object_attributes, initial_attributes)
             object_ = obj_class(**object_data)
@@ -220,7 +236,7 @@ class ExcelReader:
                 for k, val_attr in enumerate(value_set):
                     if isinstance(val_attr, openpyxl.cell.cell.Cell):
                         val_replace = instantiated_objects[self.get_location(val_attr)[0]]
-                        value_set[k] = self.replace_attribute(val_attr, val_replace)
+                        value_set[k] = self.update_attribute_values(val_attr, val_replace)
 
                 object_data = self.get_data(value_set, object_attributes, initial_attributes)
                 obj = obj_class(**object_data)
