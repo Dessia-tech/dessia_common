@@ -107,7 +107,7 @@ class ExcelReader:
                     object_data[attribute] = value[i]
         return object_data
 
-    def instantiate_main_objects(self, instantiated_objects_list, key, values):
+    def instantiate_main_objects(self, instantiated_objects, key, values):
         """
         Instantiate main objects based on provided values and attributes.
 
@@ -132,7 +132,7 @@ class ExcelReader:
         for value_set in values[2].values():
             for index, attr_value in enumerate(value_set):
                 if isinstance(attr_value, openpyxl.cell.cell.Cell):
-                    replaced_value = instantiated_objects_list[self.get_location(attr_value)[0]]
+                    replaced_value = instantiated_objects[self.get_location(attr_value)[0]]
                     value_set[index] = self.replace_attribute(attr_value, replaced_value)
 
             object_data = self.get_data(value_set, object_attributes, initial_attributes)
@@ -141,10 +141,10 @@ class ExcelReader:
                 object_.name = ""
             objects.append(object_)
 
-        instantiated_objects_list[key] = objects
-        return instantiated_objects_list
+        instantiated_objects[key] = objects
+        return instantiated_objects
 
-    def process_multiple_hyperlink_rows(self, list_instantiated_obj, key, values):
+    def process_multiple_hyperlink_rows(self, instantiated_objects, key, values):
         """
         Process multiple rows in a sheet, each representing an object with hyperlinks.
 
@@ -158,15 +158,15 @@ class ExcelReader:
         """
         module_name = values[0][0]
         class_name = values[0][1]
-        attr = values[1]
+        object_attributes = values[1]
 
         full_class_name = f"{module_name}.{class_name}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
-        init_attributes = self.get_attributes_and_types(obj_class)
+        initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
-        for value in values[2].values():
-            for i, val in enumerate(value):
+        for value_set in values[2].values():
+            for i, val in enumerate(value_set):
                 if isinstance(val, openpyxl.cell.cell.Cell):
                     sheet_target_title, row_target = self.get_location(val)
                     sub_module_name = self.workbook[sheet_target_title]["A2"].value
@@ -178,18 +178,18 @@ class ExcelReader:
                     sub_init_attributes = self.get_attributes_and_types(sub_obj_class)
 
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
-                    value[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
+                    value_set[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
 
-            obj_data = {a: value[i] for i, a in enumerate(attr) if a in init_attributes}
-            object_ = obj_class(**obj_data)
+            object_data = self.get_data(value_set, object_attributes, initial_attributes)
+            object_ = obj_class(**object_data)
             if not object_.name:
                 object_.name = ""
             objects.append(object_)
 
-        list_instantiated_obj[key] = objects
-        return list_instantiated_obj
+        instantiated_objects[key] = objects
+        return instantiated_objects
 
-    def process_single_hyperlink_row(self, list_instantiated_obj, key, values, stack):
+    def process_single_hyperlink_row(self, instantiated_objects, key, values, stack):
         """
         Process a single row in a sheet representing an object with hyperlinks.
 
@@ -204,34 +204,36 @@ class ExcelReader:
         """
         hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
                           isinstance(v2, openpyxl.cell.cell.Cell)]
-        list_processed_list_key = list(list_instantiated_obj.keys())
+        list_processed_list_key = list(instantiated_objects.keys())
         if hyperlink_list == list_processed_list_key or all(
                 hyperlink in list_processed_list_key for hyperlink in hyperlink_list):
             module_name = values[0][0]
             class_name = values[0][1]
-            attr = values[1]
+            object_attributes = values[1]
 
             full_class_name = f"{module_name}.{class_name}"
             obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
-            list_obj = []
-            for value in values[2].values():
-                for k, val_attr in enumerate(value):
-                    if isinstance(val_attr, openpyxl.cell.cell.Cell):
-                        val_replace = list_instantiated_obj[self.get_location(val_attr)[0]]
-                        value[k] = self.replace_attribute(val_attr, val_replace)
+            initial_attributes = self.get_attributes_and_types(obj_class)
 
-                obj_data = {a: value[i] if i < len(value) else None for i, a in enumerate(attr)}
-                obj = obj_class(**obj_data)
+            list_obj = []
+            for value_set in values[2].values():
+                for k, val_attr in enumerate(value_set):
+                    if isinstance(val_attr, openpyxl.cell.cell.Cell):
+                        val_replace = instantiated_objects[self.get_location(val_attr)[0]]
+                        value_set[k] = self.replace_attribute(val_attr, val_replace)
+
+                object_data = self.get_data(value_set, object_attributes, initial_attributes)
+                obj = obj_class(**object_data)
                 if not obj.name:
                     obj.name = ""
                 list_obj.append(obj)
 
-            list_instantiated_obj[key] = list_obj
+            instantiated_objects[key] = list_obj
         else:
             stack.extend(list({key: values}.items()))
-        return list_instantiated_obj
+        return instantiated_objects
 
-    def process_simple_sheet(self, list_instantiated_obj, key, values):
+    def process_simple_sheet(self, instantiated_objects, key, values):
         """
         Process a sheet without hyperlinks containing simple cell values to instantiate objects.
 
@@ -245,21 +247,21 @@ class ExcelReader:
         """
         module_name = values[0][0]
         class_name = values[0][1]
-        attributes = values[1]
+        object_attributes = values[1]
         full_class_name = f"{module_name}.{class_name}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
-        init_attributes = self.get_attributes_and_types(obj_class)
+        initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
-        for value in values[2].values():
-            obj_data = self.get_data(value, attributes, init_attributes)
+        for value_set in values[2].values():
+            obj_data = self.get_data(value_set, object_attributes, initial_attributes)
             object_ = obj_class(**obj_data)
             if not object_.name:
                 object_.name = ""
             objects.append(object_)
 
-        list_instantiated_obj[key] = objects
-        return list_instantiated_obj
+        instantiated_objects[key] = objects
+        return instantiated_objects
 
     def process_workbook(self):
         """

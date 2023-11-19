@@ -19,10 +19,11 @@ class Line(DessiaObject):
 
         super().__init__(name)
 
-class Caracteristique:
+
+class Caracteristique(DessiaObject):
     def __init__(self, description: str, name: str = ''):
         self.description = description
-        self.name = name
+        super().__init__(name=name)
 
 
 class ShapeCollection(DessiaObject):
@@ -36,6 +37,7 @@ class CompositeShape(DessiaObject):
     def __init__(self, shape_collection: ShapeCollection, name: str = ''):
         self.shape_collection = shape_collection
         super().__init__(name=name)
+
 
 # TODO: fix case if attributes is List, Tuple, Dict of builtin
 # class Circle(DessiaObject):
@@ -57,7 +59,6 @@ class CompositeShape(DessiaObject):
 
 class TestReadExcel(unittest.TestCase):
     def test_container(self):
-
         point1 = Point(0, 'A')
         point2 = Point(1, 'B')
         point3 = Point(2, 'C')
@@ -81,6 +82,3 @@ class TestReadExcel(unittest.TestCase):
 
         main_obj = reader.read_object()
         self.assertEqual(main_obj, composite_shape)
-
-
-
