@@ -291,7 +291,8 @@ class ExcelReader:
               Each key represents the sheet title, and its value is a list consisting of:
               - Tuple containing module and class names extracted from cells (row=2, column=1) and (row=2, column=2).
               - List of attributes extracted from row 3, starting from column 2.
-              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per attributes.
+              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per
+               attributes.
         """
         extracted_data = {}
 
@@ -347,8 +348,8 @@ class ExcelReader:
                 break
 
             is_cell_instance = any(
-                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for val in
-                 value.values()))
+                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for
+                 val in value.values()))
             if is_cell_instance:
 
                 nb_objects_in_sheet = len(values[2].keys())
