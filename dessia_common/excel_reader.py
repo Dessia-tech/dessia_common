@@ -270,8 +270,8 @@ class ExcelReader:
         initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
         for value_set in values[2].values():
-            obj_data = self.get_data(value_set, object_attributes, initial_attributes)
-            object_ = obj_class(**obj_data)
+            object_data = self.get_data(value_set, object_attributes, initial_attributes)
+            object_ = obj_class(**object_data)
             if not object_.name:
                 object_.name = ""
             objects.append(object_)
@@ -327,6 +327,10 @@ class ExcelReader:
 
         Reads the processed workbook data, instantiates objects, and organizes them based on the provided classes and
         modules.
+
+        Note:
+        This method does not support processing variables of complex types, such as `List[Tuple[float, float]]`, due to
+        limitations in interpreting complex nested structures within Excel sheets.
 
         Returns:
         object: The instantiated object obtained from the main sheet's data.
