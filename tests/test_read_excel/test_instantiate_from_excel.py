@@ -19,10 +19,16 @@ class Line(DessiaObject):
 
         super().__init__(name)
 
+class Caracteristique:
+    def __init__(self, description: str, name: str = ''):
+        self.description = description
+        self.name = name
+
 
 class ShapeCollection(DessiaObject):
-    def __init__(self, lines: List[Line], name: str = ''):
+    def __init__(self, lines: List[Line], caracteristiques: List[Caracteristique], name: str = ''):
         self.lines = lines
+        self.caracteristiques = caracteristiques
         super().__init__(name=name)
 
 

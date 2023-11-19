@@ -33,7 +33,7 @@ class ExcelReader:
             target = cell.hyperlink.target.split('!')
 
         sheet_name = target[0].replace("#", '')
-        if target[0].replace("#", '') not in self.sheet_titles:
+        if sheet_name not in self.sheet_titles:
             raise ValueError(f"The sheet '{sheet_name}' referenced by the hyperlink does not exist.")
         return sheet_name, target[1]
 
@@ -144,7 +144,18 @@ class ExcelReader:
         instantiated_objects_list[key] = objects
         return instantiated_objects_list
 
-    def process_hyperlinks(self, list_instantiated_obj, key, values):
+    def process_multiple_hyperlink_rows(self, list_instantiated_obj, key, values):
+        """
+        Process multiple rows in a sheet, each representing an object with hyperlinks.
+
+        Args:
+        - instantiated_objects (dict): Dictionary containing instantiated objects.
+        - key (str): Key to associate with the list of instantiated objects.
+        - values (list): List containing information to process.
+
+        Returns:
+        - dict: Updated dictionary of instantiated objects.
+        """
         module_name = values[0][0]
         class_name = values[0][1]
         attr = values[1]
@@ -178,7 +189,19 @@ class ExcelReader:
         list_instantiated_obj[key] = objects
         return list_instantiated_obj
 
-    def process_other_cases(self, list_instantiated_obj, key, values, stack):
+    def process_single_hyperlink_row(self, list_instantiated_obj, key, values, stack):
+        """
+        Process a single row in a sheet representing an object with hyperlinks.
+
+        Args:
+        - instantiated_objects (dict): Dictionary containing instantiated objects.
+        - key (str): Key to associate with the list of instantiated objects.
+        - values (list): List containing information to process.
+        - stack (list): Stack to handle unprocessed items.
+
+        Returns:
+        - dict: Updated dictionary of instantiated objects.
+        """
         hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
                           isinstance(v2, openpyxl.cell.cell.Cell)]
         list_processed_list_key = list(list_instantiated_obj.keys())
@@ -306,10 +329,11 @@ class ExcelReader:
                  value.values()))
             if is_cell_instance:
 
-                if len(values[2].keys()) > 1:
-                    instantiated_objects = self.process_hyperlinks(instantiated_objects, key, values)
+                nb_objects_in_sheet = len(values[2].keys())
+                if nb_objects_in_sheet > 1:
+                    instantiated_objects = self.process_multiple_hyperlink_rows(instantiated_objects, key, values)
                 else:
-                    instantiated_objects = self.process_other_cases(instantiated_objects, key, values, stack)
+                    instantiated_objects = self.process_single_hyperlink_row(instantiated_objects, key, values, stack)
 
             else:
                 instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
