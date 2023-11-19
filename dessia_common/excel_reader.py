@@ -362,6 +362,17 @@ class ExcelReader:
 
         return instantiated_objects[self.main_sheet][0]
 
+    def read_catalog(self):
+        instantiated_objects = {}
+        cell_values = self.process_workbook()
+        stack = list(cell_values.items())
+
+        while stack:
+            key, values = stack.pop()
+            instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
+
+        return instantiated_objects
+
     def close(self):
         """
         Closes the workbook.
