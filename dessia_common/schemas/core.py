@@ -320,7 +320,7 @@ class ClassSchema(MemberSchema):
         docstring = class_.__doc__
         classname = full_classname(class_)
 
-        MemberSchema.__init__(self, annotations=annotations, argspec=members, docstring=docstring, name=classname)
+        super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=classname)
 
     @property
     def editable_attributes(self) -> List[str]:
