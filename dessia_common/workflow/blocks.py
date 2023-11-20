@@ -90,7 +90,7 @@ class InstantiateModel(Block):
         inputs = []
         inputs = set_inputs_from_function(self.model_class.__init__, inputs)
         outputs = [Variable(type_=self.model_class, name="Model")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -100,7 +100,7 @@ class InstantiateModel(Block):
         """ Return whether the block is equivalent to the other given or not. """
         classname = self.model_class.__class__.__name__
         other_classname = other.model_class.__class__.__name__
-        return Block.equivalent(self, other) and classname == other_classname
+        return super().equivalent(other) and classname == other_classname
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'InstantiateModel':
@@ -158,7 +158,7 @@ class ClassMethod(Block):
         self.argument_names = [i.name for i in inputs]
 
         output = output_from_function(function=self.method, name="Return")
-        Block.__init__(self, inputs, [output], name=name, position=position)
+        super().__init__(inputs, [output], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -171,7 +171,7 @@ class ClassMethod(Block):
         other_classname = other.method_type.class_.__name__
         same_class = classname == other_classname
         same_method = self.method_type.name == other.method_type.name
-        return Block.equivalent(self, other) and same_class and same_method
+        return super().equivalent(other) and same_class and same_method
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ClassMethod':
@@ -238,7 +238,7 @@ class ModelMethod(Block):
 
         if name == "":
             name = f"Model method: {method_type.name}"
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -251,7 +251,7 @@ class ModelMethod(Block):
         other_classname = other.method_type.class_.__name__
         same_model = classname == other_classname
         same_method = self.method_type.name == other.method_type.name
-        return Block.equivalent(self, other) and same_model and same_method
+        return super().equivalent(other) and same_model and same_method
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelMethod':
@@ -312,7 +312,7 @@ class Sequence(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -320,7 +320,7 @@ class Sequence(Block):
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+        return super().equivalent(other) and self.number_arguments == other.number_arguments
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sequence':
@@ -352,7 +352,7 @@ class Concatenate(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -360,7 +360,7 @@ class Concatenate(Block):
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.number_arguments == other.number_arguments
+        return super().equivalent(other) and self.number_arguments == other.number_arguments
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Concatenate':
@@ -404,7 +404,7 @@ class WorkflowBlock(Block):
             inputs.append(input_)
 
         outputs = [self.workflow.output.copy()]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -412,7 +412,7 @@ class WorkflowBlock(Block):
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        if not Block.equivalent(self, other):
+        if not super().equivalent(other):
             return False
         return self.workflow == other.workflow
 
@@ -485,7 +485,7 @@ class ForEach(Block):
         output_variable = Variable(name="Foreach output")
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
-        Block.__init__(self, inputs, [output_variable], name=name, position=position)
+        super().__init__(inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -496,7 +496,7 @@ class ForEach(Block):
         """ Return whether the block is equivalent to the other given or not. """
         input_eq = self.iter_input_index == other.iter_input_index
         wb_eq = self.workflow_block.equivalent(other.workflow_block)
-        return Block.equivalent(self, other) and wb_eq and input_eq
+        return super().equivalent(other) and wb_eq and input_eq
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ForEach':
@@ -549,11 +549,11 @@ class Unpacker(Block):
     def __init__(self, indices: List[int], name: str = "Unpacker", position:  Position = (0, 0)):
         self.indices = indices
         outputs = [Variable(name=f"Element {i}") for i in indices]
-        Block.__init__(self, inputs=[Variable(name="Sequence")], outputs=outputs, name=name, position=position)
+        super().__init__(inputs=[Variable(name="Sequence")], outputs=outputs, name=name, position=position)
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.indices == other.indices
+        return super().equivalent(other) and self.indices == other.indices
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Unpacker':
@@ -587,7 +587,7 @@ class Flatten(Block):
     def __init__(self, name: str = "Flatten", position:  Position = (0, 0)):
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Flattened sequence")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -620,7 +620,7 @@ class Product(Block):
         self.number_list = number_list
         inputs = [Variable(name=f"Sequence {i}") for i in range(self.number_list)]
         output_variable = Variable(name="Product")
-        Block.__init__(self, inputs, [output_variable], name=name, position=position)
+        super().__init__(inputs, [output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -628,7 +628,7 @@ class Product(Block):
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.number_list == other.number_list
+        return super().equivalent(other) and self.number_list == other.number_list
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Product':
@@ -664,11 +664,11 @@ class Filter(Block):
         self.logical_operator = logical_operator
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Filtered sequence")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.filters == other.filters
+        return super().equivalent(other) and self.filters == other.filters
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Filter':
@@ -712,7 +712,7 @@ class Display(Block):
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "Display",
                  selector: Optional[ViewType] = None, position:  Position = (0, 0)):
         output = Variable(type_=DisplayObject, name="Display Object")
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
         self.load_by_default = load_by_default
         self.selector = selector
@@ -778,7 +778,7 @@ class DeprecatedMultiPlot(Display):
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
         same_attributes = self.attributes == other.attributes
-        return Block.equivalent(self, other) and same_attributes
+        return super().equivalent(other) and same_attributes
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -842,7 +842,7 @@ class MultiPlot(Display):
     def equivalent(self, other):
         """ Return whether if the block is equivalent to the other given. """
         same_attributes = self.attributes == other.attributes
-        return Block.equivalent(self, other) and same_attributes
+        return super().equivalent(other) and same_attributes
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1072,7 +1072,7 @@ class ModelAttribute(Block):
         self.attribute_name = attribute_name
         inputs = [Variable(name="Model")]
         outputs = [Variable(name="Attribute value")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1080,7 +1080,7 @@ class ModelAttribute(Block):
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_name == other.attribute_name
+        return super().equivalent(other) and self.attribute_name == other.attribute_name
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelAttribute':
@@ -1114,7 +1114,7 @@ class GetModelAttribute(Block):
         inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         outputs = [Variable(type_=type_, name="Attribute")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1127,7 +1127,7 @@ class GetModelAttribute(Block):
         other_classname = other.attribute_type.class_.__name__
         same_model = classname == other_classname
         same_method = self.attribute_type.name == other.attribute_type.name
-        return Block.equivalent(self, other) and same_model and same_method
+        return super().equivalent(other) and same_model and same_method
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'GetModelAttribute':
@@ -1168,7 +1168,7 @@ class SetModelAttribute(Block):
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         inputs.append(Variable(type_=type_, name="Value"))
         outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        Block.__init__(self, inputs, outputs, name=name, position=position)
+        super().__init__(inputs, outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1176,7 +1176,7 @@ class SetModelAttribute(Block):
 
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.attribute_type.name == other.attribute_type.name
+        return super().equivalent(other) and self.attribute_type.name == other.attribute_type.name
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SetModelAttribute':
@@ -1212,7 +1212,7 @@ class Sum(Block):
     def __init__(self, number_elements: int = 2, name: str = "Sum", position:  Position = (0, 0)):
         self.number_elements = number_elements
         inputs = [Variable(name=f"Sum element {i + 1}") for i in range(number_elements)]
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[Variable(name="Sum")], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1220,7 +1220,7 @@ class Sum(Block):
 
     def equivalent(self, other):
         """ Returns whether the block is equivalent to the other given or not. """
-        return Block.equivalent(self, other) and self.number_elements == other.number_elements
+        return super().equivalent(other) and self.number_elements == other.number_elements
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sum':
@@ -1247,7 +1247,7 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = "Substraction", position:  Position = (0, 0)):
-        Block.__init__(self, [Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
+        super().__init__([Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
                        position=position)
 
     def evaluate(self, values, **kwargs):
@@ -1283,7 +1283,7 @@ class ConcatenateStrings(Block):
         self.separator = separator
         inputs = [Variable(name=f"Substring {i + 1}", type_=str, default_value="") for i in range(number_elements)]
         output = Variable(name="Concatenation", type_=str)
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1293,7 +1293,7 @@ class ConcatenateStrings(Block):
         """ Returns whether the block is equivalent to the other given or not. """
         same_number = self.number_elements == other.number_elements
         same_separator = self.separator == other.separator
-        return Block.equivalent(self, other) and same_number and same_separator
+        return super().equivalent(other) and same_number and same_separator
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ConcatenateStrings':
@@ -1344,7 +1344,7 @@ class Export(Block):
         output = output_from_function(function=method, name="Stream")
         inputs = [Variable(type_=method_type.class_, name="Model"),
                   Variable(type_=str, default_value=filename, name="Filename")]
-        Block.__init__(self, inputs=inputs, outputs=[output], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Export':
@@ -1400,12 +1400,12 @@ class Archive(Block):
         self.text = False
         inputs = [Variable(name=f"Export {i}") for i in range(number_exports)]
         inputs.append(Variable(type_=str, default_value=filename, name="Filename"))
-        Block.__init__(self, inputs=inputs, outputs=[Variable(name="Archive")], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[Variable(name="Archive")], name=name, position=position)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = "#", id_method=True, id_memo=None,
                 **kwargs):
         """ Serialize the block with custom logic. """
-        dict_ = Block.to_dict(self, use_pointers=use_pointers, memo=memo, path=path)
+        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path)
         dict_["number_exports"] = len(self.inputs) - 1   # Filename is also a block input
         dict_["filename"] = self.filename
         return dict_

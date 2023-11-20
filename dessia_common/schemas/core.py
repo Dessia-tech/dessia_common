@@ -32,8 +32,7 @@ UNDEFINED = object()
 
 EMPTY_PARSED_ATTRIBUTE = {"desc": "", "type": "", "annotation": ""}
 FAILED_DOCSTRING_PARSING = {"description": "Docstring parsing failed", "attributes": {}}
-FAILED_ATTRIBUTE_PARSING = {"desc": "Attribute documentation parsing failed",
-                            "type": "", "annotation": ""}
+FAILED_ATTRIBUTE_PARSING = {"desc": "Attribute documentation parsing failed", "type": "", "annotation": ""}
 
 
 class BackendReference(CoreDessiaObject):
