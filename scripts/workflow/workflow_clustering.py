@@ -37,18 +37,14 @@ workflow = Workflow(blocks, pipes, output=block_4.outputs[0], name='Filters demo
 
 # Workflow run
 filters = [DessiaFilter('cylinders', ">", 6), DessiaFilter('displacement', ">", 0.3)]
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_2.inputs[0]): filters,
-    workflow.index(block_2.inputs[1]): 'and',
-    workflow.index(block_3.inputs[1]): 10})
+workflow_run = workflow.run({workflow.input_index(block_0.inputs[0]): stream_file,
+                             workflow.input_index(block_2.inputs[0]): filters,
+                             workflow.input_index(block_2.inputs[1]): 'and',
+                             workflow.input_index(block_3.inputs[1]): 10})
 
 # Workflow tests
 workflow._check_platform()
 wfrun_plot_data = workflow_run.output_value.plot_data()
-# assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0, "Cluster Label')
-# assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == ', "cylinders": 8.0, "displacement": 0.35, "horsepo')
-# assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
@@ -82,17 +78,13 @@ pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7]
 workflow = Workflow(blocks, pipes, output=block_6.outputs[0], name='SubClist + Concatenate')
 
 # Workflow run
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_2.inputs[1]): 10,
-    workflow.index(block_6.inputs[1]): 40})
+workflow_run = workflow.run({workflow.input_index(block_0.inputs[0]): stream_file,
+                             workflow.input_index(block_2.inputs[1]): 10,
+                             workflow.input_index(block_6.inputs[1]): 40})
 
 # Workflow tests
 workflow._check_platform()
 wfrun_plot_data = workflow_run.output_value.plot_data()
-# assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'cceleration": 20.5, "model": 70.0, "Cluster Label"')
-# assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == '8.0, "displacement": 0.35, "horsepower": 155.0, "w')
-# assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 5, 2, 12, -1]].to_dict(use_pointers=True)

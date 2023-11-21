@@ -1,4 +1,4 @@
-from dessia_common.workflow.core import Workflow, TypedVariableWithDefaultValue, Pipe, NAME_VARIABLE
+from dessia_common.workflow.core import Workflow, Variable, Pipe, NAME_VARIABLE
 from dessia_common.workflow.blocks import InstantiateModel
 from dessia_common.forms import Generator
 
@@ -40,7 +40,7 @@ assert len(wired_dict["nonblock_variables"]) == 1
 assert wired_dict["nonblock_variables"][0]["name"] == "Result Name"
 
 # Workflow with an user variable added as a detached one
-user_variable = TypedVariableWithDefaultValue(type_=int, default_value="2", name="User Parameter")
+user_variable = Variable(type_=int, default_value="2", name="User Parameter")
 user_variable_workflow = Workflow(blocks=[block], pipes=[pipe_name], output=None, detached_variables=[user_variable])
 user_variable_workflow._check_platform()
 assert len(user_variable_workflow.detached_variables) == 1
@@ -99,7 +99,7 @@ assert switched_user_variable_dict["nonblock_variables"][0]["name"] == "User Par
 assert switched_user_variable_dict["nonblock_variables"][1]["name"] == "Result Name"
 
 # Complete Workflow
-another_user_variable = TypedVariableWithDefaultValue(type_=int, default_value=5, name="Number of Solutions")
+another_user_variable = Variable(type_=int, default_value=5, name="Number of Solutions")
 pipe_numb = Pipe(input_variable=another_user_variable, output_variable=block.inputs[1])
 complete_workflow = Workflow(blocks=[block], pipes=[pipe_name, pipe_var, pipe_numb],
                              output=block.outputs[0], detached_variables=[user_variable])

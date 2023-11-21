@@ -1,15 +1,18 @@
-from dessia_common.schemas.core import HomogeneousSequence, HeterogeneousSequence
+from dessia_common.schemas.core import HomogeneousSequence, HeterogeneousSequence, SchemaAttribute
 from dessia_common.forms import StandaloneObject
 from typing import List, Tuple
 
 import unittest
 from parameterized import parameterized
 
+BARE_LIST = SchemaAttribute(name="bare_list")
+BARE_TUPLE = SchemaAttribute(name="bare_tuple")
+
 
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (HomogeneousSequence(annotation=List, attribute="bare_list"), 1),
-        (HeterogeneousSequence(annotation=Tuple, attribute="bare_tuple"), 1)
+        (HomogeneousSequence(annotation=List, attribute=BARE_LIST), 1),
+        (HeterogeneousSequence(annotation=Tuple, attribute=BARE_TUPLE), 1)
     ])
     def test_schema_check(self, schema, expected_number):
         checked_schema = schema.check_list()
@@ -19,9 +22,14 @@ class TestFaulty(unittest.TestCase):
         self.assertEqual(errors[0].level, "error")
 
 
+INT_LIST = SchemaAttribute(name="integer_list", title="Sequence")
+NESTED_LIST = SchemaAttribute(name="nested_list", title="Nested Sequence")
+TWO_ELEMENT_TUPLE = SchemaAttribute(name="two_element_tuple", title="Sequence")
+
+
 class TestSequences(unittest.TestCase):
     @parameterized.expand([
-        (HomogeneousSequence(annotation=List[int], attribute="integer_list"), "List[int]"),
+        (HomogeneousSequence(annotation=List[int], attribute=INT_LIST), "List[int]"),
     ])
     def test_simple_sequences(self, schema, expected_typing):
         computed_schema = schema.to_dict("Sequence")
@@ -38,11 +46,11 @@ class TestSequences(unittest.TestCase):
         self.assertFalse(checked_schema.checks_above_level("error"))
 
     @parameterized.expand([
-        (HomogeneousSequence(annotation=List[List[StandaloneObject]], attribute="nested_list"),
+        (HomogeneousSequence(annotation=List[List[StandaloneObject]], attribute=NESTED_LIST),
          "List[List[dessia_common.forms.StandaloneObject]]"),
     ])
     def test_nested_sequences(self, schema, expected_typing):
-        computed_schema = schema.to_dict("Nested Sequence")
+        computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "array")
         self.assertEqual(computed_schema["title"], "Nested Sequence")
         self.assertEqual(computed_schema["python_typing"], expected_typing)
@@ -50,7 +58,7 @@ class TestSequences(unittest.TestCase):
         self.assertEqual(computed_schema["items"]["type"], "array")
         self.assertEqual(computed_schema["items"]["python_typing"], "List[dessia_common.forms.StandaloneObject]")
         self.assertEqual(computed_schema["items"]["title"], "Nested Sequence/0")
-        self.assertEqual(computed_schema["items"]["editable"], False)
+        self.assertEqual(computed_schema["items"]["editable"], True)
         self.assertEqual(computed_schema["items"]["description"], "")
 
         self.assertEqual(computed_schema["items"]["items"]["type"], "object")
@@ -61,10 +69,10 @@ class TestSequences(unittest.TestCase):
         self.assertFalse(checked_schema.checks_above_level("error"))
 
     @parameterized.expand([
-        (HeterogeneousSequence(annotation=Tuple[int, str], attribute="two_element_tuple"), "Tuple[int, str]"),
+        (HeterogeneousSequence(annotation=Tuple[int, str], attribute=TWO_ELEMENT_TUPLE), "Tuple[int, str]"),
     ])
     def test_simple_sequences(self, schema, expected_typing):
-        computed_schema = schema.to_dict("Sequence")
+        computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "array")
         self.assertEqual(computed_schema["additionalItems"], False)
         self.assertEqual(computed_schema["title"], "Sequence")
