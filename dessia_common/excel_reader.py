@@ -90,13 +90,17 @@ class ExcelReader:
         init_signature = inspect.signature(obj_class.__init__)
         init_parameters = init_signature.parameters
 
-        attribute_types = {}
+        attribute_info = {}
 
         for attr_name, param in init_parameters.items():
             if attr_name != 'self':
-                attribute_types[attr_name] = param.annotation if param.annotation != param.empty else None
+                attr_info = {
+                    'type': param.annotation if param.annotation != param.empty else None,
+                    'default_value': param.default if param.default != param.empty else None
+                }
+                attribute_info[attr_name] = attr_info
 
-        return attribute_types
+        return attribute_info
 
     @staticmethod
     def get_data(value, attributes, init_attributes):
