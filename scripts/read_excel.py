@@ -3,10 +3,10 @@
 """
 
 from dessia_common.models import all_cars_no_feat
-from dessia_common.datatools import HeterogeneousList
+from dessia_common.datatools.dataset import Dataset
 from dessia_common.excel_reader import ExcelReader
 
-dataset = HeterogeneousList(all_cars_no_feat)
+dataset = Dataset(all_cars_no_feat)
 
 dataset.to_xlsx("dataset.xlsx'")
 

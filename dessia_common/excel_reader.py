@@ -136,10 +136,9 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        module_name = values[0][0]
-        class_name = values[0][1]
+        class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
         object_attributes = values[1]
-        full_class_name = f"{module_name}.{class_name}"
+        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
@@ -172,11 +171,10 @@ class ExcelReader:
         Returns:
         - dict: Updated dictionary of instantiated objects.
         """
-        module_name = values[0][0]
-        class_name = values[0][1]
+        class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
         object_attributes = values[1]
 
-        full_class_name = f"{module_name}.{class_name}"
+        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
@@ -223,11 +221,9 @@ class ExcelReader:
         list_processed_list_key = list(instantiated_objects.keys())
         if hyperlink_list == list_processed_list_key or all(
                 hyperlink in list_processed_list_key for hyperlink in hyperlink_list):
-            module_name = values[0][0]
-            class_name = values[0][1]
+            class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
             object_attributes = values[1]
-
-            full_class_name = f"{module_name}.{class_name}"
+            full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
             obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
             initial_attributes = self.get_attributes_and_types(obj_class)
 
