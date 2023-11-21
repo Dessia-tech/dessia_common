@@ -1,7 +1,7 @@
 from dessia_common.forms import Generator, StandaloneObject
 from dessia_common.workflow.blocks import InstantiateModel, ClassMethod, Sequence
 from dessia_common.typings import ClassMethodType
-from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
+from dessia_common.workflow.core import Variable, Pipe, Workflow
 from dessia_common.files import StringFile
 
 block_0 = InstantiateModel(model_class=Generator, name='Simple Inputs',
@@ -15,8 +15,8 @@ block_3 = InstantiateModel(model_class=StandaloneObject, name='Custom & Complex 
 block_4 = Sequence(number_arguments=4, name='Packer', position=(482.55623557963327, 33.78454658062492))
 blocks = [block_0, block_1, block_2, block_3, block_4]
 
-variable_0 = TypedVariable(name='Result Name', position=[-353.5235486758587, 234.9165175396766], type_=str)
-variable_1 = TypedVariable(name='stream', position=[-131.55327139280053, 248.81817426839467], type_=StringFile)
+variable_0 = Variable(name='Result Name', position=(-353.5235486758587, 234.9165175396766), type_=str)
+variable_1 = Variable(name='stream', position=(-131.55327139280053, 248.81817426839467), type_=StringFile)
 
 pipe_0 = Pipe(variable_0, block_3.inputs[12])
 pipe_1 = Pipe(variable_0, block_0.inputs[3])
@@ -36,5 +36,3 @@ file_input_indices = [workflow.input_index(i) for i in workflow.file_inputs]
 
 assert file_input_indices == [3, 17]
 assert workflow.is_variable_nbv(workflow.file_inputs[1])
-
-

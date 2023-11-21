@@ -6,7 +6,7 @@ import inspect
 import json
 
 
-from typing import Union, List, Optional
+from typing import Union, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
@@ -59,7 +59,7 @@ class DisplaySetting:
 class DisplayObject:
     """ Container for data of display. A traceback can be set if display fails to be generated. """
 
-    def __init__(self, type_: str, data: Union[JsonSerializable, List[JsonSerializable], str],
+    def __init__(self, type_: str, data: Union[JsonSerializable, str],
                  reference_path: str = '', traceback: str = '', name: str = ''):
         self.type_ = type_
         self.data = data

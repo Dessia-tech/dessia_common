@@ -9,7 +9,6 @@ class TestRunSchema(unittest.TestCase):
 
     @parameterized.expand([
         ("required", ["0", "3", "5"]),
-        ("classes", "dessia_common.workflow.core.Workflow"),
         ("method", True),
         ("type", "object")
     ])
@@ -22,11 +21,7 @@ class TestRunSchema(unittest.TestCase):
         ("editable", True),
         ("type", "number"),
         ("default_value", 3),
-        ("description", {
-            "desc": "value that will be added to model's intarg attribute",
-            "type_": "int",
-            "annotation": "<class 'int'>"
-        })
+        ("description", "value that will be added to model's intarg attribute")
     ])
     def test_properties(self, key, value):
         properties = self.schema["properties"]
@@ -40,7 +35,6 @@ class TestStartSchema(unittest.TestCase):
 
     @parameterized.expand([
         ("required", []),
-        ("python_typing", "dessia_common.typings.MethodType")
     ])
     def test_items(self, key, value):
         self.assertEqual(self.schema[key], value)
@@ -51,7 +45,7 @@ class TestStartSchema(unittest.TestCase):
         ("editable", True),
         ("type", "string"),
         ("default_value", "Shared Name"),
-        ("description", None)
+        ("description", "")
     ])
     def test_properties(self, key, value):
         properties = self.schema["properties"]
