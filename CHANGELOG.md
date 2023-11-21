@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## 0.15.0
+
+### Added
+
+- Documentation : Rewrite from scratch
+- forms : Update with last volmdlr
+- Workflow : Variables now have a pretty type to display on frontend
+- WorkflowState: add memory usage monitoring & markdown
+- Workflow : add documentation to workflow when export in .py
+
+### Changed
+
+- Workflow : Block input and output names have been enhanced
+- Workflow : Inputs now have entries for Imposed Variable Values
+
+### Removed
+
+- Workflow : jointjs plot
+
+
 ## 0.14.2
 
 ###  Fix
@@ -14,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.14.1
 
-## Changed
+### Changed
 
 - Multiplot block takes selector as a string
 
@@ -22,13 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 'reference_path' is now passed on by Display block while evaluating
 
+
 ## 0.14.0
+
 
 ### Added
 
 - Blocks : GetModelAttribute block which will replace ModelAttribute in a few releases
 - Blocks : Display blocks are now more configurable (Custom selector)
-- DessiaObject : Add type to load_from_file method arguments
+- DessiaObjegitct : Add type to load_from_file method arguments
 - Displays : Displays can now be defined with decorators
 - Document generator : New module to write in docx file
 - Document generator : New class Table
@@ -87,7 +110,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Serialization : Remove warning for dict_to_object if class is not inheriting from SerializableObject
 
-
 ### Chore
 
 - Fix Spelling (x2)
@@ -101,17 +123,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
-## 0.13.5 [released 09/25/2023]
+## 0.13.5 [09/25/2023]
 
 ### Fix
 - add python 3.9 minimum requirement to avoid install issues
 
-## 0.13.4 [released 07/31/2023]
+## 0.13.4 [07/31/2023]
 
 ### Added
 - Add rotational speed to measures
 
-## 0.13.3 [released 05/04/2023]
+## 0.13.3 [05/04/2023]
 
 ### Changed
 
@@ -124,7 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 - Workflow name correction: correct the name if it contains an apostrophe.
 
-## 0.13.2 [released 03/01/2023]
+## 0.13.2 [03/01/2023]
 
 ### Fix
 
@@ -182,7 +204,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0 [released 01/20/2023]
+## 0.12.0 [01/20/2023]
 
 
 ### Changed
@@ -234,7 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0 [released 12/19/2022]
+## 0.11.0 [12/19/2022]
 
 ### Fixed
 

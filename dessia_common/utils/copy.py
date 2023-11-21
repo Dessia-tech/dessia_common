@@ -68,7 +68,6 @@ def deepcopy_value(value, memo):
 
     if isinstance(value, dict):
         return deepcopy_dict(value, memo)
-
     raise NotImplementedError(f'unhandle type for copy: {value} of type {value.__class__}')
 
 

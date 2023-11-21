@@ -35,7 +35,16 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    """ Define which method of an object should be called for each Export. """
+    """
+    Define which method of an object should be called for each Export.
+
+    :param str selector: A custom and unique identifier for current ExportFormat.
+    :param str extension: The extension of the file to create (without '.')
+    :param str method_name: The method to call to generate the export. Should be the one that handles the stream.
+    :param bool text: Whether the resulting file is text-like or binary-like.
+    :param str export_name: Enables user to set their own custom export name.
+    :param Dict args: Arguments to pass to the called function.
+    """
 
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
