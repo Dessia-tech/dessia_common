@@ -115,6 +115,15 @@ class ExcelReader:
         Returns:
         - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
         """
+        if len(attributes) != len(init_attributes.keys()):
+            if len(attributes) > len(init_attributes.keys()):
+                missing_attributes = set(init_attributes.keys()) - set(attributes)
+            else:
+                missing_attributes = set(init_attributes.keys()) - set(attributes)
+            for attr_name in missing_attributes:
+                if init_attributes[attr_name]['default_value'] is None:
+                    raise ValueError(f"missing attribute '{attr_name}' don't have a default value")
+
         object_data = {}
         for i, attribute in enumerate(attributes):
             if attribute in init_attributes:
