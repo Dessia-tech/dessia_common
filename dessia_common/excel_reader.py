@@ -136,8 +136,7 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
-        object_attributes = values[1]
+        class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
         full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
@@ -150,7 +149,7 @@ class ExcelReader:
                     replaced_value = instantiated_objects[self.get_location(attr_value)[0]]
                     value_set[index] = self.update_attribute_values(attr_value, replaced_value)
 
-            object_data = self.get_data(value_set, object_attributes, initial_attributes)
+            object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
             object_ = obj_class(**object_data)
             if not object_.name:
                 object_.name = ""
@@ -218,12 +217,13 @@ class ExcelReader:
         """
         hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
                           isinstance(v2, openpyxl.cell.cell.Cell)]
-        list_processed_list_key = list(instantiated_objects.keys())
-        if hyperlink_list == list_processed_list_key or all(
-                hyperlink in list_processed_list_key for hyperlink in hyperlink_list):
-            class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
-            object_attributes = values[1]
+
+        if hyperlink_list == list(instantiated_objects.keys()) or all(
+                hyperlink in list(instantiated_objects.keys()) for hyperlink in hyperlink_list):
+
+            class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
             full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
+
             obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
             initial_attributes = self.get_attributes_and_types(obj_class)
 
@@ -234,7 +234,7 @@ class ExcelReader:
                         val_replace = instantiated_objects[self.get_location(val_attr)[0]]
                         value_set[k] = self.update_attribute_values(val_attr, val_replace)
 
-                object_data = self.get_data(value_set, object_attributes, initial_attributes)
+                object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
                 obj = obj_class(**object_data)
                 if not obj.name:
                     obj.name = ""
