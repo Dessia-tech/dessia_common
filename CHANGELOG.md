@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : Variables now have a pretty type to display on frontend
 - WorkflowState: add memory usage monitoring & markdown
 - Workflow : add documentation to workflow when export in .py
+- Workflow : Add Label to variables
 
 ### Changed
 
@@ -126,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.13.5 [09/25/2023]
 
 ### Fix
+
 - add python 3.9 minimum requirement to avoid install issues
 
 ## 0.13.4 [07/31/2023]
