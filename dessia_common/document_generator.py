@@ -31,7 +31,7 @@ class LayoutElement:
         element = getattr(section, type_)
         paragraph = element.add_paragraph()
         paragraph.text = self.text
-        paragraph.alignment = getattr(docx.enum.text.WD_ALIGN_PARAGRAPH, self.align.upper())
+        paragraph.alignment = getattr(docx.enum.text.WD_PARAGRAPH_ALIGNMENT, self.align.upper())
 
     def _add_picture(self, section, type_: str, image_path: str, width: int = None, height: int = None):
         """ Add the header or footer picture to the specified section. """

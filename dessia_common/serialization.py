@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-
+from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
@@ -120,8 +120,7 @@ def serialize(value):
             return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
-            raise dc_err.SerializationError(msg)
+            raise dc_err.SerializationError(f"Element of value '{value}' is not json serializable")
         serialized_value = value
     return serialized_value
 
@@ -135,9 +134,9 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
     if isinstance(value, SerializableObject):
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {REF_MARKER: path_value}, memo
+            return {REF_MARKER: path_to_refs}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
         except TypeError:
@@ -146,18 +145,18 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
         if id_method:
             id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
+            path_to_refs = f"#/_references/{id_}"
+            memo[value] = path_to_refs, serialized, id_, path
             if value._standalone_in_db:
                 id_memo[id_] = serialized
-                serialized = {REF_MARKER: path_value}
+                serialized = {REF_MARKER: path_to_refs}
         else:
             memo[value] = path, serialized, None, path
 
     elif isinstance(value, type):
         # TODO Why do we serialize types with pointers ? These are only just strings.
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
             return {REF_MARKER: memo[value]}, memo
         serialized = serialize_annotation(value)
@@ -165,15 +164,15 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, path_to_value = memo[value]
             id_memo[id_] = serialized_value
-            return {REF_MARKER: path}, memo
+            return {REF_MARKER: path_to_value}, memo
         serialized = value.to_dict()
 
         if id_method:
             id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
+            path_to_refs = f"#/_references/{id_}"
+            memo[value] = path_to_refs, serialized, id_, path
         else:
             memo[value] = path, serialized, None, path
 
@@ -359,7 +358,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         obj = class_(**subobjects)
     else:
         obj = subobjects
-
     return obj
 
 
@@ -463,9 +461,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
         if isinstance(argument, int) and type_ == float:
             # Explicit conversion in this case
             return float(argument)
-        # else ...
-        msg = f"Given built-in type and argument are incompatible: " \
-              f"{type(argument)} and {type_} in {argument}"
+        msg = f"Given built-in type and argument are incompatible: {type(argument)} and {type_} in {argument}"
         raise TypeError(msg)
 
     if type_ is Any:
@@ -478,7 +474,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    if issubclass(type_, Measure):
+        return argument
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):

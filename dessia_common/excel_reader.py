@@ -90,13 +90,17 @@ class ExcelReader:
         init_signature = inspect.signature(obj_class.__init__)
         init_parameters = init_signature.parameters
 
-        attribute_types = {}
+        attribute_info = {}
 
         for attr_name, param in init_parameters.items():
             if attr_name != 'self':
-                attribute_types[attr_name] = param.annotation if param.annotation != param.empty else None
+                attr_info = {
+                    'type': param.annotation if param.annotation != param.empty else None,
+                    'default_value': param.default if param.default != param.empty else None
+                }
+                attribute_info[attr_name] = attr_info
 
-        return attribute_types
+        return attribute_info
 
     @staticmethod
     def get_data(value, attributes, init_attributes):
@@ -111,6 +115,15 @@ class ExcelReader:
         Returns:
         - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
         """
+        if len(attributes) != len(init_attributes.keys()):
+            if len(attributes) > len(init_attributes.keys()):
+                missing_attributes = set(init_attributes.keys()) - set(attributes)
+            else:
+                missing_attributes = set(init_attributes.keys()) - set(attributes)
+            for attr_name in missing_attributes:
+                if init_attributes[attr_name]['default_value'] is None:
+                    raise ValueError(f"missing attribute '{attr_name}' don't have a default value")
+
         object_data = {}
         for i, attribute in enumerate(attributes):
             if attribute in init_attributes:
@@ -136,10 +149,8 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        module_name = values[0][0]
-        class_name = values[0][1]
-        object_attributes = values[1]
-        full_class_name = f"{module_name}.{class_name}"
+        class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
+        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
@@ -151,7 +162,7 @@ class ExcelReader:
                     replaced_value = instantiated_objects[self.get_location(attr_value)[0]]
                     value_set[index] = self.update_attribute_values(attr_value, replaced_value)
 
-            object_data = self.get_data(value_set, object_attributes, initial_attributes)
+            object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
             object_ = obj_class(**object_data)
             if not object_.name:
                 object_.name = ""
@@ -172,11 +183,10 @@ class ExcelReader:
         Returns:
         - dict: Updated dictionary of instantiated objects.
         """
-        module_name = values[0][0]
-        class_name = values[0][1]
+        class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
         object_attributes = values[1]
 
-        full_class_name = f"{module_name}.{class_name}"
+        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
@@ -220,14 +230,13 @@ class ExcelReader:
         """
         hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
                           isinstance(v2, openpyxl.cell.cell.Cell)]
-        list_processed_list_key = list(instantiated_objects.keys())
-        if hyperlink_list == list_processed_list_key or all(
-                hyperlink in list_processed_list_key for hyperlink in hyperlink_list):
-            module_name = values[0][0]
-            class_name = values[0][1]
-            object_attributes = values[1]
 
-            full_class_name = f"{module_name}.{class_name}"
+        if hyperlink_list == list(instantiated_objects.keys()) or all(
+                hyperlink in list(instantiated_objects.keys()) for hyperlink in hyperlink_list):
+
+            class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
+            full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
+
             obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
             initial_attributes = self.get_attributes_and_types(obj_class)
 
@@ -238,7 +247,7 @@ class ExcelReader:
                         val_replace = instantiated_objects[self.get_location(val_attr)[0]]
                         value_set[k] = self.update_attribute_values(val_attr, val_replace)
 
-                object_data = self.get_data(value_set, object_attributes, initial_attributes)
+                object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
                 obj = obj_class(**object_data)
                 if not obj.name:
                     obj.name = ""
@@ -291,7 +300,8 @@ class ExcelReader:
               Each key represents the sheet title, and its value is a list consisting of:
               - Tuple containing module and class names extracted from cells (row=2, column=1) and (row=2, column=2).
               - List of attributes extracted from row 3, starting from column 2.
-              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per attributes.
+              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per
+               attributes.
         """
         extracted_data = {}
 
@@ -347,8 +357,8 @@ class ExcelReader:
                 break
 
             is_cell_instance = any(
-                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for val in
-                 value.values()))
+                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for
+                 val in value.values()))
             if is_cell_instance:
 
                 nb_objects_in_sheet = len(values[2].keys())

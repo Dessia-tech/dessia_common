@@ -72,7 +72,7 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
+    :cvar List[str] _allowed_methods: List of all methods that can be ran from platform.
 
     :param name: Name of object.
     """

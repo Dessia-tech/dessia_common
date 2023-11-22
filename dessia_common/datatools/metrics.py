@@ -218,8 +218,8 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
     Compute the Mahalanobis distance between list_a and list_b.
 
     This method computes distances considering the scale
-    and the data repartition on each dimension (covariance matrix). It is advised to use this method to compute
-    distances in spaces constituted of very different dimensions in terms of scale and data repartition.
+    and the data distribution on each dimension (covariance matrix). It is advised to use this method to compute
+    distances in spaces constituted of very different dimensions in terms of scale and data distribution.
 
     :param list_a: First list
     :type list_a: List[float]
