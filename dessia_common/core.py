@@ -34,6 +34,7 @@ import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
 from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
+from dessia_common.excel_reader import ExcelReader
 
 
 def __getattr__(name):
@@ -294,6 +295,17 @@ class DessiaObject(SerializableObject):
             dict_ = json.load(file)
 
         return cls.dict_to_object(dict_)
+
+    @classmethod
+    def from_xlsx(cls, filepath):
+        """
+        Load object from a xlsx file.
+
+        :param filepath: either a string representing the filepath or a stream
+        """
+        reader = ExcelReader(filepath)
+        main_obj = reader.read_object()
+        return main_obj
 
     def check_list(self, level: str = 'error', check_platform: bool = True) -> dcc.CheckList:
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """

@@ -10,6 +10,30 @@ import openpyxl
 from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
+def missed_attribute(attributes, init_attributes):
+    """
+    Check for missing attributes in a dictionary of current attributes compared to initial attributes.
+
+    Args:
+    - attributes (list or set): The current attributes to be checked.
+    - init_attributes (dict): A dictionary containing initial attributes as keys and their details as values.
+
+    Returns:
+    - tuple: A tuple containing two elements:
+        - A boolean indicating whether all attributes are present or not.
+        - If an attribute is missing with a `None` default value, it returns False along with the missing attribute name.
+    """
+    if len(attributes) != len(init_attributes.keys()):
+        if len(attributes) > len(init_attributes.keys()):
+            missing_attributes = set(init_attributes.keys()) - set(attributes)
+        else:
+            missing_attributes = set(init_attributes.keys()) - set(attributes)
+        for attr_name in missing_attributes:
+            if init_attributes[attr_name]['default_value'] is None:
+                return False, attr_name
+    return True, None
+
+
 class ExcelReader:
     def __init__(self, filepath):
         self.filepath = filepath
@@ -115,14 +139,9 @@ class ExcelReader:
         Returns:
         - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
         """
-        if len(attributes) != len(init_attributes.keys()):
-            if len(attributes) > len(init_attributes.keys()):
-                missing_attributes = set(init_attributes.keys()) - set(attributes)
-            else:
-                missing_attributes = set(init_attributes.keys()) - set(attributes)
-            for attr_name in missing_attributes:
-                if init_attributes[attr_name]['default_value'] is None:
-                    raise ValueError(f"missing attribute '{attr_name}' don't have a default value")
+        check_missed_attribute, attribute = missed_attribute(attributes, init_attributes)
+        if not check_missed_attribute:
+            raise ValueError(f"missing attribute '{attribute}' don't have a default value")
 
         object_data = {}
         for i, attribute in enumerate(attributes):
