@@ -21,7 +21,8 @@ def missed_attribute(attributes, init_attributes):
     Returns:
     - tuple: A tuple containing two elements:
         - A boolean indicating whether all attributes are present or not.
-        - If an attribute is missing with a `None` default value, it returns False along with the missing attribute name.
+        - If an attribute is missing with a `None` default value, it returns False along with the missing attribute
+         name.
     """
     if len(attributes) != len(init_attributes.keys()):
         if len(attributes) > len(init_attributes.keys()):
