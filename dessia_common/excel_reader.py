@@ -35,6 +35,24 @@ def missed_attribute(attributes, init_attributes):
     return True, None
 
 
+def check_duplicate_attributes(attributes):
+    """
+    Check for the presence of duplicate attributes in a list of attribute names.
+
+    Args:
+    - attributes (list): A list containing attribute names to be checked.
+
+    Returns:
+    - str or None: If duplicates are found, returns the first duplicated attribute name; otherwise, returns None.
+    """
+    seen = set()
+    for attribute in attributes:
+        if attribute in seen:
+            return attribute
+        seen.add(attribute)
+    return None
+
+
 class ExcelReader:
     def __init__(self, filepath):
         self.filepath = filepath
@@ -326,8 +344,7 @@ class ExcelReader:
         extracted_data = {}
 
         for sheet in self.workbook.worksheets:
-            sheet_data = []
-            sheet_data.append((sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value))
+            sheet_data = [(sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value)]
 
             attributes = []
             for value in sheet.iter_cols(min_row=3, max_row=3, min_col=2, values_only=True):
@@ -416,6 +433,10 @@ class ExcelReader:
             for value in sheet.iter_cols(min_row=2, max_row=2, min_col=1, values_only=True):
                 attributes.append(value[0])
 
+            duplicate_attribute = check_duplicate_attributes(attributes)
+            if duplicate_attribute:
+                raise ValueError(f"Duplicate attribute '{duplicate_attribute}' detected. Each attribute name should "
+                                 f"be unique.")
             sheet_data.append(attributes)
 
             row_data = {}
