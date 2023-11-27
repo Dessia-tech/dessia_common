@@ -391,6 +391,66 @@ class ExcelReader:
 
         return instantiated_objects[self.main_sheet][0]
 
+    def process_workbook_catalog(self):
+        """
+        Process the workbook's sheets and extract information (Catalog).
+
+        This function iterates through each sheet in the workbook and gathers specific data from each sheet.
+        It collects module and class names along with attributes and associated data.
+
+        Returns:
+        dict: A dictionary containing information extracted from the workbook sheets.
+              Each key represents the sheet title, and its value is a list consisting of:
+              - Tuple containing module and class names extracted from cells (row=1, column=1) and (row=1, column=2).
+              - List of attributes extracted from row 2, starting from column 1.
+              - Dictionary containing row-wise data (starting from row 3, column 1) with column values as per
+               attributes.
+        """
+        extracted_data = {}
+
+        for sheet in self.workbook.worksheets:
+            sheet_data = [(sheet.cell(row=1, column=1).value, sheet.cell(row=1, column=2).value)]
+
+            attributes = []
+            for value in sheet.iter_cols(min_row=2, max_row=2, min_col=1, values_only=True):
+                attributes.append(value[0])
+
+            sheet_data.append(attributes)
+
+            row_data = {}
+            for i, value in enumerate(sheet.iter_rows(min_row=3, min_col=1, values_only=True)):
+                column_values = []
+                for j, _ in enumerate(value):
+                    cell_value = sheet.cell(row=i + 3, column=j + 1)
+                    column_values.append(cell_value.value)
+                row_data[i] = column_values
+
+            sheet_data.append(row_data.copy())
+            extracted_data[sheet.title] = sheet_data
+
+        return extracted_data
+
+    def read_catalog(self):
+        """
+        Read and process data to instantiate objects from the workbook (Catalog).
+
+        This method retrieves cell values from a workbook, processes them, and creates instantiated
+        objects based on the processed data.
+
+        Returns:
+        instantiated_objects (dict): A dictionary containing instantiated objects created from
+        the processed workbook data.
+        """
+        instantiated_objects = {}
+        cell_values = self.process_workbook_catalog()
+        stack = list(cell_values.items())
+
+        while stack:
+            key, values = stack.pop()
+            instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
+
+        return instantiated_objects
+
     def close(self):
         """
         Closes the workbook.
