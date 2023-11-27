@@ -75,8 +75,9 @@ class Variable(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
         default_value = dict_.get("default_value", UNDEFINED)
+        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
         return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
-                   name=dict_["name"], label=dict_["label"], position=tuple(dict_["position"]))
+                   name=dict_["name"], label=label, position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
