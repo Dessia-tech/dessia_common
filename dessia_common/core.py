@@ -297,7 +297,7 @@ class DessiaObject(SerializableObject):
         return cls.dict_to_object(dict_)
 
     @classmethod
-    def from_xlsx(cls, filepath):
+    def from_xlsx(cls, filepath: str):
         """
         Load object from a xlsx file.
 
