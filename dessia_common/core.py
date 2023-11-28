@@ -1316,3 +1316,13 @@ def get_attribute_names(object_class):
     attributes += [attribute for attribute in subclass_numeric_attributes
                    if attribute not in _FORBIDDEN_ARGNAMES]
     return attributes
+
+
+class ObjectTest(DessiaObject):
+
+    def __init__(self, name: str = 'Object test'):
+        DessiaObject.__init__(name=name)
+
+    @classmethod
+    def test_import_step(cls, test_step: dcf.BinaryFile):
+        return cls()
