@@ -113,7 +113,10 @@ class Variable(DessiaObject):
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
-NAME_VARIABLE = Variable(type_=str, name="Result Name")
+RESULT_VARIABLE_NAME = "_result_name_"
+
+
+NAME_VARIABLE = Variable(type_=str, default_value="Workflow Result", name=RESULT_VARIABLE_NAME, label="Result Name")
 
 
 class Block(DessiaObject):
@@ -373,7 +376,7 @@ class Workflow(Block):
         all_nbvs = self.nonblock_variables + self.detached_variables
         while not found_name and i < len(all_nbvs):
             variable = all_nbvs[i]
-            found_name = variable.name == "Result Name"
+            found_name = variable.name == RESULT_VARIABLE_NAME
             i += 1
         if not found_name:
             self.detached_variables.insert(0, NAME_VARIABLE)
@@ -667,7 +670,7 @@ class Workflow(Block):
                     path_value = f"{path}/inputs/{i}"
                     value = deserialize_argument(type_=input_.type_, argument=dict_[i], global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path_value)
-                    if input_.name == "Result Name":
+                    if input_.name == RESULT_VARIABLE_NAME:
                         name = value
                     arguments_values[i] = value
             if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):
