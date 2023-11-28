@@ -1321,7 +1321,7 @@ def get_attribute_names(object_class):
 class ObjectTest(DessiaObject):
 
     def __init__(self, name: str = 'Object test'):
-        DessiaObject.__init__(name=name)
+        DessiaObject.__init__(self, name=name)
 
     @classmethod
     def test_import_step(cls, test_step: dcf.BinaryFile):
