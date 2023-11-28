@@ -1319,7 +1319,7 @@ def get_attribute_names(object_class):
 
 
 class ObjectTest(DessiaObject):
-
+    _standalone_in_db = True
     def __init__(self, name: str = 'Object test'):
         DessiaObject.__init__(self, name=name)
 
