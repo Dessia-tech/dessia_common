@@ -1324,5 +1324,5 @@ class ObjectTest(DessiaObject):
         DessiaObject.__init__(self, name=name)
 
     @classmethod
-    def test_import_step(cls, test_step: dcf.BinaryFile, test_step_2: dcf.BinaryFile = None):
+    def test_import_step(cls, test_step: dcf.BinaryFile, test_step_2: List[dcf.BinaryFile] = None):
         return cls(name='test')
