@@ -116,7 +116,7 @@ class Variable(DessiaObject):
 RESULT_VARIABLE_NAME = "_result_name_"
 
 
-NAME_VARIABLE = Variable(type_=str, default_value="Workflow Result", name=RESULT_VARIABLE_NAME, label="Result Name")
+NAME_VARIABLE = Variable(type_=str, name=RESULT_VARIABLE_NAME, label="Result Name")
 
 
 class Block(DessiaObject):
