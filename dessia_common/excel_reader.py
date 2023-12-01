@@ -30,7 +30,7 @@ def missed_attribute(attributes, init_attributes):
         else:
             missing_attributes = set(init_attributes.keys()) - set(attributes)
         for attr_name in missing_attributes:
-            if init_attributes[attr_name]['default_value'] is None:
+            if init_attributes[attr_name]['default_value'] == "empty":
                 return False, attr_name
     return True, None
 
@@ -139,7 +139,7 @@ class ExcelReader:
             if attr_name != 'self':
                 attr_info = {
                     'type': param.annotation if param.annotation != param.empty else None,
-                    'default_value': param.default if param.default != param.empty else None
+                    'default_value': param.default if param.default != param.empty else "empty"
                 }
                 attribute_info[attr_name] = attr_info
 
