@@ -56,7 +56,7 @@ def check_duplicate_attributes(attributes):
 class ExcelReader:
     def __init__(self, filepath):
         self.filepath = filepath
-        self.workbook = openpyxl.load_workbook(filepath)
+        self.workbook = openpyxl.load_workbook(filepath, data_only=True)
         self.sheet_titles = [sheet.title for sheet in self.workbook.worksheets]
         self.main_sheet = self.workbook.worksheets[0].title
 
