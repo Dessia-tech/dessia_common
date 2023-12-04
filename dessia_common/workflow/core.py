@@ -51,12 +51,13 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
-                 name: str = "", position: Tuple[float, float] = (0, 0)):
+                 name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if self.has_default_value and type_ is None:
             self.type_ = type(default_value)
         else:
             self.type_ = type_
+        self.label = label
         self.position = position
         super().__init__(name)
 
@@ -65,7 +66,7 @@ class Variable(DessiaObject):
         """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
-                      "pretty_type": pretty_annotation(self.type_)})
+                      "pretty_type": pretty_annotation(self.type_), "label": self.label})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
@@ -74,8 +75,9 @@ class Variable(DessiaObject):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
         default_value = dict_.get("default_value", UNDEFINED)
+        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
         return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
-                   name=dict_["name"], position=tuple(dict_["position"]))
+                   name=dict_["name"], label=label, position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
@@ -111,7 +113,10 @@ class Variable(DessiaObject):
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
-NAME_VARIABLE = Variable(type_=str, name="Result Name")
+RESULT_VARIABLE_NAME = "_result_name_"
+
+
+NAME_VARIABLE = Variable(type_=str, name=RESULT_VARIABLE_NAME, label="Result Name")
 
 
 class Block(DessiaObject):
@@ -156,13 +161,6 @@ class Block(DessiaObject):
         except Exception:  # Broad except to avoid error 500 on doc computing
             return FAILED_ATTRIBUTE_PARSING
         return EMPTY_PARSED_ATTRIBUTE
-
-    def input_name(self, input_: Variable):
-        """ Compute input name by concatenating block name in front. """
-        name = input_.name
-        if self.name:
-            name = f"{self.name} - {name}"
-        return prettyname(name)
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
@@ -378,7 +376,7 @@ class Workflow(Block):
         all_nbvs = self.nonblock_variables + self.detached_variables
         while not found_name and i < len(all_nbvs):
             variable = all_nbvs[i]
-            found_name = variable.name == "Result Name"
+            found_name = variable.name == RESULT_VARIABLE_NAME
             i += 1
         if not found_name:
             self.detached_variables.insert(0, NAME_VARIABLE)
@@ -573,17 +571,20 @@ class Workflow(Block):
         attributes = []
         annotations = {}
         for i, input_ in enumerate(self.inputs + self.detached_variables):
-            # input_address = str(self.variable_indices(input_))
             input_address = str(i)
             annotations[input_address] = input_.type_
 
             # Title & Description
             description = EMPTY_PARSED_ATTRIBUTE
-            title = prettyname(input_.name)
+            title = input_.label
+            name = prettyname(input_.name)
             if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
                 block = self.block_from_variable(input_)
                 description = block.parse_input_doc(input_)
-                title = block.input_name(input_)
+                if not title:
+                    title = f"{block.name} - {name}"
+            if input_ in self.nonblock_variables and not title:
+                title = name
 
             # Editable and Default values
             editable = input_ not in self.imposed_variable_values
@@ -596,34 +597,6 @@ class Workflow(Block):
 
         schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
         schemas = {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
-
-        # properties = {}
-        # required = []
-        # for i, input_ in enumerate(self.inputs + self.detached_variables):
-        #     # Default value
-        #     default_ = input_.default_value
-        #     if not input_.has_default_value:
-        #         required.append(str(i))
-        #     schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
-        #
-        #     # Title & Description
-        #     description = None
-        #     title = prettyname(input_.name)
-        #     if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
-        #         block = self.block_from_variable(input_)
-        #         description = block.parse_input_doc(input_)
-        #         title = block.input_name(input_)
-        #     editable = input_ not in self.imposed_variable_values
-        #     properties[str(i)] = schema.to_dict(title=title, editable=editable, description=description)
-
-        # schemas = {}
-        # for method_name in ["run", "start_run"]:
-        #     schemas[method_name] = deepcopy(SCHEMA_HEADER)
-        #     schemas[method_name].update({"required": required, "method": True, "properties": properties,
-        #                                  "python_typing": "dessia_common.typings.MethodType",
-        #                                  "description": self.description,
-        #                                  "classes": "dessia_common.workflow.core.Workflow"})
-        # schemas["start_run"]["required"] = []
         return schemas
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
@@ -697,7 +670,7 @@ class Workflow(Block):
                     path_value = f"{path}/inputs/{i}"
                     value = deserialize_argument(type_=input_.type_, argument=dict_[i], global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path_value)
-                    if input_.name == "Result Name":
+                    if input_.name == RESULT_VARIABLE_NAME:
                         name = value
                     arguments_values[i] = value
             if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):

@@ -46,8 +46,9 @@ scripts = [
 
 for script_name in scripts:
     print(f"\n## Executing script '{script_name}'.")
-    exec(open(script_name).read())
-    print(f"Script '{script_name}' successful.")
+    with open(script_name, "r") as script_file:
+        exec(script_file.read())
+        print(f"Script '{script_name}' successful.")
 
 # This needs to be executed once all "assert-tests" have been run + once all unittests are defined
 if __name__ == "__main__":
