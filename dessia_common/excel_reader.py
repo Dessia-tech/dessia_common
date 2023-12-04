@@ -427,11 +427,10 @@ class ExcelReader:
         extracted_data = {}
 
         for sheet in self.workbook.worksheets:
-            module, class_ = sheet.title.split(".")
-            sheet_data = [(module, class_)]
+            sheet_data = [(sheet.cell(row=1, column=1).value, sheet.cell(row=1, column=2).value)]
 
             attributes = []
-            for value in sheet.iter_cols(min_row=1, max_row=1, min_col=1, values_only=True):
+            for value in sheet.iter_cols(min_row=2, max_row=2, min_col=1, values_only=True):
                 attributes.append(value[0])
 
             duplicate_attribute = check_duplicate_attributes(attributes)
@@ -441,15 +440,15 @@ class ExcelReader:
             sheet_data.append(attributes)
 
             row_data = {}
-            for i, value in enumerate(sheet.iter_rows(min_row=2, min_col=1, values_only=True)):
+            for i, value in enumerate(sheet.iter_rows(min_row=3, min_col=1, values_only=True)):
                 column_values = []
                 for j, _ in enumerate(value):
-                    cell_value = sheet.cell(row=i + 2, column=j + 1)
+                    cell_value = sheet.cell(row=i + 3, column=j + 1)
                     column_values.append(cell_value.value)
                 row_data[i] = column_values
 
             sheet_data.append(row_data.copy())
-            extracted_data[class_] = sheet_data
+            extracted_data[sheet.title] = sheet_data
 
         return extracted_data
 
