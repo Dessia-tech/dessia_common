@@ -9,7 +9,7 @@ import json
 import webbrowser
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_args
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, get_args, get_origin
 from copy import deepcopy
 import warnings
 import networkx as nx
@@ -21,7 +21,7 @@ from dessia_common.core import DessiaObject, is_sequence, JSONSCHEMA_HEADER, jso
     deserialize_argument, set_default_value, DisplaySetting
 
 from dessia_common.utils.types import (serialize_typing, deserialize_typing, recursive_type,
-                                       typematch, is_typing, is_dessia_file)
+                                       typematch, is_typing, is_file_or_file_sequence)
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.docstrings import FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.utils.diff import choose_hash
@@ -121,7 +121,13 @@ class TypedVariable(Variable):
         """ Return whether a variable is of type File given its type_ attribute. """
         if is_typing(self.type_):
             # Handling List[BinaryFile or StringFile]
-            return get_args(self.type_)[0] in [BinaryFile, StringFile]
+            origin = get_origin(self.type_)
+            args = get_args(self.type_)
+            relevant_arg = args[0]
+            if origin is Union and len(args) == 2 and type(None) in args:
+                # Check for Union false Positive (Default value = None)
+                relevant_arg = get_args(relevant_arg)[0]
+            return relevant_arg in [BinaryFile, StringFile]
 
         if not isinstance(self.type_, type):
             return False
@@ -1603,14 +1609,6 @@ class WorkflowState(DessiaObject):
             if self.activated_items[pipe] != other_object.activated_items[other_pipe]:
                 # Check pipe progress state
                 return False
-
-            # Not comparing values, to avoid comparing cleaned values
-            # if self.activated_items[pipe] and pipe in self.values:
-            #     # Not comparing values if ther
-            #     if not is_dessia_file(self.values[pipe]) and not is_dessia_file(other_object.values[other_pipe]):
-            #         if self.values[pipe] != other_object.values[other_pipe]:
-            #             # Check variable values for evaluated ones
-            #             return False
         return True
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#', id_method=True, id_memo=None):
@@ -1658,7 +1656,7 @@ class WorkflowState(DessiaObject):
         # Values
         values = {}
         for pipe, value in self.values.items():
-            if not is_dessia_file(value) and pipe in self.workflow.memorized_pipes:
+            if not is_file_or_file_sequence(value) and pipe in self.workflow.memorized_pipes:
                 pipe_index = self.workflow.pipes.index(pipe)
                 if use_pointers:
                     try:
