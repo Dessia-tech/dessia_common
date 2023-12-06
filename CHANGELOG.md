@@ -101,6 +101,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
+## 0.13.7
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.6
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
 ## 0.13.5 [released 09/25/2023]
 
 ### Fix
