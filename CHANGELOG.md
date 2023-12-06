@@ -108,6 +108,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
 
 
+
+## 0.13.7
+
+### Fix
+
+- Workflow : Ignore Optional File-Like Sequence inputs when serializing WorkflowRun
+
 ## 0.13.6
 
 ### Fix
