@@ -1,4 +1,4 @@
-from dessia_common.schemas.core import BuiltinProperty, MeasureProperty, SchemaAttribute, EMPTY_PARSED_ATTRIBUTE
+from dessia_common.schemas.core import BuiltinProperty, MeasureProperty, SchemaAttribute
 from dessia_common.measures import Distance
 
 import unittest

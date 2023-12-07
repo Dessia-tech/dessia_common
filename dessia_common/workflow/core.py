@@ -7,7 +7,7 @@ import time
 import datetime
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
 import humanize
@@ -18,8 +18,8 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        deserialize_annotation, is_typing, pretty_annotation, UNDEFINED,
-                                        Schema, SchemaAttribute)
+                                        deserialize_annotation, pretty_annotation, UNDEFINED, Schema,
+                                        SchemaAttribute, get_schema)
 
 from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
@@ -84,17 +84,14 @@ class Variable(DessiaObject):
         """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.default_value is not UNDEFINED
 
-    def is_file_type(self) -> bool:
+    @cached_property
+    def is_file_related(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
         if self.type_ is None:
             return False
 
-        if is_typing(self.type_):  # Handling List[BinaryFile or StringFile]
-            return get_args(self.type_)[0] in [BinaryFile, StringFile]
-
-        if not isinstance(self.type_, type):
-            return False
-        return issubclass(self.type_, (StringFile, BinaryFile))
+        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
+        return schema.is_file_related
 
     def copy(self, deep: bool = False, memo=None):
         """
@@ -292,7 +289,7 @@ class Workflow(Block):
     @cached_property
     def file_inputs(self):
         """ Get all inputs that are files. """
-        return [i for i in self.inputs if i.is_file_type()]
+        return [i for i in self.inputs if i.is_file_related]
 
     @cached_property
     def has_file_inputs(self) -> bool:
@@ -1396,7 +1393,7 @@ class WorkflowState(DessiaObject):
             value2 = other_object.input_values.get(index, None)
             if value1 != value2:
                 # Rechecking if input is file, in which case we tolerate different values
-                if not self.workflow.inputs[index].is_file_type():
+                if not self.workflow.inputs[index].is_file_related:
                     return False
 
         for block, other_block in zip(self.workflow.blocks, other_object.workflow.blocks):
