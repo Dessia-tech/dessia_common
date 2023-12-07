@@ -439,6 +439,7 @@ class Property:
 
     @cached_property
     def is_file_related(self) -> bool:
+        """ Wether the property is related to files. Base property never is. """
         return False
 
     @cached_property
@@ -530,6 +531,7 @@ class TypingProperty(Property):
 
     @cached_property
     def is_file_related(self) -> bool:
+        """ Wether the property is related to files. Is related to files if any of its argument is. """
         return any(s.is_file_related for s in self.args_schemas)
 
     @cached_property
@@ -774,6 +776,7 @@ class FileProperty(Property):
 
     @cached_property
     def is_file_related(self) -> bool:
+        """ Wether the property is related to files. Base property always is. """
         return True
 
     @cached_property
