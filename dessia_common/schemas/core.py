@@ -438,6 +438,10 @@ class Property:
         return self
 
     @cached_property
+    def is_file_related(self) -> bool:
+        return False
+
+    @cached_property
     def serialized(self) -> str:
         """ Stringified annotation. """
         if isinstance(self.annotation, type):
@@ -523,6 +527,10 @@ class TypingProperty(Property):
                                            editable=self.attribute.editable)
             schemas.append(get_schema(annotation=arg, attribute=subattribute))
         return schemas
+
+    @cached_property
+    def is_file_related(self) -> bool:
+        return any(s.is_file_related for s in self.args_schemas)
 
     @cached_property
     def serialized(self) -> str:
@@ -639,7 +647,7 @@ class OptionalProperty(ProxyProperty):
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
         """ Deserialize Optional annotation. """
-        raise NotImplementedError("Optional deserialization not implemented yet. ")
+        raise NotImplementedError("Optional property deserialization not implemented yet. ")
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -763,6 +771,10 @@ class FileProperty(Property):
 
     def __init__(self, annotation: Type[File], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
+
+    @cached_property
+    def is_file_related(self) -> bool:
+        return True
 
     @cached_property
     def serialized(self) -> str:
