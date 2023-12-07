@@ -39,6 +39,12 @@ from dessia_common.serialization import deserialize, serialize_with_pointers, se
 from dessia_common.workflow.utils import ToScriptElement
 
 
+def is_file_type(type_):
+    if not isinstance(type_, type):
+        return False
+    return issubclass(type_, (StringFile, BinaryFile))
+
+
 class Variable(DessiaObject):
     """ Variable for workflow. """
 
@@ -126,12 +132,12 @@ class TypedVariable(Variable):
             relevant_arg = args[0]
             if origin is Union and len(args) == 2 and type(None) in args:
                 # Check for Union false Positive (Default value = None)
-                relevant_arg = get_args(relevant_arg)[0]
-            return relevant_arg in [BinaryFile, StringFile]
-
-        if not isinstance(self.type_, type):
-            return False
-        return issubclass(self.type_, (StringFile, BinaryFile))
+                subarg = get_args(relevant_arg)
+                if len(subarg):
+                    # Checking only 1-level depth. Recursive is handled with version >= 0.15.0
+                    relevant_arg = subarg[0]
+            return is_file_type(relevant_arg)
+        return is_file_type(self.type_)
 
 
 class VariableWithDefaultValue(Variable):
