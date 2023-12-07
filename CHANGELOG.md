@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.14.4
+
+### Fix
+
+- Port 0.13.8 patch
+
+
+## 0.14.3
+
+### Fix
+
+- Port 0.13.7 patch
+
 ## 0.14.2
 
 ###  Fix
@@ -101,13 +114,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
-## 0.13.7
+## 0.13.8
 
 ### Fix
 
-- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
-
-
+- Workflow : Fix Optional File-Like Sequence ignoring feature when type is a builtin
 
 ## 0.13.7
 
