@@ -5,16 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
-### Changed
-- package_version is removed from serialization
-- License changed from GPL to Lesser GPL
-- Add rotation speed in measures
+## 0.13.8
 
 ### Fix
-- Workflow name correction: correct the name if it contains an apostrophe.
 
+- Workflow : Fix Optional File-Like Sequence ignoring feature when type is a builtin
 
 ## 0.13.7
 
