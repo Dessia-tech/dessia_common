@@ -767,14 +767,3 @@ class MidLevel(DessiaObject):
         object2 = NotStandalone(attribute=1, name="2")
         bottom_level = BottomLevel([object1, object2])
         return cls(bottom_level=bottom_level, name=name)
-
-
-class ObjectTest(DessiaObject):
-    _standalone_in_db = True
-    
-    def __init__(self, name: str = 'Object test'):
-        DessiaObject.__init__(self, name=name)
-
-    @classmethod
-    def test_import_step(cls, test_step: BinaryFile, test_step_2: List[BinaryFile] = None):
-        return cls(name='test')

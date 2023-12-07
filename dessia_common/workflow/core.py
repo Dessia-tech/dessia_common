@@ -7,7 +7,7 @@ import time
 import datetime
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
 import humanize
@@ -18,8 +18,8 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        deserialize_annotation, is_typing, pretty_annotation, UNDEFINED,
-                                        Schema, SchemaAttribute, get_schema)
+                                        deserialize_annotation, pretty_annotation, UNDEFINED, Schema,
+                                        SchemaAttribute, get_schema)
 
 from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
