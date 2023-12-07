@@ -40,6 +40,7 @@ from dessia_common.workflow.utils import ToScriptElement
 
 
 def is_file_type(type_):
+    """ Whether type_ is related to files. """
     if not isinstance(type_, type):
         return False
     return issubclass(type_, (StringFile, BinaryFile))
