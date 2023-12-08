@@ -4,7 +4,9 @@
 
 import re
 from typing import List, Union
+
 import docx
+from docx.shared import Inches
 
 from dessia_common.files import BinaryFile
 
@@ -53,8 +55,12 @@ class Header(LayoutElement):
         """ Add header to section. """
         super()._add_to_section(section=section, type_='header')
 
-    def add_picture(self, section, image_path: str, width: int = None, height: int = None):
+    def add_picture(self, section, image_path: str, width: float = None, height: float = None):
         """ Add picture for header. """
+        if width:
+            width = Inches(width)
+        if height:
+            height = Inches(height)
         super()._add_picture(section=section, type_='header', image_path=image_path, width=width, height=height)
 
 
@@ -70,8 +76,12 @@ class Footer(LayoutElement):
         """ Add footer to section. """
         super()._add_to_section(section=section, type_='footer')
 
-    def add_picture(self, section, image_path: str, width: int = None, height: int = None):
+    def add_picture(self, section, image_path: str, width: float = None, height: float = None):
         """ Add picture for footer. """
+        if width:
+            width = Inches(width)
+        if height:
+            height = Inches(height)
         super()._add_picture(section=section, type_='footer', image_path=image_path, width=width, height=height)
 
 
@@ -243,8 +253,12 @@ class DocxWriter:
         self.section.add_picture_to_document(document=self.document, image_path=image_path, width=width, height=height)
         return self
 
-    def add_picture(self, image_path: str, width: int = None, height: int = None) -> 'DocxWriter':
+    def add_picture(self, image_path: str, width: float = None, height: float = None) -> 'DocxWriter':
         """ Add an image to the document. """
+        if width:
+            width = Inches(width)
+        if height:
+            height = Inches(height)
         self.document.add_picture(image_path, width=width, height=height)
         return self
 
