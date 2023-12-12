@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.15.0
 
+
 ### Added
 
 - Documentation : Rewrite from scratch
@@ -30,12 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.14.2
 
+
 ###  Fix
 
 - Set right path in pointers for non DessiaObject equal elements
 
 
 ## 0.14.1
+
 
 ### Changed
 
@@ -125,18 +128,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
+## 0.13.7
+
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.6
+
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
 ## 0.13.5 [09/25/2023]
+
 
 ### Fix
 
 - add python 3.9 minimum requirement to avoid install issues
 
+
 ## 0.13.4 [07/31/2023]
+
 
 ### Added
 - Add rotational speed to measures
 
+
 ## 0.13.3 [05/04/2023]
+
 
 ### Changed
 
@@ -149,7 +173,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+
 ## 0.13.2 [03/01/2023]
+
 
 ### Fix
 
@@ -161,7 +187,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Display settings now have load_by_default config option
 
+
 ## 0.13.1
+
 
 ### Fix
 

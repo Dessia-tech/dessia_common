@@ -7,7 +7,7 @@ import time
 import datetime
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args, get_origin
 import warnings
 
 import humanize
@@ -17,15 +17,13 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        deserialize_annotation, pretty_annotation, UNDEFINED, Schema,
-                                        SchemaAttribute, get_schema)
-
-from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
+from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
+                                        serialize_annotation, deserialize_annotation, pretty_annotation,
+                                        UNDEFINED, Schema, SchemaAttribute)
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_typing, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
-
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplaySetting
@@ -34,9 +32,8 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
-from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict, add_references, deserialize_argument
-
+from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
+                                         serialize_dict, add_references, deserialize_argument)
 from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
@@ -87,7 +84,17 @@ class Variable(DessiaObject):
     @cached_property
     def is_file_related(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
-        if self.type_ is None:
+        if is_typing(self.type_):
+            # Handling List[BinaryFile or StringFile]
+            origin = get_origin(self.type_)
+            args = get_args(self.type_)
+            relevant_arg = args[0]
+            if origin is Union and len(args) == 2 and type(None) in args:
+                # Check for Union false Positive (Default value = None)
+                relevant_arg = get_args(relevant_arg)[0]
+            return relevant_arg in [BinaryFile, StringFile]
+
+        if not isinstance(self.type_, type):
             return False
 
         schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
@@ -1462,7 +1469,7 @@ class WorkflowState(DessiaObject):
         # Values
         values = {}
         for pipe, value in self.values.items():
-            if not is_dessia_file(value) and pipe in self.workflow.memorized_pipes:
+            if not is_file_or_file_sequence(value) and pipe in self.workflow.memorized_pipes:
                 pipe_index = self.workflow.pipes.index(pipe)
                 if use_pointers:
                     try:
