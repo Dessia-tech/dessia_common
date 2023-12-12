@@ -2,7 +2,7 @@
 Test for ClusteredDataset in workflow. Test filtering method
 """
 import json
-import pkg_resources
+import importlib_resources
 from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
@@ -13,86 +13,79 @@ from dessia_common.datatools.cluster import ClusteredDataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-stream_file = StringFile.from_stream(csv_cars)
+ref = importlib_resources.files("dessia_common").joinpath("models/data/cars.csv")
+with ref.open('rb') as csv_cars:
+    stream = StringFile.from_stream(csv_cars)
 
-# ===============================================================================================================
-# ClusteredDataset Workflow
-# ===============================================================================================================
+    # ===============================================================================================================
+    # ClusteredDataset Workflow
+    # ===============================================================================================================
 
-block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
-block_2 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Clist')
-block_3 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
-block_4 = ModelMethod(method_type=MethodType(ClusteredDataset, 'filtering'), name='CList.filtering')
-blocks = [block_0, block_1, block_2, block_3, block_4]
+    block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+    block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
+    block_2 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Clist')
+    block_3 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
+    block_4 = ModelMethod(method_type=MethodType(ClusteredDataset, 'filtering'), name='CList.filtering')
+    blocks = [block_0, block_1, block_2, block_3, block_4]
 
-pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
-pipe_1 = Pipe(block_1.outputs[0], block_3.inputs[0])
-pipe_2 = Pipe(block_3.outputs[0], block_4.inputs[0])
-pipe_3 = Pipe(block_2.outputs[0], block_4.inputs[1])
-pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
+    pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
+    pipe_1 = Pipe(block_1.outputs[0], block_3.inputs[0])
+    pipe_2 = Pipe(block_3.outputs[0], block_4.inputs[0])
+    pipe_3 = Pipe(block_2.outputs[0], block_4.inputs[1])
+    pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
 
-workflow = Workflow(blocks, pipes, output=block_4.outputs[0], name='Filters demo Clists')
+    workflow = Workflow(blocks, pipes, output=block_4.outputs[0], name='Filters demo Clists')
 
-# Workflow run
-filters = [DessiaFilter('cylinders', ">", 6), DessiaFilter('displacement', ">", 0.3)]
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_2.inputs[0]): filters,
-    workflow.index(block_2.inputs[1]): 'and',
-    workflow.index(block_3.inputs[1]): 10})
+    # Workflow run
+    filters = [DessiaFilter('cylinders', ">", 6), DessiaFilter('displacement', ">", 0.3)]
+    workflow_run = workflow.run({workflow.input_index(block_0.inputs[0]): stream,
+                                 workflow.input_index(block_2.inputs[0]): filters,
+                                 workflow.input_index(block_2.inputs[1]): 'and',
+                                 workflow.input_index(block_3.inputs[1]): 10})
 
-# Workflow tests
-workflow._check_platform()
-wfrun_plot_data = workflow_run.output_value.plot_data()
-# assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0, "Cluster Label')
-# assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == ', "cylinders": 8.0, "displacement": 0.35, "horsepo')
-# assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
+    # Workflow tests
+    workflow._check_platform()
+    wfrun_plot_data = workflow_run.output_value.plot_data()
 
-# JSON TESTS
-output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
-output_json = json.dumps(output_dict)
-output_json_to_dict = json.loads(output_json)
-output_jsondict_to_object_1 = ClusteredDataset.dict_to_object(output_json_to_dict)
+    # JSON TESTS
+    output_dict = workflow_run.output_value[[0, 3, 10, 15, 30, -1]].to_dict(use_pointers=True)
+    output_json = json.dumps(output_dict)
+    output_json_to_dict = json.loads(output_json)
+    output_jsondict_to_object_1 = ClusteredDataset.dict_to_object(output_json_to_dict)
 
-# ===============================================================================================================
-# ClusteredDataset Big Workflow
-# ===============================================================================================================
+    # ===============================================================================================================
+    # ClusteredDataset Big Workflow
+    # ===============================================================================================================
 
-block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
-block_2 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
-block_3 = ModelMethod(method_type=MethodType(ClusteredDataset, 'clustered_sublists'), name='Sublists')
-block_4 = Unpacker(indices=[3, 8, 9], name='Unpack_3_8_9')
-block_5 = Concatenate(number_arguments=3, name='Concatenate')
-block_6 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_dbscan'), name='DBSCAN')
-blocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6]
+    block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+    block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
+    block_2 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_agglomerative_clustering'), name='Clustering')
+    block_3 = ModelMethod(method_type=MethodType(ClusteredDataset, 'clustered_sublists'), name='Sublists')
+    block_4 = Unpacker(indices=[3, 8, 9], name='Unpack_3_8_9')
+    block_5 = Concatenate(number_arguments=3, name='Concatenate')
+    block_6 = ClassMethod(method_type=ClassMethodType(ClusteredDataset, 'from_dbscan'), name='DBSCAN')
+    blocks = [block_0, block_1, block_2, block_3, block_4, block_5, block_6]
 
-pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
-pipe_1 = Pipe(block_1.outputs[0], block_2.inputs[0])
-pipe_2 = Pipe(block_2.outputs[0], block_3.inputs[0])
-pipe_3 = Pipe(block_3.outputs[0], block_4.inputs[0])
-pipe_4 = Pipe(block_4.outputs[0], block_5.inputs[0])
-pipe_5 = Pipe(block_4.outputs[1], block_5.inputs[1])
-pipe_6 = Pipe(block_4.outputs[2], block_5.inputs[2])
-pipe_7 = Pipe(block_5.outputs[0], block_6.inputs[0])
-pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7]
+    pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
+    pipe_1 = Pipe(block_1.outputs[0], block_2.inputs[0])
+    pipe_2 = Pipe(block_2.outputs[0], block_3.inputs[0])
+    pipe_3 = Pipe(block_3.outputs[0], block_4.inputs[0])
+    pipe_4 = Pipe(block_4.outputs[0], block_5.inputs[0])
+    pipe_5 = Pipe(block_4.outputs[1], block_5.inputs[1])
+    pipe_6 = Pipe(block_4.outputs[2], block_5.inputs[2])
+    pipe_7 = Pipe(block_5.outputs[0], block_6.inputs[0])
+    pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7]
 
-workflow = Workflow(blocks, pipes, output=block_6.outputs[0], name='SubClist + Concatenate')
+    workflow = Workflow(blocks, pipes, output=block_6.outputs[0], name='SubClist + Concatenate')
 
-# Workflow run
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_2.inputs[1]): 10,
-    workflow.index(block_6.inputs[1]): 40})
+    # Workflow run
+    workflow_run = workflow.run({workflow.input_index(block_0.inputs[0]): stream,
+                                 workflow.input_index(block_2.inputs[1]): 10,
+                                 workflow.input_index(block_6.inputs[1]): 40})
 
 # Workflow tests
 workflow._check_platform()
 wfrun_plot_data = workflow_run.output_value.plot_data()
-# assert(json.dumps(wfrun_plot_data[0].to_dict())[150:200] == 'cceleration": 20.5, "model": 70.0, "Cluster Label"')
-# assert(json.dumps(wfrun_plot_data[1].to_dict())[10500:10550] == '8.0, "displacement": 0.35, "horsepower": 155.0, "w')
-# assert(json.dumps(wfrun_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
 
 # JSON TESTS
 output_dict = workflow_run.output_value[[0, 3, 5, 2, 12, -1]].to_dict(use_pointers=True)
