@@ -1,6 +1,6 @@
 """ Script for workflow with exports creationZ. """
 
-from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
+from dessia_common.workflow.core import Variable, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
     Export, Unpacker, Archive, MultiPlot
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
@@ -44,7 +44,7 @@ export_xlsx = Export(method_type=xlsx_method, text=False, filename="export_xlsx"
 
 zip_export = Archive(number_exports=2, name="Zip")
 
-int_variable = TypedVariable(type_=int, name="Some Integer")
+int_variable = Variable(type_=int, name="Some Integer")
 
 pipe_int_1 = Pipe(input_variable=int_variable, output_variable=inst.inputs[1])
 pipe_1 = Pipe(input_variable=inst.outputs[0], output_variable=gene.inputs[0])

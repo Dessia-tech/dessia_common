@@ -13,8 +13,6 @@ workflow_run = workflow_.run(input_values=input_values, verbose=True, name="Dev 
 
 
 class TestWorkflowFeatures(unittest.TestCase):
-    def setUp(self) -> None:
-        pass
 
     @parameterized.expand([
         (workflow_,),

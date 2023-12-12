@@ -8,7 +8,7 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-
+from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
@@ -48,7 +48,7 @@ class SerializableObject(CoreDessiaObject):
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
-                id_method=True, id_memo=None) -> JsonSerializable:
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Generic to_dict method. """
         if memo is None:
             memo = {}
@@ -65,15 +65,12 @@ class SerializableObject(CoreDessiaObject):
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            return dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, **kwargs)
         if cls is not SerializableObject:
-            return dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                  pointers_memo=pointers_memo, path=path)
+            return dict_to_object(dict_=dict_, class_=cls, **kwargs)
         raise NotImplementedError("No object_class in dict")
 
     @property
@@ -123,8 +120,7 @@ def serialize(value):
             return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
-            raise dc_err.SerializationError(msg)
+            raise dc_err.SerializationError(f"Element of value '{value}' is not json serializable")
         serialized_value = value
     return serialized_value
 
@@ -362,7 +358,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         obj = class_(**subobjects)
     else:
         obj = subobjects
-
     return obj
 
 
@@ -466,9 +461,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
         if isinstance(argument, int) and type_ == float:
             # Explicit conversion in this case
             return float(argument)
-        # else ...
-        msg = f"Given built-in type and argument are incompatible: " \
-              f"{type(argument)} and {type_} in {argument}"
+        msg = f"Given built-in type and argument are incompatible: {type(argument)} and {type_} in {argument}"
         raise TypeError(msg)
 
     if type_ is Any:
@@ -481,7 +474,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    if issubclass(type_, Measure):
+        return argument
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):

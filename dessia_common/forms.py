@@ -99,7 +99,8 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     def voldmlr_primitives(self):
         """ Volmdlr primitives of the squared contour. """
         contour = self.contour()
-        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volumes = [p3d.ExtrudedProfile(frame, contour, [], 1)]
         return volumes
 
 
@@ -350,8 +351,8 @@ class StandaloneObject(MovingObject):
         """ Volmdlr primitives of a cube. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
-        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
-                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         return [subcube, cube]
 
     def volmdlr_primitives_step_frames(self):
@@ -371,8 +372,8 @@ class StandaloneObject(MovingObject):
         """ Volmdlr primitives of 'cubes'. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
-        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
-                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         primitives = [subcube, cube]
         return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
@@ -434,7 +435,7 @@ class StandaloneObject(MovingObject):
         return computation
 
     @markdown_view(selector="Markdown", load_by_default=True)
-    def to_markdown(self):
+    def to_markdown(self, *args, **kwargs):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
         # Quem Stygios dumque
@@ -643,8 +644,8 @@ class MovingStandaloneObject(MovingObject):
     def volmdlr_primitives(self, **kwargs):
         """ A cube. """
         contour = self.contour()
-        volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
-                                     inner_contours2d=[], extrusion_vector=vm.Y3D)
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volume = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         return [volume]
 
     def volmdlr_primitives_step_frames(self):
