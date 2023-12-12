@@ -67,7 +67,7 @@ class Dataset(DessiaObject):
             >>> Dataset(all_cars_wi_feat)[0:2]
             returns Dataset(all_cars_wi_feat[0:2])
             >>> Dataset(all_cars_wi_feat)[[0,5,6]]
-            returns Dataset([all_cars_wi_feat[idx] for idx in [0,5,6]])
+            returns Dataset([all_cars_wi_feat[i] for i in [0,5,6]])
             >>> booleans_list = [True, False,..., True] of length len(all_cars_wi_feat)
             >>> Dataset(all_cars_wi_feat)[booleans_list]
             returns Dataset([car for car, boolean in zip(all_cars_wi_feat, booleans_list) if boolean])
@@ -96,7 +96,7 @@ class Dataset(DessiaObject):
 
     def __getitem__(self, key: Any):
         """
-        Custom getitem for Dataset.
+        Custom Dataset function to get item.
 
         In addition to work as numpy.arrays of dimension `(n,)`, allows to pick a sub-Dataset from a list of indexes.
         """
@@ -599,7 +599,7 @@ class Dataset(DessiaObject):
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
-        More informations: https://en.wikipedia.org/wiki/Singular_value_decomposition
+        More information: https://en.wikipedia.org/wiki/Singular_value_decomposition
 
         :return:
             **normalized_singular_values**: list of normalized singular values
@@ -630,7 +630,7 @@ class Dataset(DessiaObject):
             # correlation_matrix = []
             # Dimensionality plot
             dimensionality_plot = self._plot_dimensionality()
-            # Scattermatrix
+            # Scatter Matrix
             scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
@@ -655,7 +655,6 @@ class Dataset(DessiaObject):
         return scatter_matrix
 
     def _histogram_unic_value(self, idx_col: int, name_attr: str):
-        # unic_values = set((getattr(dobject, line) for dobject in self.dessia_objects))
         unic_values = set((row_matrix[idx_col] for row_matrix in self.matrix))
         if len(unic_values) == 1:  # TODO (plot_data linspace axis between two same values)
             plot_obj = Scatter(x_variable=name_attr, y_variable=name_attr)
@@ -677,7 +676,7 @@ class Dataset(DessiaObject):
                 for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
-        return [PointFamily(BLUE, list(range(len(self))))]
+        return [PointFamily(GREY, list(range(len(self))))]
 
     def _parallel_plot(self, data_list: List[Dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
@@ -869,7 +868,7 @@ class Dataset(DessiaObject):
 
     def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
         """
-        Get successive Pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+        Get successive Pareto sheets (i.e. optimal points in a DOE for already computed costs).
 
         :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
         :type costs_attributes: List[str]
