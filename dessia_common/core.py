@@ -652,7 +652,7 @@ class PhysicalObject(DessiaObject):
         """
         if not filepath.endswith('.step'):
             filepath += '.step'
-        with open(filepath, 'w') as file:
+        with open(filepath, 'w', encoding='utf-8') as file:
             self.to_step_stream(stream=file)
 
     def to_step_stream(self, stream):
