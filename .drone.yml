@@ -77,7 +77,7 @@ steps:
   image: python:3.9
   commands:
   - git fetch --tags
-  - python setup.py install
+  - pip install .
   - pip install sphinx sphinx-rtd-theme coverage volmdlr==0.12.0 nbformat nbconvert
   - pip install plot_data --no-cache-dir
   - pip show coverage
@@ -130,7 +130,6 @@ steps:
 
 - name: upload to pypi
   image: plugins/pypi
-  failure: ignore
   when:
       event: tag
   settings:
