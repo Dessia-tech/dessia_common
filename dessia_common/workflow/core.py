@@ -7,7 +7,7 @@ import time
 import datetime
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args, get_origin
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
 import humanize
@@ -20,7 +20,7 @@ from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
                                         serialize_annotation, deserialize_annotation, pretty_annotation,
                                         UNDEFINED, Schema, SchemaAttribute)
-from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_typing, is_file_or_file_sequence
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
