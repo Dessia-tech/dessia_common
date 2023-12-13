@@ -130,6 +130,7 @@ steps:
 
 - name: upload to pypi
   image: plugins/pypi
+  failure: ignore
   when:
       event: tag
   settings:
