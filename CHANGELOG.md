@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Build
 
 - Drone : Use pip install instead of setup.py install
+- Drone : Remove non-working try on failure ignore
 
 
 ## 0.15.1
