@@ -84,19 +84,6 @@ class Variable(DessiaObject):
     @cached_property
     def is_file_related(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
-        if is_typing(self.type_):
-            # Handling List[BinaryFile or StringFile]
-            origin = get_origin(self.type_)
-            args = get_args(self.type_)
-            relevant_arg = args[0]
-            if origin is Union and len(args) == 2 and type(None) in args:
-                # Check for Union false Positive (Default value = None)
-                relevant_arg = get_args(relevant_arg)[0]
-            return relevant_arg in [BinaryFile, StringFile]
-
-        if not isinstance(self.type_, type):
-            return False
-
         schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
         return schema.is_file_related
 
