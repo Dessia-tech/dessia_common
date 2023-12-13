@@ -676,13 +676,17 @@ class PhysicalObject(DessiaObject):
         """ Export Object CAD to given stream as STL. """
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
-    def to_stl(self, filepath):
+    def to_stl(self, filepath: str):
         """
         Exports the CAD of the object to STL. Works if the class define a custom volmdlr model.
 
         :param filepath: a str representing a filepath
         """
-        return self.volmdlr_volume_model().to_stl(filepath=filepath)
+        if not filepath.endswith('.stl'):
+            filepath += '.stl'
+
+        with open(filepath, 'wb', encoding='utf-8') as file:
+            self.to_stl_stream(stream=file)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
