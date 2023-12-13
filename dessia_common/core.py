@@ -650,7 +650,10 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
-        return self.volmdlr_volume_model().to_step(filepath=filepath)
+        if not filepath.endswith('.step'):
+            filepath += '.step'
+        with open(filepath, 'w') as f:
+            self.to_step_stream(stream=f)
 
     def to_step_stream(self, stream):
         """
