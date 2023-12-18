@@ -69,9 +69,10 @@ class Variable(DessiaObject):
         return dict_
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'Variable':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
+        global_dict = dict_.get("global_dict", {})
+        pointers_memo = dict_.get("pointers_memo", {})
         type_ = dict_.get("type_", None)
         default_value = dict_.get("default_value", UNDEFINED)
         default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
