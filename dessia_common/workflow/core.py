@@ -128,7 +128,7 @@ class VariableWithDefaultValue(Variable):
         Variable.__init__(self, default_value=default_value, name=name, position=position)
 
 
-class TypedVariableWithDefaultValue(TypedVariable):
+class TypedVariableWithDefaultValue(Variable):
     """ Backward compatibility for <0.15.0. Should not be used anymore. """
 
     def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
