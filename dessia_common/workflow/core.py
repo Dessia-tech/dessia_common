@@ -71,10 +71,14 @@ class Variable(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
+        global_dict = dict_.get("global_dict", {})
+        pointers_memo = dict_.get("pointers_memo", {})
+        type_ = dict_.get("type_", None)
         default_value = dict_.get("default_value", UNDEFINED)
+        default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
         label = dict_.get("label", "")  # Backward compatibility < 0.15.0
-        return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
-                   name=dict_["name"], label=label, position=tuple(dict_["position"]))
+        return Variable(type_=deserialize_annotation(type_), default_value=default_value,
+                        name=dict_["name"], label=label, position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
@@ -102,6 +106,35 @@ class Variable(DessiaObject):
         else:
             copied_default_value = UNDEFINED
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
+
+
+class TypedVariable(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    def __init__(self, type_: Type[T], name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'TypedVariable' has been deprecated since 0.15.0 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        super().__init__(type_=type_, position=position, name=name)
+
+
+class VariableWithDefaultValue(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    has_default_value: bool = True
+
+    def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'VariableWithDefaultValue' has been deprecated since 0.15.5 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        Variable.__init__(self, default_value=default_value, name=name, position=position)
+
+
+class TypedVariableWithDefaultValue(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'TypedVariableWithDefaultValue' has been deprecated since 0.15.0 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        Variable.__init__(self, type_=type_, default_value=default_value, name=name, position=position)
 
 
 RESULT_VARIABLE_NAME = "_result_name_"
