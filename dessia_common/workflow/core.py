@@ -7,7 +7,7 @@ import time
 import datetime
 from functools import cached_property
 import io
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, get_args
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
 import humanize
@@ -17,15 +17,13 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
-from dessia_common.schemas.core import (FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, serialize_annotation,
-                                        deserialize_annotation, is_typing, pretty_annotation, UNDEFINED,
-                                        Schema, SchemaAttribute)
-
-from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_dessia_file
+from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
+                                        serialize_annotation, deserialize_annotation, pretty_annotation,
+                                        UNDEFINED, Schema, SchemaAttribute)
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
-
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplaySetting
@@ -34,9 +32,8 @@ from dessia_common.errors import SerializationError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
-from dessia_common.serialization import deserialize, serialize_with_pointers, serialize, update_pointers_data, \
-    serialize_dict, add_references, deserialize_argument
-
+from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
+                                         serialize_dict, add_references, deserialize_argument)
 from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
@@ -51,12 +48,13 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
-                 name: str = "", position: Tuple[float, float] = (0, 0)):
+                 name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if self.has_default_value and type_ is None:
             self.type_ = type(default_value)
         else:
             self.type_ = type_
+        self.label = label
         self.position = position
         super().__init__(name)
 
@@ -65,7 +63,7 @@ class Variable(DessiaObject):
         """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
-                      "pretty_type": pretty_annotation(self.type_)})
+                      "pretty_type": pretty_annotation(self.type_), "label": self.label})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
@@ -73,26 +71,25 @@ class Variable(DessiaObject):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
         """ Customize serialization method in order to handle undefined default value. """
+        global_dict = dict_.get("global_dict", {})
+        pointers_memo = dict_.get("pointers_memo", {})
+        type_ = dict_.get("type_", None)
         default_value = dict_.get("default_value", UNDEFINED)
-        return cls(type_=deserialize_annotation(dict_["type_"]), default_value=default_value,
-                   name=dict_["name"], position=tuple(dict_["position"]))
+        default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
+        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
+        return Variable(type_=deserialize_annotation(type_), default_value=default_value,
+                        name=dict_["name"], label=label, position=tuple(dict_["position"]))
 
     @property
     def has_default_value(self):
         """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.default_value is not UNDEFINED
 
-    def is_file_type(self) -> bool:
+    @cached_property
+    def is_file_related(self) -> bool:
         """ Return whether a variable is of type File given its type_ attribute. """
-        if self.type_ is None:
-            return False
-
-        if is_typing(self.type_):  # Handling List[BinaryFile or StringFile]
-            return get_args(self.type_)[0] in [BinaryFile, StringFile]
-
-        if not isinstance(self.type_, type):
-            return False
-        return issubclass(self.type_, (StringFile, BinaryFile))
+        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
+        return schema.is_file_related
 
     def copy(self, deep: bool = False, memo=None):
         """
@@ -111,7 +108,39 @@ class Variable(DessiaObject):
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
 
 
-NAME_VARIABLE = Variable(type_=str, name="Result Name")
+class TypedVariable(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    def __init__(self, type_: Type[T], name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'TypedVariable' has been deprecated since 0.15.0 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        super().__init__(type_=type_, position=position, name=name)
+
+
+class VariableWithDefaultValue(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    has_default_value: bool = True
+
+    def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'VariableWithDefaultValue' has been deprecated since 0.15.5 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        Variable.__init__(self, default_value=default_value, name=name, position=position)
+
+
+class TypedVariableWithDefaultValue(Variable):
+    """ Backward compatibility for <0.15.0. Should not be used anymore. """
+
+    def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
+        warnings.warn("'TypedVariableWithDefaultValue' has been deprecated since 0.15.0 and should not be used anymore."
+                      "\nConsider using 'Variable', instead", DeprecationWarning)
+        Variable.__init__(self, type_=type_, default_value=default_value, name=name, position=position)
+
+
+RESULT_VARIABLE_NAME = "_result_name_"
+
+
+NAME_VARIABLE = Variable(type_=str, name=RESULT_VARIABLE_NAME, label="Result Name")
 
 
 class Block(DessiaObject):
@@ -156,13 +185,6 @@ class Block(DessiaObject):
         except Exception:  # Broad except to avoid error 500 on doc computing
             return FAILED_ATTRIBUTE_PARSING
         return EMPTY_PARSED_ATTRIBUTE
-
-    def input_name(self, input_: Variable):
-        """ Compute input name by concatenating block name in front. """
-        name = input_.name
-        if self.name:
-            name = f"{self.name} - {name}"
-        return prettyname(name)
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
@@ -294,7 +316,7 @@ class Workflow(Block):
     @cached_property
     def file_inputs(self):
         """ Get all inputs that are files. """
-        return [i for i in self.inputs if i.is_file_type()]
+        return [i for i in self.inputs if i.is_file_related]
 
     @cached_property
     def has_file_inputs(self) -> bool:
@@ -378,7 +400,7 @@ class Workflow(Block):
         all_nbvs = self.nonblock_variables + self.detached_variables
         while not found_name and i < len(all_nbvs):
             variable = all_nbvs[i]
-            found_name = variable.name == "Result Name"
+            found_name = variable.name == RESULT_VARIABLE_NAME
             i += 1
         if not found_name:
             self.detached_variables.insert(0, NAME_VARIABLE)
@@ -573,17 +595,20 @@ class Workflow(Block):
         attributes = []
         annotations = {}
         for i, input_ in enumerate(self.inputs + self.detached_variables):
-            # input_address = str(self.variable_indices(input_))
             input_address = str(i)
             annotations[input_address] = input_.type_
 
             # Title & Description
             description = EMPTY_PARSED_ATTRIBUTE
-            title = prettyname(input_.name)
+            title = input_.label
+            name = prettyname(input_.name)
             if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
                 block = self.block_from_variable(input_)
                 description = block.parse_input_doc(input_)
-                title = block.input_name(input_)
+                if not title:
+                    title = f"{block.name} - {name}"
+            if input_ in self.nonblock_variables and not title:
+                title = name
 
             # Editable and Default values
             editable = input_ not in self.imposed_variable_values
@@ -596,34 +621,6 @@ class Workflow(Block):
 
         schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
         schemas = {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
-
-        # properties = {}
-        # required = []
-        # for i, input_ in enumerate(self.inputs + self.detached_variables):
-        #     # Default value
-        #     default_ = input_.default_value
-        #     if not input_.has_default_value:
-        #         required.append(str(i))
-        #     schema = get_schema(annotation=input_.type_, attribute=str(i), definition_default=default_)
-        #
-        #     # Title & Description
-        #     description = None
-        #     title = prettyname(input_.name)
-        #     if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
-        #         block = self.block_from_variable(input_)
-        #         description = block.parse_input_doc(input_)
-        #         title = block.input_name(input_)
-        #     editable = input_ not in self.imposed_variable_values
-        #     properties[str(i)] = schema.to_dict(title=title, editable=editable, description=description)
-
-        # schemas = {}
-        # for method_name in ["run", "start_run"]:
-        #     schemas[method_name] = deepcopy(SCHEMA_HEADER)
-        #     schemas[method_name].update({"required": required, "method": True, "properties": properties,
-        #                                  "python_typing": "dessia_common.typings.MethodType",
-        #                                  "description": self.description,
-        #                                  "classes": "dessia_common.workflow.core.Workflow"})
-        # schemas["start_run"]["required"] = []
         return schemas
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
@@ -697,7 +694,7 @@ class Workflow(Block):
                     path_value = f"{path}/inputs/{i}"
                     value = deserialize_argument(type_=input_.type_, argument=dict_[i], global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path_value)
-                    if input_.name == "Result Name":
+                    if input_.name == RESULT_VARIABLE_NAME:
                         name = value
                     arguments_values[i] = value
             if name is None and len(self.inputs) in dict_ and isinstance(dict_[len(self.inputs)], str):
@@ -1423,7 +1420,7 @@ class WorkflowState(DessiaObject):
             value2 = other_object.input_values.get(index, None)
             if value1 != value2:
                 # Rechecking if input is file, in which case we tolerate different values
-                if not self.workflow.inputs[index].is_file_type():
+                if not self.workflow.inputs[index].is_file_related:
                     return False
 
         for block, other_block in zip(self.workflow.blocks, other_object.workflow.blocks):
@@ -1492,7 +1489,7 @@ class WorkflowState(DessiaObject):
         # Values
         values = {}
         for pipe, value in self.values.items():
-            if not is_dessia_file(value) and pipe in self.workflow.memorized_pipes:
+            if not is_file_or_file_sequence(value) and pipe in self.workflow.memorized_pipes:
                 pipe_index = self.workflow.pipes.index(pipe)
                 if use_pointers:
                     try:
