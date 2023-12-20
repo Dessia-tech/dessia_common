@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- PhysicalObject: Pool to_stem and to_step_stream
 - Workflow : Block input and output names have been enhanced
 - Workflow : Inputs now have entries for Imposed Variable Values
 
