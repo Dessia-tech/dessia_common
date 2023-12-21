@@ -2,7 +2,7 @@
 Tests on filtering methods with block filter and Dataset.filtering
 """
 import json
-import pkg_resources
+import importlib_resources
 from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
@@ -12,36 +12,37 @@ from dessia_common.datatools.dataset import Dataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-stream_file = StringFile.from_stream(csv_cars)
+ref = importlib_resources.files("dessia_common").joinpath("models/data/cars.csv")
+with ref.open('rb') as csv_cars:
+    stream = StringFile.from_stream(csv_cars)
 
-# =============================================================================================================
-# Filters Workflow
-# =============================================================================================================
+    # =============================================================================================================
+    # Filters Workflow
+    # =============================================================================================================
 
-block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
-block_2 = ModelMethod(method_type=MethodType(Dataset, 'filtering'), name='Filters HList')
-block_3 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Hlist')
-block_4 = Filter(filters=[DessiaFilter(attribute='weight', comparison_operator='<=', bound=4000, name='weight'),
-                          DessiaFilter(attribute='mpg', comparison_operator='>=', bound=25, name='mpg')],
-                 logical_operator='xor', name='Filters on W or MPG')
-blocks = [block_0, block_1, block_2, block_3, block_4]
+    block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+    block_1 = InstantiateModel(model_class=Dataset, name='HList Cars')
+    block_2 = ModelMethod(method_type=MethodType(Dataset, 'filtering'), name='Filters HList')
+    block_3 = ClassMethod(method_type=ClassMethodType(FiltersList, 'from_filters_list'), name='Filters Hlist')
+    block_4 = Filter(filters=[DessiaFilter(attribute='weight', comparison_operator='<=', bound=4000, name='weight'),
+                              DessiaFilter(attribute='mpg', comparison_operator='>=', bound=25, name='mpg')],
+                     logical_operator='xor', name='Filters on W or MPG')
+    blocks = [block_0, block_1, block_2, block_3, block_4]
 
-pipe_0 = Pipe(block_1.outputs[0], block_2.inputs[0])
-pipe_1 = Pipe(block_3.outputs[0], block_2.inputs[1])
-pipe_2 = Pipe(block_0.outputs[0], block_4.inputs[0])
-pipe_3 = Pipe(block_4.outputs[0], block_1.inputs[0])
-pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
+    pipe_0 = Pipe(block_1.outputs[0], block_2.inputs[0])
+    pipe_1 = Pipe(block_3.outputs[0], block_2.inputs[1])
+    pipe_2 = Pipe(block_0.outputs[0], block_4.inputs[0])
+    pipe_3 = Pipe(block_4.outputs[0], block_1.inputs[0])
+    pipes = [pipe_0, pipe_1, pipe_2, pipe_3]
 
-workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Filters demo')
+    workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Filters demo')
 
-# Workflow run
-filters = [DessiaFilter('cylinders', ">", 4), DessiaFilter('displacement', ">", 0.25)]
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_3.inputs[0]): filters,
-    workflow.index(block_3.inputs[1]): 'and'})
+    # Workflow run
+    filters = [DessiaFilter('cylinders', ">", 4), DessiaFilter('displacement', ">", 0.25)]
+    workflow_run = workflow.run({
+        workflow.index(block_0.inputs[0]): stream,
+        workflow.index(block_3.inputs[0]): filters,
+        workflow.index(block_3.inputs[1]): 'and'})
 
 # Workflow tests
 workflow._check_platform()
