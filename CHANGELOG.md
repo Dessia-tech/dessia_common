@@ -5,16 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.15.3
+
+### Fix
+
+- Workflow : Add backward compatibility for variables
+
+
+
+## 0.15.2
+
+
+### Build
+
+- Drone : Use pip install instead of setup.py install
+- Drone : Remove non-working try on failure ignore
+
+
+## 0.15.1
+
+### Removed
+
+- Workflow : remove useless code
+
+### Build
+
+- Drone : Try to ignore pypi upload failure
+
 
 ## 0.15.0
+
 
 ### Added
 
 - Documentation : Rewrite from scratch
-- forms : Update with last volmdlr
+- Forms : Update with last volmdlr
 - Workflow : Variables now have a pretty type to display on frontend
-- WorkflowState: add memory usage monitoring & markdown
 - Workflow : add documentation to workflow when export in .py
+- Workflow : Add Label to variables
+- WorkflowState : add memory usage monitoring & markdown
+- Schemas : Property file relevance. Replace 0.13.7 hot with this
 
 ### Changed
 
@@ -33,12 +63,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.14.2
 
+
 ###  Fix
 
 - Set right path in pointers for non DessiaObject equal elements
 
 
 ## 0.14.1
+
 
 ### Changed
 
@@ -128,17 +160,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI : Upload coverage is now optional
 
 
-## 0.13.5 [09/25/2023]
+## 0.13.7
+
 
 ### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.6
+
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.5 [09/25/2023]
+
+
+### Fix
+
 - add python 3.9 minimum requirement to avoid install issues
 
+
 ## 0.13.4 [07/31/2023]
+
 
 ### Added
 - Add rotational speed to measures
 
+
 ## 0.13.3 [05/04/2023]
+
 
 ### Changed
 
@@ -151,7 +205,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 - Workflow name correction: correct the name if it contains an apostrophe.
 
+
 ## 0.13.2 [03/01/2023]
+
 
 ### Fix
 
@@ -163,7 +219,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Display settings now have load_by_default config option
 
+
 ## 0.13.1
+
 
 ### Fix
 
