@@ -4,20 +4,17 @@ import copy
 import warnings
 from dessia_common.abstract import CoreDessiaObject
 import dessia_common.files
-from dessia_common.utils.types import is_sequence, is_typing
+from dessia_common.utils.types import is_sequence
+from dessia_common.schemas.core import is_typing
 
 
 def deepcopy_value(value, memo):
     """
-    Returns the deep copy of a value.
+    Returns the deep-copy of a value.
 
-    :param value:
-        The value to be deep copied
-
-    :param memo:
-        A dictionary linking a path to an object
-
-    :return: A deep copy of the value
+    :param value: The value to be deep-copied
+    :param memo: A dictionary linking a path to an object
+    :return: A deep-copy of the value
     """
     if isinstance(value, type) or is_typing(value):  # For class
         return value
@@ -29,8 +26,7 @@ def deepcopy_value(value, memo):
     if value is None:
         return None
 
-    if value.__class__.__name__ in ['Point2D', 'Point3D',
-                                    'Vector2D', 'Vector3D']:
+    if value.__class__.__name__ in ['Point2D', 'Point3D', 'Vector2D', 'Vector3D']:
         try:
             copied_value = value.copy(deep=True, memo=memo)
         except TypeError:
@@ -62,7 +58,7 @@ def deepcopy_value(value, memo):
         try:
             copied_value = copy.deepcopy(value, memo=memo)
         except TypeError:
-            # Memo arg not handled
+            # Memo not handled
             copied_value = copy.deepcopy(value)
         memo[value] = copied_value
         return copied_value
@@ -72,12 +68,11 @@ def deepcopy_value(value, memo):
 
     if isinstance(value, dict):
         return deepcopy_dict(value, memo)
-
     raise NotImplementedError(f'unhandle type for copy: {value} of type {value.__class__}')
 
 
 def deepcopy_dict(dict_value, memo):
-    """ Deepcopy dict. """
+    """ Deep-copy dict. """
     memo_value = search_memo(dict_value, memo)
     if memo_value is not None:
         return memo_value
@@ -91,7 +86,7 @@ def deepcopy_dict(dict_value, memo):
 
 
 def deepcopy_sequence(seq_value, memo):
-    """ Deepcopy sequence. """
+    """ Deep-copy sequence. """
     memo_value = search_memo(seq_value, memo)
     if memo_value is not None:
         return memo_value

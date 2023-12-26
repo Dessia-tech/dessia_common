@@ -6,28 +6,27 @@ Defines physic quantities called measures.
 It is an overloading of float, and useful in platform forms to have access to units conversion.
 """
 
-from dessia_common.utils.types import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
 # Measures
 class Measure(float):
     """ Abstract base class of measures, do not instantiate directly. """
 
-    si_unit = ''
+    si_unit = ""
 
     def to_dict(self):
         """ Serializes the object into a dict. """
-        return {'object_class': f'{self.__module__}.{self.__class__.__name__}',
-                'value': self.real}
+        return {"object_class": f"{self.__module__}.{self.__class__.__name__}", "value": self.real}
 
     @classmethod
     def dict_to_object(cls, dict_):
-        """ Unserializes the dict into an object. """
-        class_ = get_python_class_from_class_name(dict_['object_class'])
-        return class_(dict_['value'])
+        """ Deserialize the dict into an object. """
+        class_ = get_python_class_from_class_name(dict_["object_class"])
+        return class_(dict_["value"])
 
     def __str__(self):
-        return f'{self.__class__.__name__} {round(self, 6)} {self.si_unit}'
+        return f"{self.__class__.__name__} {round(self, 6)} {self.si_unit}"
 
 
 class Distance(Measure):
@@ -64,6 +63,12 @@ class Speed(Measure):
     """ Represent a speed in meters per second. """
 
     si_unit = 'm/s'
+
+
+class RotationSpeed(Measure):
+    """ Represent a rotation speed in radian per second. """
+
+    si_unit = 'rad/s'
 
 
 class Acceleration(Measure):

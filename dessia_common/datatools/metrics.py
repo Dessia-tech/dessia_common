@@ -19,6 +19,7 @@ def diff_list(list_a, list_b):
     """
     return (a - b for a, b in zip(list_a, list_b))
 
+
 def l1_norm(vector):
     """
     L1-norm of vector.
@@ -31,6 +32,7 @@ def l1_norm(vector):
     """
     return sum(map(abs, vector))
 
+
 def l2_norm(vector):
     """
     L2-norm of vector.
@@ -41,10 +43,11 @@ def l2_norm(vector):
     :return: the l2-norm
     :rtype: float
     """
-    # better than numpy for len = 20000, nearly the same for len = 2000
+    # better than numpy for length = 20000, nearly the same for length = 2000
     return sum(x*x for x in vector)**0.5
 
-def lp_norm(vector, mink_power = 2):
+
+def lp_norm(vector, mink_power=2):
     """
     Minkowski norm of vector.
 
@@ -59,9 +62,10 @@ def lp_norm(vector, mink_power = 2):
     """
     return float(npy.linalg.norm(vector, ord=mink_power))
 
+
 def inf_norm(vector):
     """
-    Inifinite norm of vector.
+    Infinite norm of vector.
 
     :param vector: vector to get norm
     :type vector: List[float]
@@ -70,6 +74,7 @@ def inf_norm(vector):
     :rtype: float
     """
     return max(abs(coord) for coord in vector)
+
 
 def manhattan_distance(list_a, list_b):
     """
@@ -87,9 +92,10 @@ def manhattan_distance(list_a, list_b):
     # faster than numpy
     return l1_norm(diff_list(list_a, list_b))
 
+
 def euclidian_distance(list_a, list_b):
     """
-    Compute the euclidian distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
+    Compute the euclidean distance between list_a and list_b, i.e. the l2-norm of difference between list_a and list_b.
 
     It is the natural distance of 3D space.
 
@@ -102,10 +108,11 @@ def euclidian_distance(list_a, list_b):
     :return: the l2 distance between the two list
     :rtype: float
     """
-    # faster than numpy for len = 20000, nearly the same for len = 2000
+    # faster than numpy for length = 20000, nearly the same for length = 2000
     return l2_norm(diff_list(list_a, list_b))
 
-def minkowski_distance(list_a, list_b, mink_power = 2):
+
+def minkowski_distance(list_a, list_b, mink_power= 2):
     """
     Compute the Minkowski distance between list_a and list_b, i.e. the lp-norm of difference between list_a and list_b.
 
@@ -124,6 +131,7 @@ def minkowski_distance(list_a, list_b, mink_power = 2):
     # faster than sum((a - b)**p for a, b in zip(list_a, list_b))**(1/p)
     return lp_norm(npy.array(list_a)-npy.array(list_b), mink_power=mink_power)
 
+
 def mean(vector):
     """
     Mean of vector.
@@ -135,6 +143,7 @@ def mean(vector):
     :rtype: float
     """
     return sum(vector)/len(vector)
+
 
 def variance(vector):
     """
@@ -148,6 +157,7 @@ def variance(vector):
     """
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector))**2 / len(vector)
     return float(npy.var(vector))
+
 
 def covariance(vector_x, vector_y):
     """
@@ -169,6 +179,7 @@ def covariance(vector_x, vector_y):
     mean_y = mean(vector_y)
     return sum((x - mean_x) * (y - mean_y) for x, y in zip(vector_x, vector_y)) / len(vector_x)
 
+
 def covariance_matrix(matrix):
     """
     Compute the covariance matrix of `matrix` of dimension `N x M`.
@@ -187,6 +198,7 @@ def covariance_matrix(matrix):
     """
     return npy.cov(matrix, dtype=float).tolist()
 
+
 def std(vector):
     """
     Standard deviation of vector.
@@ -200,13 +212,14 @@ def std(vector):
     # faster than euclidian_distance(vector, [mean(vector)] * len(vector)) / math.sqrt(len(vector))
     return float(npy.std(vector))
 
+
 def mahalanobis_distance(list_a, list_b, cov_matrix):
     """
     Compute the Mahalanobis distance between list_a and list_b.
 
     This method computes distances considering the scale
-    and the data repartition on each dimension (covariance matrix). It is adviced to use this method to compute
-    distances in spaces constituted of very different dimensions in terms of scale and data repartition.
+    and the data distribution on each dimension (covariance matrix). It is advised to use this method to compute
+    distances in spaces constituted of very different dimensions in terms of scale and data distribution.
 
     :param list_a: First list
     :type list_a: List[float]

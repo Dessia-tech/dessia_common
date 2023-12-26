@@ -1,24 +1,23 @@
-.. DessiaCommon documentation master file, created by
-   sphinx-quickstart on Thu Feb 20 15:37:42 2020.
+.. dessia_common documentation master file, created by
+   sphinx-quickstart on Tue Apr  4 11:00:57 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DessiaCommon's documentation!
-========================================
+Welcome to dessia_common's documentation!
+===================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   about_dessia
+   authors
+   about_the_package
    getting_started
-   subclassing
-   customizing
-   core
-   datatools
-   workflow
-   advanced
-
-
+   user_guide
+   road_map_and_current_limitations
+   tutorials
+   glossary
 
 Indices and tables
 ==================

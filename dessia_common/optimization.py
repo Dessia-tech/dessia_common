@@ -28,25 +28,12 @@ class BoundedAttributeValue(DessiaObject):
     """
     Define a bounded attribute value to run a Design Of Experiment (DOE) or an Optimization.
 
-    :param attribute_name:
-        Name of attribute to bound.
-    :type attribute_name: str
-
-    :param min_value:
-        Minimum value for this attribute.
-    :type min_value: float
-
-    :param max_value:
-        Maximum value for this attribute.
-    :type max_value: float
-
-    :param number:
-        Number of values to generate betwwen those bounds. Only used for sampling.ClassSampler.full_fact method.
-    :type number: int
-
-    :param name:
-        Name of BoundedAttributeValue.
-    :type name: str, `optional`, defaults to `''`
+    :param attribute_name: Name of attribute to bound.
+    :param min_value: Minimum value for this attribute.
+    :param max_value: Maximum value for this attribute.
+    :param number: Number of values to generate between those bounds.
+        Only used for sampling. ClassSampler.full_fact method.
+    :param name: Name of BoundedAttributeValue.
     """
 
     _standalone_in_db = True
@@ -64,7 +51,7 @@ class BoundedAttributeValue(DessiaObject):
         return self.min_value + dimless_value * self.interval_length
 
     def dimensionless_value(self, value: float):
-        """ Method to compute the dimensionless value out of the dimensioned one. """
+        """ Method to compute the dimensionless value out of the given one. """
         return (value - self.min_value) / self.interval_length
 
 
@@ -72,7 +59,7 @@ class Optimizer(DessiaObject):
     """ Base class for creating an Optimizer. """
 
     def adimensioned_vector(self, x):
-        """ Returns the adimensioned vector from the real one. """
+        """ Returns the dimensionless vector from the real one. """
 
     def reduced_vector(self, x):
         """ Get reduced vector of vector x. """
@@ -98,13 +85,13 @@ class DrivenModelOptimizer(Optimizer):
         self.model = model
 
     def get_model_from_vector(self):
-        """ Get model from vector. """ #TODO: change docstring
-        # modify inplace model from vector
+        """ Get model from vector. """  # TODO: change docstring
+        # Modify in-place model from vector
         raise NotImplementedError('the method must be overloaded by subclassing class')
 
 
 class InstantiatingModelOptimizer(Optimizer):
-    """ Abstract class, to be subclassed by real class. Instantiate a new model at each point request. """
+    """ Abstract class, to be inherited by a real class. Instantiate a new model at each point request. """
 
     def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
                  name: str = ''):
@@ -119,7 +106,7 @@ class InstantiatingModelOptimizer(Optimizer):
         raise NotImplementedError('the method instantiate_model must be overloaded by subclassing class')
 
     def dimensionless_vector_to_vector(self, dl_vector):
-        """ Returns the vector from the adimensioned one. """
+        """ Returns the vector from the dimensionless one. """
         return [bound.dimensionless_to_value(dl_xi) for dl_xi, bound in zip(dl_vector, self.optimization_bounds)]
 
     def vector_to_attributes_values(self, vector: List[float]):
@@ -165,11 +152,8 @@ class InstantiatingModelOptimizer(Optimizer):
         """ Optimize the problem using the CMA-ES algorithm. """
         x0 = npy.random.random(self.number_parameters)
         bounds = self.cma_bounds()
-        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector, x0, 0.6, options={'bounds': bounds,
-                                                                                           'tolfun': 1e-3,
-                                                                                           'maxiter': 250,
-                                                                                           'verbose': -9,
-                                                                                           'ftarget': 0.2})[0:2]
+        options = {'bounds': bounds, 'tolfun': 1e-3, 'maxiter': 250, 'verbose': -9, 'ftarget': 0.2}
+        xra, fx_opt = cma.fmin(self.objective_from_dimensionless_vector, x0, 0.6, options=options)[0:2]
 
         attributes_values = self.vector_to_attributes_values(self.dimensionless_vector_to_vector(xra))
 

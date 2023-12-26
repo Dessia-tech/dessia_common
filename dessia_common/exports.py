@@ -35,7 +35,16 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    """ Define which method of an object should be called for each Export. """
+    """
+    Define which method of an object should be called for each Export.
+
+    :param str selector: A custom and unique identifier for current ExportFormat.
+    :param str extension: The extension of the file to create (without '.')
+    :param str method_name: The method to call to generate the export. Should be the one that handles the stream.
+    :param bool text: Whether the resulting file is text-like or binary-like.
+    :param str export_name: Enables user to set their own custom export name.
+    :param Dict args: Arguments to pass to the called function.
+    """
 
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
@@ -237,7 +246,6 @@ class XLSXWriter:
     @staticmethod
     def autosize_sheet_columns(sheet, min_width=5, max_width=30):
         """ Auto-size the sheet columns by analyzing the content. Min and max width must be specified. """
-        # Autosize columns
         for col in sheet.columns:
             width = min_width
             column = col[1].column_letter  # Get the column name
@@ -261,8 +269,9 @@ class MarkdownWriter:
         self.table_limit = table_limit
 
     @staticmethod
-    def _object_titles():
-        return ['Attribute', 'Type', 'Value']  # , 'Subvalues']
+    def object_titles():
+        """ Return a list of strings representing the titles for the object matrix. """
+        return ['Attribute', 'Type', 'Value']
 
     @staticmethod
     def _sequence_to_str(value: Sequence):
@@ -306,7 +315,8 @@ class MarkdownWriter:
     def _string_in_table(self, string: str = ''):
         return string[:self.print_limit] + ('...' if len(string) > self.print_limit else '')
 
-    def _object_matrix(self, object_):
+    def object_matrix(self, object_):
+        """ Return a matrix representing the object passed as argument. """
         matrix = []
         for attr, value in object_.__dict__.items():
             matrix.append([attr,
@@ -367,9 +377,29 @@ class MarkdownWriter:
 
     def object_table(self, object_) -> str:
         """Print object_'s attributes in table."""
-        return self.matrix_table(self._object_matrix(object_),
-                                 self._object_titles())
+        return self.matrix_table(self.object_matrix(object_),
+                                 self.object_titles())
 
     def element_details(self, elements: List[Any]) -> str:
         """Print sequence of elements."""
         return self._sequence_to_str(elements)
+
+    @staticmethod
+    def write_to_file(filename: str, content: str) -> None:
+        """ Writes the given content to the specified file. """
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(content)
+
+    @staticmethod
+    def table_of_contents(headings: List[str]) -> str:
+        """ Generates a table of contents based on the given list of headings. """
+        table_of_contents = '## Table of Contents\n\n'
+        for heading in headings:
+            table_of_contents += f'- [{heading}](#{heading.lower().replace(" ", "-")})\n'
+        return table_of_contents
+
+    @staticmethod
+    def header(title: str, level: int = 1) -> str:
+        """ Generates a markdown header with the specified title and level. """
+        header_level = "#" * level
+        return f"{header_level} {title}\n\n"
