@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Workflow : Add backward compatibility for variables
-
+- Workflow : Add display block class discovery
 
 
 ## 0.15.2
