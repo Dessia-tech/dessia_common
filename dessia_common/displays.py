@@ -9,13 +9,13 @@ import json
 from typing import Union, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, DISPLAY_TYPES
 
 
 class DisplaySetting:
     """ Describe which method to call to get a display. """
 
-    def __init__(self, selector: Optional[str], type_: str, method: str, arguments=None,
+    def __init__(self, selector: Optional[str], type_: DISPLAY_TYPES, method: str, arguments=None,
                  serialize_data: bool = False, load_by_default: bool = False):
         self.selector = selector
         self.type = type_

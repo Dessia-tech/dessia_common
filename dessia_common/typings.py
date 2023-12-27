@@ -1,10 +1,12 @@
 """ Typing for dessia_common. """
-from typing import TypeVar, Generic, Dict, Any, Tuple, get_type_hints
+from typing import TypeVar, Generic, Literal, Dict, Any, Tuple, get_type_hints
 
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
 
 T = TypeVar('T')
+
+DISPLAY_TYPES = Literal["plot_data", "markdown", "babylon_data"]
 
 
 class Subclass(Generic[T]):

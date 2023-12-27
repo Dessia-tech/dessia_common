@@ -33,7 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
+from dessia_common.decorators import get_decorated_methods
 
 
 def __getattr__(name):
@@ -85,6 +85,8 @@ class DessiaObject(SerializableObject):
 
     _init_variables = None
     _allowed_methods = []
+
+    _display_decorators = ["plot_data_view", "markdown_view"]
 
     def __init__(self, name: str = '', **kwargs):
         self.name = name
@@ -401,9 +403,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
-        settings.extend(cls._display_settings_from_decorators())
-        return settings
+        return cls._display_settings_from_decorators()
 
     @classmethod
     def _display_settings_from_decorator_name(cls, decorator_name: str):
@@ -424,7 +424,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
         """ Return a list, computed from decorated functions, of objects describing how to call displays. """
-        return [s for d in DISPLAY_DECORATORS for s in cls._display_settings_from_decorator_name(d)]
+        return [s for d in cls._display_decorators for s in cls._display_settings_from_decorator_name(d)]
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
@@ -627,13 +627,7 @@ class DessiaObject(SerializableObject):
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
-    @classmethod
-    def display_settings(cls, **kwargs):
-        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = super().display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
-        return display_settings
+    _display_decorators = DessiaObject._display_decorators + ["cad_view"]
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """

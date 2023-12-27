@@ -12,7 +12,7 @@ from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PA
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
-                                   PlotDataType, MarkdownType)
+                                   PlotDataType, MarkdownType, DISPLAY_TYPES)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
@@ -706,7 +706,7 @@ class Display(Block):
 
     _displayable_input = 0
     _non_editable_attributes = ["inputs"]
-    _type = (0, 0)
+    _type = None
     serialize = False
 
     def __init__(self, inputs: List[Variable], load_by_default: bool = False, name: str = "Display",
@@ -718,7 +718,7 @@ class Display(Block):
         self.selector = selector
 
     @property
-    def type_(self) -> str:
+    def type_(self) -> DISPLAY_TYPES:
         """ Get display's type_. """
         if self._type:
             return self._type
@@ -1247,8 +1247,8 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = "Substraction", position:  Position = (0, 0)):
-        super().__init__([Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
-                       position=position)
+        super().__init__([Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")],
+                         name=name, position=position)
 
     def evaluate(self, values, **kwargs):
         """ Subtract input values. """
@@ -1358,10 +1358,7 @@ class Export(Block):
     def evaluate(self, values, **kwargs):
         """ Generate to-be-exported stream from corresponding method. """
         filename = f"{values.pop(self.inputs[-1])}.{self.extension}"
-        if self.text:
-            stream = StringFile(filename)
-        else:
-            stream = BinaryFile(filename)
+        stream = StringFile(filename) if self.text else BinaryFile(filename)
         getattr(values[self.inputs[0]], self.method_type.name)(stream)
         return [stream]
 
