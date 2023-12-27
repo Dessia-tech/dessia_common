@@ -14,7 +14,7 @@ from copy import deepcopy, copy
 import inspect
 import json
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import traceback as tb
 
 from importlib import import_module
@@ -25,7 +25,7 @@ from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, DISPLAY_TYPES
 from dessia_common import templates
 import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
@@ -370,18 +370,29 @@ class DessiaObject(SerializableObject):
                       "anymore. Please use Display Decorators, instead", DeprecationWarning)
         return []
 
-    def plot(self, reference_path: str = "#", **kwargs):
+    def plot(self, selector: Optional[DISPLAY_TYPES] = None,  reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
-        if hasattr(self, 'plot_data'):
-            import plot_data
-            for data in self.plot_data(reference_path, **kwargs):
-                plot_data.plot_canvas(plot_data_object=data,
-                                      canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
+        type_ = "plot_data"
+        plot_data_settings = self._display_settings_from_type(type_)
+        if selector is None:
+            plot_data_objects = [self._display_from_selector(d.selector) for d in plot_data_settings]
+            msg = f"Class '{self.full_classname}' does not define any display of type '{type_}'."
         else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
+            plot_data_objects = [self._display_from_selector(d.selector) for d in plot_data_settings
+                                 if d.selector == selector]
+            msg = (f"No selector '{selector}' found in class '{self.full_classname}'"
+                   f"definition for displays of type '{type_}'.")
+        if not plot_data_objects:
+            raise ValueError(msg)
+
+        import plot_data
+        for plot_data_object in plot_data_objects:
+            # Ideally
+            # plot_data_object.plot()
+
+            # Removing this and using statement above would remove plot_data requirement
+            plot_data.plot_canvas(plot_data_object=data, canvas_id='canvas',
+                                  width=1400, height=900, debug_mode=False)
 
     def mpl_plot(self, **kwargs):
         """ Plot with matplotlib using plot_data function. """
@@ -447,6 +458,13 @@ class DessiaObject(SerializableObject):
             if display_setting.selector == selector:
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+
+    @classmethod
+    def _display_settings_from_type(cls, type_: DISPLAY_TYPES) -> List[DisplaySetting]:
+        if type_ not in cls._display_decorators:
+            raise ValueError(f"Type '{type_}' is not valid for an object of class '{cls}'.\n"
+                             f"It should be one of '{cls._display_decorators}'. Got '{type_}'")
+        return [d for d in cls._display_settings_from_decorators() if d.type == type_]
 
     def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """

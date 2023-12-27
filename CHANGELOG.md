@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactor
 
 - Displays : Stronger type for display than 'str'. Values other than "markdown", "plot_data" & "babylon_data" are now forbidden
+- PlotData : Adapt plot method to new decorator paradigm
 
 
 ## 0.15.3
