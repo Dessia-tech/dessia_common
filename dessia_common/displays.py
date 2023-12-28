@@ -6,16 +6,16 @@ import inspect
 import json
 
 
-from typing import Union, Optional
+from typing import Union, Optional, Any
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
-from dessia_common.typings import JsonSerializable, DISPLAY_TYPES
+from dessia_common.typings import JsonSerializable, _DISPLAY_TYPES
 
 
 class DisplaySetting:
     """ Describe which method to call to get a display. """
 
-    def __init__(self, selector: Optional[str], type_: DISPLAY_TYPES, method: str, arguments=None,
+    def __init__(self, selector: Optional[str], type_: _DISPLAY_TYPES, method: str, arguments=None,
                  serialize_data: bool = False, load_by_default: bool = False):
         self.selector = selector
         self.type = type_
@@ -57,9 +57,14 @@ class DisplaySetting:
 
 
 class DisplayObject:
-    """ Container for data of display. A traceback can be set if display fails to be generated. """
+    """
+    Container for data of display. A traceback can be set if display fails to be generated.
 
-    def __init__(self, type_: str, data: Union[JsonSerializable, str],
+    Argument 'data' is typed with Any as part of the Union. Any stands for 3D and PlotDataObject
+    when data is not serialized, waiting to have a better implementation of this.
+    """
+
+    def __init__(self, type_: _DISPLAY_TYPES, data: Union[JsonSerializable, str, Any],
                  reference_path: str = '', traceback: str = '', name: str = ''):
         self.type_ = type_
         self.data = data

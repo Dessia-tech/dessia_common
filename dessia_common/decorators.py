@@ -5,7 +5,7 @@ import inspect
 import ast
 import textwrap
 
-from dessia_common.typings import DISPLAY_TYPES
+from dessia_common.typings import _DISPLAY_TYPES
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -89,7 +89,7 @@ def cad_view(selector: str, load_by_default: bool = False):
     return decorator
 
 
-def set_decorated_function_metadata(function, type_: DISPLAY_TYPES, selector: str = None,
+def set_decorated_function_metadata(function, type_: _DISPLAY_TYPES, selector: str = None,
                                     serialize_data: bool = False, load_by_default: bool = False):
     """ Attach metadata to function object. Is there any better way to do this ? It seems a bit dirty. """
     setattr(function, "type_", type_)

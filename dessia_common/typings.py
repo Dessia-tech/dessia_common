@@ -6,7 +6,7 @@ from dessia_common.utils.helpers import full_classname, get_python_class_from_cl
 
 T = TypeVar('T')
 
-DISPLAY_TYPES = Literal["plot_data", "markdown", "babylon_data"]
+_DISPLAY_TYPES = Literal["plot_data", "markdown", "babylon_data"]
 
 
 class Subclass(Generic[T]):

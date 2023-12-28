@@ -12,7 +12,7 @@ from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PA
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
-                                   PlotDataType, MarkdownType, DISPLAY_TYPES)
+                                   PlotDataType, MarkdownType, _DISPLAY_TYPES)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
 from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
@@ -718,7 +718,7 @@ class Display(Block):
         self.selector = selector
 
     @property
-    def type_(self) -> DISPLAY_TYPES:
+    def type_(self) -> _DISPLAY_TYPES:
         """ Get display's type_. """
         if self._type:
             return self._type
