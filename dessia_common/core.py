@@ -391,7 +391,8 @@ class DessiaObject(SerializableObject):
                 raise ValueError(f"Class '{self.full_classname}' does not define any display of type 'plot_data'.")
             raise ValueError(f"No selector '{selector}' found in class '{self.full_classname}'"
                              f"definition for displays of type 'plot_data'.")
-        display_objects = [self._display_from_selector(selector=s.selector, serialize_data=False) for s in settings]
+        display_objects = [self._display_from_selector(selector=s.selector, serialize_data=False, **kwargs)
+                           for s in settings]
         for display_object in display_objects:
             display_object.data.plot()
 
@@ -415,7 +416,7 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        return cls._display_settings_from_decorators()
+        return cls._display_settings_from_decorators(**kwargs)
 
     @classmethod
     def _display_settings_from_decorator_name(cls, decorator_name: str, **kwargs):
@@ -439,9 +440,9 @@ class DessiaObject(SerializableObject):
         return [s for d in cls._display_types
                 for s in cls._display_settings_from_decorator_name(_DISPLAY_DECORATOR_FROM_TYPE[d], **kwargs)]
 
-    def _display_from_selector(self, selector: str, serialize_data: bool = True) -> DisplayObject:
+    def _display_from_selector(self, selector: str, serialize_data: bool = True, **kwargs) -> DisplayObject:
         """ Generate the display from the selector. """
-        display_setting = self._display_settings_from_selector(selector)
+        display_setting = self._display_settings_from_selector(selector, **kwargs)
         track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
@@ -454,9 +455,9 @@ class DessiaObject(SerializableObject):
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def _display_settings_from_selector(self, selector: str):
+    def _display_settings_from_selector(self, selector: str, **kwargs):
         """ Get display settings from given selector. """
-        for display_setting in self.display_settings():
+        for display_setting in self.display_settings(**kwargs):
             if display_setting.selector == selector:
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
@@ -466,7 +467,9 @@ class DessiaObject(SerializableObject):
         if type_ not in cls._display_types:
             raise ValueError(f"Type '{type_}' is not valid for an object of class '{cls}'.\n"
                              f"It should be one of '{cls._display_types}'. Got '{type_}'")
-        return [d for d in cls._display_settings_from_decorators(**kwargs) if d.type == type_]
+
+        decorator_name = _DISPLAY_DECORATOR_FROM_TYPE[type_]
+        return [d for d in cls._display_settings_from_decorator_name(decorator_name, **kwargs) if d.type == type_]
 
     def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
