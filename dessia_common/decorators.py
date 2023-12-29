@@ -1,12 +1,11 @@
 """ Provides decorators that work as 'flags' for display settings. """
 
-from typing import Type, List, TypeVar
+from typing import Type, List
 import inspect
 import ast
 import textwrap
 
-
-DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
+from dessia_common.typings import _DISPLAY_TYPES
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -90,13 +89,10 @@ def cad_view(selector: str, load_by_default: bool = False):
     return decorator
 
 
-def set_decorated_function_metadata(function, type_: str, selector: str = None,
+def set_decorated_function_metadata(function, type_: _DISPLAY_TYPES, selector: str = None,
                                     serialize_data: bool = False, load_by_default: bool = False):
     """ Attach metadata to function object. Is there any better way to do this ? It seems a bit dirty. """
     setattr(function, "type_", type_)
     setattr(function, "selector", selector)
     setattr(function, "serialize_data", serialize_data)
     setattr(function, "load_by_default", load_by_default)
-
-
-T = TypeVar("T")

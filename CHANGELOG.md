@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## 0.16.0
+
+### Removed
+
+- Displays : Old markdown and 3D displays (without decorators) are not supported anymore
+
+### Refactor
+
+- Displays : Stronger type for display than 'str'. Values other than "markdown", "plot_data" & "babylon_data" are now forbidden
+- PlotData : Adapt plot method to new decorator paradigm
+
+
 ## 0.15.3
 
 ### Fix

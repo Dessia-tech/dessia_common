@@ -14,7 +14,7 @@ from copy import deepcopy, copy
 import inspect
 import json
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 import traceback as tb
 
 from importlib import import_module
@@ -25,7 +25,7 @@ from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
 from dessia_common.exports import XLSXWriter, MarkdownWriter, ExportFormat
-from dessia_common.typings import JsonSerializable
+from dessia_common.typings import JsonSerializable, _DISPLAY_TYPES
 from dessia_common import templates
 import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
@@ -33,7 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
+from dessia_common.decorators import get_decorated_methods
 
 
 def __getattr__(name):
@@ -45,6 +45,12 @@ def __getattr__(name):
 
 
 _fullargsspec_cache = {}
+
+_DISPLAY_DECORATOR_FROM_TYPE = {
+    "plot_data": "plot_data_view",
+    "markdown": "markdown_view",
+    "babylon_data": "cad_view"
+}
 
 
 class DessiaObject(SerializableObject):
@@ -85,6 +91,8 @@ class DessiaObject(SerializableObject):
 
     _init_variables = None
     _allowed_methods = []
+
+    _display_types = ["plot_data", "markdown"]
 
     def __init__(self, name: str = '', **kwargs):
         self.name = name
@@ -368,18 +376,25 @@ class DessiaObject(SerializableObject):
                       "anymore. Please use Display Decorators, instead", DeprecationWarning)
         return []
 
-    def plot(self, reference_path: str = "#", **kwargs):
-        """ Generic plot getting plot_data function to plot. """
-        if hasattr(self, 'plot_data'):
-            import plot_data
-            for data in self.plot_data(reference_path, **kwargs):
-                plot_data.plot_canvas(plot_data_object=data,
-                                      canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
+    def plot(self, selector: Optional[str] = None, **kwargs):
+        """
+        Generic plot getting object plot_data views in order to plot locally.
+
+        First, get all settings defined by a 'plot_data_view' decorator.
+        If a selector is set, it only plots the desired one.
+        If selector is None, plots every plot candidate
+        """
+        settings = [s for s in self._display_settings_from_type("plot_data", **kwargs)
+                    if selector is None or s.selector == selector]
+        if not settings:
+            if selector is None:
+                raise ValueError(f"Class '{self.full_classname}' does not define any display of type 'plot_data'.")
+            raise ValueError(f"No selector '{selector}' found in class '{self.full_classname}'"
+                             f"definition for displays of type 'plot_data'.")
+        display_objects = [self._display_from_selector(selector=s.selector, serialize_data=False, **kwargs)
+                           for s in settings]
+        for display_object in display_objects:
+            display_object.data.plot()
 
     def mpl_plot(self, **kwargs):
         """ Plot with matplotlib using plot_data function. """
@@ -401,12 +416,10 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
-        settings.extend(cls._display_settings_from_decorators())
-        return settings
+        return cls._display_settings_from_decorators(**kwargs)
 
     @classmethod
-    def _display_settings_from_decorator_name(cls, decorator_name: str):
+    def _display_settings_from_decorator_name(cls, decorator_name: str, **kwargs):
         methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
         settings = []
         for method in methods:
@@ -417,18 +430,19 @@ class DessiaObject(SerializableObject):
             selector = getattr(method, "selector", None)
             if selector is None:
                 selector = name
-            settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
+            settings.append(DisplaySetting(selector=selector, type_=type_, method=name, arguments=kwargs,
                                            serialize_data=serialize_data, load_by_default=load_by_default))
         return settings
     
     @classmethod
-    def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
+    def _display_settings_from_decorators(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list, computed from decorated functions, of objects describing how to call displays. """
-        return [s for d in DISPLAY_DECORATORS for s in cls._display_settings_from_decorator_name(d)]
+        return [s for d in cls._display_types
+                for s in cls._display_settings_from_decorator_name(_DISPLAY_DECORATOR_FROM_TYPE[d], **kwargs)]
 
-    def _display_from_selector(self, selector: str) -> DisplayObject:
+    def _display_from_selector(self, selector: str, serialize_data: bool = True, **kwargs) -> DisplayObject:
         """ Generate the display from the selector. """
-        display_setting = self._display_settings_from_selector(selector)
+        display_setting = self._display_settings_from_selector(selector, **kwargs)
         track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
@@ -436,17 +450,26 @@ class DessiaObject(SerializableObject):
             data = None
             track = tb.format_exc()
 
-        if display_setting.serialize_data:
+        if serialize_data and display_setting.serialize_data:
             data = serialize(data)
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def _display_settings_from_selector(self, selector: str):
+    def _display_settings_from_selector(self, selector: str, **kwargs):
         """ Get display settings from given selector. """
-        for display_setting in self.display_settings():
+        for display_setting in self.display_settings(**kwargs):
             if display_setting.selector == selector:
                 return display_setting
         raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+
+    @classmethod
+    def _display_settings_from_type(cls, type_: _DISPLAY_TYPES, **kwargs) -> List[DisplaySetting]:
+        if type_ not in cls._display_types:
+            raise ValueError(f"Type '{type_}' is not valid for an object of class '{cls}'.\n"
+                             f"It should be one of '{cls._display_types}'. Got '{type_}'")
+
+        decorator_name = _DISPLAY_DECORATOR_FROM_TYPE[type_]
+        return [d for d in cls._display_settings_from_decorator_name(decorator_name, **kwargs) if d.type == type_]
 
     def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
@@ -627,13 +650,7 @@ class DessiaObject(SerializableObject):
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
-    @classmethod
-    def display_settings(cls, **kwargs):
-        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = super().display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
-        return display_settings
+    _display_types = DessiaObject._display_types + ["babylon_data"]
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
