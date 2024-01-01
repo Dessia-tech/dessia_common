@@ -4,6 +4,7 @@
 
 import inspect
 from ast import literal_eval
+from typing import Dict, Tuple, List
 
 import openpyxl
 
@@ -53,10 +54,26 @@ def check_duplicate_attributes(attributes):
     return None
 
 
+class ExcelDataExtract:
+    """Data extracted from sheet of Excel file."""
+
+    def __init__(self, class_info: Tuple[str, str], attributes: List[str], datas):
+        self.class_info = class_info
+        self.attributes = attributes
+        self.datas = datas
+
+
+class ExcelDatasExtracted:
+    """Collection of data extracted from Excel."""
+
+    def __init__(self, extracted_datas: Dict[str, ExcelDataExtract]):
+        self.extracted_datas = extracted_datas
+
+
 class ExcelReader:
-    def __init__(self, filepath):
-        self.filepath = filepath
-        self.workbook = openpyxl.load_workbook(filepath, data_only=True)
+    def __init__(self, stream):
+        self.stream = stream
+        self.workbook = openpyxl.load_workbook(stream, data_only=True)
         self.sheet_titles = [sheet.title for sheet in self.workbook.worksheets]
         self.main_sheet = self.workbook.worksheets[0].title
 
@@ -74,6 +91,9 @@ class ExcelReader:
             target = cell.hyperlink.location.split('!')
         elif cell.hyperlink.target:
             target = cell.hyperlink.target.split('!')
+
+        else:
+            raise ValueError("The provided cell does not contain a valid hyperlink location or target.")
 
         sheet_name = target[0].replace("#", '')
         if sheet_name not in self.sheet_titles:
@@ -101,23 +121,23 @@ class ExcelReader:
         target = self.get_location(cell)
         dict_keys = []
         if "Dict" in cell.value:
-            real_attr_val = {}
+            actual_value = {}
             sheet = self.workbook[target]
             column = sheet["A"]
             for row in column[3:]:
                 dict_keys.append(row.value.split('.')[1])
 
             for key, value in zip(dict_keys, values):
-                real_attr_val[key] = value
+                actual_value[key] = value
 
-            return real_attr_val
+            return actual_value
 
-        if isinstance(values, list) and (not any(type in cell.value for type in container)):
-            val_replace = values[0]
+        if isinstance(values, list) and (not any(type_ in cell.value for type_ in container)):
+            actual_value = values[0]
         else:
-            val_replace = values
+            actual_value = values
 
-        return val_replace
+        return actual_value
 
     @staticmethod
     def get_attributes_and_types(obj_class):
@@ -158,9 +178,9 @@ class ExcelReader:
         Returns:
         - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
         """
-        check_missed_attribute, attribute = missed_attribute(attributes, init_attributes)
-        if not check_missed_attribute:
-            raise ValueError(f"missing attribute '{attribute}' don't have a default value")
+        detect_missing_attribute, attribute = missed_attribute(attributes, init_attributes)
+        if not detect_missing_attribute:
+            raise ValueError(f"Missing attribute '{attribute}' doesn't have a default value.")
 
         object_data = {}
         for i, attribute in enumerate(attributes):
@@ -174,12 +194,21 @@ class ExcelReader:
                     object_data[attribute] = value[i]
         return object_data
 
-    def instantiate_main_objects(self, instantiated_objects, key, values):
+    def create_object(self, obj_class, value_set, attributes, initial_attributes):
+        """Create an object of a specified class using provided data."""
+        object_data = self.get_data(value_set, attributes, initial_attributes)
+        object_ = obj_class(**object_data)
+        if not object_.name:
+            object_.name = ""
+
+        return object_
+
+    def instantiate_main_object(self, instantiated_objects, class_info, attributes, key, values):
         """
         Instantiate main objects based on provided values and attributes.
 
         Args:
-        - instantiated_objects_list (dict): Dictionary containing instantiated objects.
+        - instantiated_objects (dict): Dictionary containing instantiated objects.
         - key (str): Key to identify the instantiated objects.
         - values (list): List containing module name, class name, and attributes.
 
@@ -187,29 +216,24 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
-        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
+        full_class_name = f"{class_info[0]}.{class_info[1]}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
 
-        for value_set in values[2].values():
-            for index, attr_value in enumerate(value_set):
-                if isinstance(attr_value, openpyxl.cell.cell.Cell):
-                    replaced_value = instantiated_objects[self.get_location(attr_value)[0]]
-                    value_set[index] = self.update_attribute_values(attr_value, replaced_value)
+        for value_set in values.values():
+            for index, value in enumerate(value_set):
+                if isinstance(value, openpyxl.cell.cell.Cell):
+                    replaced_value = instantiated_objects[self.get_location(value)[0]]
+                    value_set[index] = self.update_attribute_values(value, replaced_value)
 
-            object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
-            object_ = obj_class(**object_data)
-            if not object_.name:
-                object_.name = ""
-            objects.append(object_)
+            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_multiple_hyperlink_rows(self, instantiated_objects, key, values):
+    def process_multiple_hyperlink_rows(self, instantiated_objects, class_info, attributes, key, values):
         """
         Process multiple rows in a sheet, each representing an object with hyperlinks.
 
@@ -221,18 +245,16 @@ class ExcelReader:
         Returns:
         - dict: Updated dictionary of instantiated objects.
         """
-        class_info = {'module_name': values[0][0], 'class_name': values[0][1]}
-        object_attributes = values[1]
 
-        full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
+        full_class_name = f"{class_info[0]}.{class_info[1]}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
-        for value_set in values[2].values():
-            for i, val in enumerate(value_set):
-                if isinstance(val, openpyxl.cell.cell.Cell):
-                    sheet_target_title, row_target = self.get_location(val)
+        for value_set in values.values():
+            for i, cell in enumerate(value_set):
+                if isinstance(cell, openpyxl.cell.cell.Cell):
+                    sheet_target_title, row_target = self.get_location(cell)
                     sub_module_name = self.workbook[sheet_target_title]["A2"].value
                     sub_class_name = self.workbook[sheet_target_title]["B2"].value
                     sheet_target = self.workbook[sheet_target_title]
@@ -244,16 +266,12 @@ class ExcelReader:
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
                     value_set[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
 
-            object_data = self.get_data(value_set, object_attributes, initial_attributes)
-            object_ = obj_class(**object_data)
-            if not object_.name:
-                object_.name = ""
-            objects.append(object_)
+            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_single_hyperlink_row(self, instantiated_objects, key, values, stack):
+    def process_single_hyperlink_row(self, instantiated_objects, class_info, attributes, key, values, stack):
         """
         Process a single row in a sheet representing an object with hyperlinks.
 
@@ -266,37 +284,33 @@ class ExcelReader:
         Returns:
         - dict: Updated dictionary of instantiated objects.
         """
-        hyperlink_list = [self.get_location(v2)[0] for val in values[2:] for v in val.values() for v2 in v if
-                          isinstance(v2, openpyxl.cell.cell.Cell)]
+        hyperlink_list = [self.get_location(column)[0] for row in values.values() for column in row
+                          if isinstance(column, openpyxl.cell.cell.Cell)]
 
         if hyperlink_list == list(instantiated_objects.keys()) or all(
                 hyperlink in list(instantiated_objects.keys()) for hyperlink in hyperlink_list):
 
-            class_info = {'module_name': values[0][0], 'class_name': values[0][1], 'object_attributes': values[1]}
-            full_class_name = f"{class_info['module_name']}.{class_info['class_name']}"
+            full_class_name = f"{class_info[0]}.{class_info[1]}"
 
             obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
             initial_attributes = self.get_attributes_and_types(obj_class)
 
-            list_obj = []
-            for value_set in values[2].values():
-                for k, val_attr in enumerate(value_set):
-                    if isinstance(val_attr, openpyxl.cell.cell.Cell):
-                        val_replace = instantiated_objects[self.get_location(val_attr)[0]]
-                        value_set[k] = self.update_attribute_values(val_attr, val_replace)
+            objects = []
+            for value_set in values.values():
+                for k, cell in enumerate(value_set):
+                    if isinstance(cell, openpyxl.cell.cell.Cell):
+                        val_replace = instantiated_objects[self.get_location(cell)[0]]
+                        value_set[k] = self.update_attribute_values(cell, val_replace)
 
-                object_data = self.get_data(value_set, class_info['object_attributes'], initial_attributes)
-                obj = obj_class(**object_data)
-                if not obj.name:
-                    obj.name = ""
-                list_obj.append(obj)
+                objects.append(
+                    self.create_object(obj_class, value_set, attributes, initial_attributes))
 
-            instantiated_objects[key] = list_obj
+            instantiated_objects[key] = objects
         else:
             stack.extend(list({key: values}.items()))
         return instantiated_objects
 
-    def process_simple_sheet(self, instantiated_objects, key, values):
+    def process_simple_sheet(self, instantiated_objects, class_info, attributes, key, values):
         """
         Process a sheet without hyperlinks containing simple cell values to instantiate objects.
 
@@ -308,20 +322,15 @@ class ExcelReader:
         Returns:
         dict: The updated dictionary of instantiated objects after processing the sheet.
         """
-        module_name = values[0][0]
-        class_name = values[0][1]
-        object_attributes = values[1]
+        module_name = class_info[0]
+        class_name = class_info[1]
         full_class_name = f"{module_name}.{class_name}"
         obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
         initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
-        for value_set in values[2].values():
-            object_data = self.get_data(value_set, object_attributes, initial_attributes)
-            object_ = obj_class(**object_data)
-            if not object_.name:
-                object_.name = ""
-            objects.append(object_)
+        for value_set in values.values():
+            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
@@ -341,16 +350,14 @@ class ExcelReader:
               - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per
                attributes.
         """
-        extracted_data = {}
+        extracted_datas = {}
 
         for sheet in self.workbook.worksheets:
-            sheet_data = [(sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value)]
+            class_info = (sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value)
 
             attributes = []
             for value in sheet.iter_cols(min_row=3, max_row=3, min_col=2, values_only=True):
                 attributes.append(value[0])
-
-            sheet_data.append(attributes)
 
             row_data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=4, min_col=2, values_only=True)):
@@ -363,12 +370,12 @@ class ExcelReader:
                         column_values.append(cell_value.value)
                 row_data[i] = column_values
 
-            sheet_data.append(row_data.copy())
-            extracted_data[sheet.title] = sheet_data
+            extracted_datas[sheet.title] = ExcelDataExtract(class_info=class_info, attributes=attributes,
+                                                            datas=row_data.copy())
 
-        return extracted_data
+        return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
-    def read_object(self):
+    def read_workbook(self):
         """
         Read and process data to instantiate objects from the workbook.
 
@@ -383,29 +390,40 @@ class ExcelReader:
         object: The instantiated object obtained from the main sheet's data.
         """
         instantiated_objects = {}
-        cell_values = self.process_workbook()
-        stack = list(cell_values.items())
+        data_structure = self.process_workbook()
+        stack = list(data_structure.extracted_datas.items())
 
         while stack:
-            key, values = stack.pop()
+            key, extracted_data = stack.pop()
 
             if key == self.main_sheet:
-                instantiated_objects = self.instantiate_main_objects(instantiated_objects, key, values)
+                instantiated_objects = self.instantiate_main_object(instantiated_objects, extracted_data.class_info,
+                                                                    extracted_data.attributes, key,
+                                                                    extracted_data.datas)
                 break
 
-            is_cell_instance = any(
-                (any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for value in values[2:] for
-                 val in value.values()))
+            is_cell_instance = any((any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for val
+                                    in extracted_data.datas.values()))
             if is_cell_instance:
 
-                nb_objects_in_sheet = len(values[2].keys())
+                nb_objects_in_sheet = len(extracted_data.datas.keys())
                 if nb_objects_in_sheet > 1:
-                    instantiated_objects = self.process_multiple_hyperlink_rows(instantiated_objects, key, values)
+                    instantiated_objects = self.process_multiple_hyperlink_rows(instantiated_objects,
+                                                                                extracted_data.class_info,
+                                                                                extracted_data.attributes,
+                                                                                key, extracted_data.datas)
+                    break
                 else:
-                    instantiated_objects = self.process_single_hyperlink_row(instantiated_objects, key, values, stack)
+                    instantiated_objects = self.process_single_hyperlink_row(instantiated_objects,
+                                                                             extracted_data.class_info,
+                                                                             extracted_data.attributes,
+                                                                             key, extracted_data.datas, stack)
+                    break
 
             else:
-                instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
+                instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data.class_info,
+                                                                 extracted_data.attributes, key, extracted_data.datas)
+                break
 
         return instantiated_objects[self.main_sheet][0]
 
@@ -424,10 +442,10 @@ class ExcelReader:
               - Dictionary containing row-wise data (starting from row 3, column 1) with column values as per
                attributes.
         """
-        extracted_data = {}
 
+        extracted_datas = {}
         for sheet in self.workbook.worksheets:
-            sheet_data = [(sheet.cell(row=1, column=1).value, sheet.cell(row=1, column=2).value)]
+            class_info = (sheet.cell(row=1, column=1).value, sheet.cell(row=1, column=2).value)
 
             attributes = []
             for value in sheet.iter_cols(min_row=2, max_row=2, min_col=1, values_only=True):
@@ -437,7 +455,6 @@ class ExcelReader:
             if duplicate_attribute:
                 raise ValueError(f"Duplicate attribute '{duplicate_attribute}' detected. Each attribute name should "
                                  f"be unique.")
-            sheet_data.append(attributes)
 
             row_data = {}
             for i, value in enumerate(sheet.iter_rows(min_row=3, min_col=1, values_only=True)):
@@ -447,10 +464,10 @@ class ExcelReader:
                     column_values.append(cell_value.value)
                 row_data[i] = column_values
 
-            sheet_data.append(row_data.copy())
-            extracted_data[sheet.title] = sheet_data
+            extracted_datas[sheet.title] = ExcelDataExtract(class_info=class_info, attributes=attributes,
+                                                            datas=row_data.copy())
 
-        return extracted_data
+        return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
     def read_catalog(self):
         """
@@ -464,12 +481,13 @@ class ExcelReader:
         the processed workbook data.
         """
         instantiated_objects = {}
-        cell_values = self.process_workbook_catalog()
-        stack = list(cell_values.items())
+        data_structure = self.process_workbook_catalog()
+        stack = list(data_structure.extracted_datas.items())
 
         while stack:
-            key, values = stack.pop()
-            instantiated_objects = self.process_simple_sheet(instantiated_objects, key, values)
+            key, extracted_data = stack.pop()
+            instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data.class_info,
+                                                             extracted_data.attributes, key, extracted_data.datas)
 
         return instantiated_objects
 

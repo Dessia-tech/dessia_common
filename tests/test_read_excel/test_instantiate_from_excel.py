@@ -20,16 +20,16 @@ class Line(DessiaObject):
         super().__init__(name)
 
 
-class Caracteristique(DessiaObject):
+class Characteristic(DessiaObject):
     def __init__(self, description: str, name: str = ''):
         self.description = description
         super().__init__(name=name)
 
 
 class ShapeCollection(DessiaObject):
-    def __init__(self, lines: List[Line], caracteristiques: List[Caracteristique], name: str = ''):
+    def __init__(self, lines: List[Line], characteristics: List[Characteristic], name: str = ''):
         self.lines = lines
-        self.caracteristiques = caracteristiques
+        self.characteristics = characteristics
         super().__init__(name=name)
 
 
@@ -56,29 +56,32 @@ class CompositeShape(DessiaObject):
 #         self.circles = circles
 #         super().__init__(name=name)
 
+point1 = Point(0, 'A')
+point2 = Point(1, 'B')
+point3 = Point(2, 'C')
+point4 = Point(3, 'D')
+
+line1 = Line(point1, point2, 'AB')
+line2 = Line(point2, point3, 'BC')
+line3 = Line(point3, point4, 'CD')
+
+lines_collection = ShapeCollection(lines=[line1, line2, line3],
+                                   characteristics=[Characteristic(description="best", name="characteristic_1")],
+                                   name='Shape Collection')
+composite_shape = CompositeShape(lines_collection, 'Composite Shape')
+
+excel_file_path = "composite_shape.xlsx"
+composite_shape.to_xlsx(excel_file_path)
+
 
 class TestReadExcel(unittest.TestCase):
+
     def test_container(self):
-        point1 = Point(0, 'A')
-        point2 = Point(1, 'B')
-        point3 = Point(2, 'C')
-        point4 = Point(3, 'D')
-
-        line1 = Line(point1, point2, 'AB')
-        line2 = Line(point2, point3, 'BC')
-        line3 = Line(point3, point4, 'CD')
-
-        lines_collection = ShapeCollection([line1, line2, line3], 'Shape Collection')
-        composite_shape = CompositeShape(lines_collection, 'Composite Shape')
-
-        excel_file_path = "composite_shape.xlsx"
-        composite_shape.to_xlsx(excel_file_path)
-
         reader = ExcelReader(excel_file_path)
 
         cell_values = reader.process_workbook()
         workbook = openpyxl.load_workbook(filename=excel_file_path)
-        self.assertEqual(len(cell_values.keys()), len(workbook.worksheets))
+        self.assertEqual(len(cell_values.extracted_datas.keys()), len(workbook.worksheets))
 
-        main_obj = reader.read_object()
+        main_obj = reader.read_workbook()
         self.assertEqual(main_obj, composite_shape)
