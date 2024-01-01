@@ -412,18 +412,18 @@ class ExcelReader:
                                                                                 extracted_data.class_info,
                                                                                 extracted_data.attributes,
                                                                                 key, extracted_data.datas)
-                    break
+
                 else:
                     instantiated_objects = self.process_single_hyperlink_row(instantiated_objects,
                                                                              extracted_data.class_info,
                                                                              extracted_data.attributes,
                                                                              key, extracted_data.datas, stack)
-                    break
+
 
             else:
                 instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data.class_info,
                                                                  extracted_data.attributes, key, extracted_data.datas)
-                break
+
 
         return instantiated_objects[self.main_sheet][0]
 
