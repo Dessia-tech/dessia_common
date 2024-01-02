@@ -271,7 +271,7 @@ class ExcelReader:
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_single_hyperlink_row(self, instantiated_objects, class_info, attributes, key, values, stack):
+    def process_single_hyperlink_row(self, instantiated_objects, class_info, attributes, key, values):
         """
         Process a single row in a sheet representing an object with hyperlinks.
 
@@ -284,30 +284,24 @@ class ExcelReader:
         Returns:
         - dict: Updated dictionary of instantiated objects.
         """
-        hyperlink_list = [self.get_location(column)[0] for row in values.values() for column in row
-                          if isinstance(column, openpyxl.cell.cell.Cell)]
 
-        if hyperlink_list == list(instantiated_objects.keys()) or all(
-                hyperlink in list(instantiated_objects.keys()) for hyperlink in hyperlink_list):
+        full_class_name = f"{class_info[0]}.{class_info[1]}"
 
-            full_class_name = f"{class_info[0]}.{class_info[1]}"
+        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
+        initial_attributes = self.get_attributes_and_types(obj_class)
 
-            obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
-            initial_attributes = self.get_attributes_and_types(obj_class)
+        objects = []
+        for value_set in values.values():
+            for k, cell in enumerate(value_set):
+                if isinstance(cell, openpyxl.cell.cell.Cell):
+                    val_replace = instantiated_objects[self.get_location(cell)[0]]
+                    value_set[k] = self.update_attribute_values(cell, val_replace)
 
-            objects = []
-            for value_set in values.values():
-                for k, cell in enumerate(value_set):
-                    if isinstance(cell, openpyxl.cell.cell.Cell):
-                        val_replace = instantiated_objects[self.get_location(cell)[0]]
-                        value_set[k] = self.update_attribute_values(cell, val_replace)
+            objects.append(
+                self.create_object(obj_class, value_set, attributes, initial_attributes))
 
-                objects.append(
-                    self.create_object(obj_class, value_set, attributes, initial_attributes))
+        instantiated_objects[key] = objects
 
-            instantiated_objects[key] = objects
-        else:
-            stack.extend(list({key: values}.items()))
         return instantiated_objects
 
     def process_simple_sheet(self, instantiated_objects, class_info, attributes, key, values):
@@ -417,8 +411,7 @@ class ExcelReader:
                     instantiated_objects = self.process_single_hyperlink_row(instantiated_objects,
                                                                              extracted_data.class_info,
                                                                              extracted_data.attributes,
-                                                                             key, extracted_data.datas, stack)
-
+                                                                             key, extracted_data.datas)
 
             else:
                 instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data.class_info,
