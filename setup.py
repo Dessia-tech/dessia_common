@@ -143,6 +143,7 @@ setup(
         "dectree",
         "docx",
         "humanize",
+        "importlib_resources",
         "matplotlib",
         "networkx",
         "numpy",
@@ -157,7 +158,6 @@ setup(
         "scikit-learn>=1.2.0",
         "scipy",
         "typeguard",
-        "importlib_resources"
     ],
     python_requires=">=3.9",
 )
