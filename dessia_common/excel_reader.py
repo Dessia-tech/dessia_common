@@ -222,13 +222,13 @@ class ExcelReader:
         initial_attributes = self.get_attributes_and_types(obj_class)
         objects = []
 
-        for value_set in values.values():
-            for index, value in enumerate(value_set):
-                if isinstance(value, openpyxl.cell.cell.Cell):
-                    replaced_value = instantiated_objects[self.get_location(value)[0]]
-                    value_set[index] = self.update_attribute_values(value, replaced_value)
+        value_set = list(values.values())[0]
+        for index, value in enumerate(value_set):
+            if isinstance(value, openpyxl.cell.cell.Cell):
+                replaced_value = instantiated_objects[self.get_location(value)[0]]
+                value_set[index] = self.update_attribute_values(value, replaced_value)
 
-            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
+        objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
@@ -291,14 +291,13 @@ class ExcelReader:
         initial_attributes = self.get_attributes_and_types(obj_class)
 
         objects = []
-        for value_set in values.values():
-            for k, cell in enumerate(value_set):
-                if isinstance(cell, openpyxl.cell.cell.Cell):
-                    val_replace = instantiated_objects[self.get_location(cell)[0]]
-                    value_set[k] = self.update_attribute_values(cell, val_replace)
+        value_set = list(values.values())[0]
+        for k, cell in enumerate(value_set):
+            if isinstance(cell, openpyxl.cell.cell.Cell):
+                val_replace = instantiated_objects[self.get_location(cell)[0]]
+                value_set[k] = self.update_attribute_values(cell, val_replace)
 
-            objects.append(
-                self.create_object(obj_class, value_set, attributes, initial_attributes))
+        objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
 
