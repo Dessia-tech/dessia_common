@@ -216,10 +216,10 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        full_class_name = f"{class_info[0]}.{class_info[1]}"
-        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
+        object_class = f"{class_info[0]}.{class_info[1]}"
+        class_ = get_python_class_from_class_name(full_class_name=object_class)
 
-        initial_attributes = self.get_attributes_and_types(obj_class)
+        initial_attributes = self.get_attributes_and_types(class_)
         objects = []
 
         value_set = list(values.values())[0]
@@ -228,7 +228,7 @@ class ExcelReader:
                 replaced_value = instantiated_objects[self.get_location(value)[0]]
                 value_set[index] = self.update_attribute_values(value, replaced_value)
 
-        objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
+        objects.append(self.create_object(class_, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
@@ -246,10 +246,10 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        full_class_name = f"{class_info[0]}.{class_info[1]}"
-        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
+        object_class = f"{class_info[0]}.{class_info[1]}"
+        class_ = get_python_class_from_class_name(full_class_name=object_class)
 
-        initial_attributes = self.get_attributes_and_types(obj_class)
+        initial_attributes = self.get_attributes_and_types(class_)
         objects = []
         for value_set in values.values():
             for i, cell in enumerate(value_set):
@@ -266,7 +266,7 @@ class ExcelReader:
                     moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
                     value_set[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
 
-            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
+            objects.append(self.create_object(class_, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
@@ -285,10 +285,10 @@ class ExcelReader:
         - dict: Updated dictionary of instantiated objects.
         """
 
-        full_class_name = f"{class_info[0]}.{class_info[1]}"
+        object_class = f"{class_info[0]}.{class_info[1]}"
 
-        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
-        initial_attributes = self.get_attributes_and_types(obj_class)
+        class_ = get_python_class_from_class_name(full_class_name=object_class)
+        initial_attributes = self.get_attributes_and_types(class_)
 
         objects = []
         value_set = list(values.values())[0]
@@ -297,7 +297,7 @@ class ExcelReader:
                 val_replace = instantiated_objects[self.get_location(cell)[0]]
                 value_set[k] = self.update_attribute_values(cell, val_replace)
 
-        objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
+        objects.append(self.create_object(class_, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
 
@@ -315,15 +315,14 @@ class ExcelReader:
         Returns:
         dict: The updated dictionary of instantiated objects after processing the sheet.
         """
-        module_name = class_info[0]
-        class_name = class_info[1]
-        full_class_name = f"{module_name}.{class_name}"
-        obj_class = get_python_class_from_class_name(full_class_name=full_class_name)
 
-        initial_attributes = self.get_attributes_and_types(obj_class)
+        object_class = f"{class_info[0]}.{class_info[1]}"
+        class_ = get_python_class_from_class_name(full_class_name=object_class)
+
+        initial_attributes = self.get_attributes_and_types(class_)
         objects = []
         for value_set in values.values():
-            objects.append(self.create_object(obj_class, value_set, attributes, initial_attributes))
+            objects.append(self.create_object(class_, value_set, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects
