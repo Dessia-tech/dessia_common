@@ -10,6 +10,7 @@ import volmdlr as vm
 import volmdlr.primitives2d as p2d
 
 import plot_data
+from plot_data.colors import RED, BLUE, WHITE
 
 
 class Beam(DessiaObject):
@@ -28,11 +29,17 @@ class HorizontalBeam(Beam):
     def __init__(self, length: float, name: str = ""):
         super().__init__(length=length, name=name)
 
-    @plot_data_view("2D View")
-    def plot2d(self):
+    def contour(self, reference_path: str = "#"):
         points = [vm.Point2D(0, 0), vm.Point2D(0, self.width),
                   vm.Point2D(self.length, self.width), vm.Point2D(self.length, 0)]
-        return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        contour = self.contour(reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=RED)
+        fill_style = plot_data.SurfaceStyle(color_fill=WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
 
 class VerticalBeam(Beam):
@@ -41,11 +48,17 @@ class VerticalBeam(Beam):
     def __init__(self, length: float, name: str = ""):
         super().__init__(length=length, name=name)
 
-    @plot_data_view("2D View")
-    def plot2d(self, origin: float):
+    def contour(self, origin: float, reference_path: str = "#"):
         points = [vm.Point2D(origin, 0), vm.Point2D(origin, self.length),
                   vm.Point2D(origin + self.width, self.length), vm.Point2D(origin + self.width, 0)]
-        return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, origin: float, reference_path: str = "#"):
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=BLUE)
+        fill_style = plot_data.SurfaceStyle(color_fill=WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
 
 class BeamStructure(DessiaObject):
@@ -58,11 +71,14 @@ class BeamStructure(DessiaObject):
         super().__init__(name=name)
 
     @plot_data_view("2D View")
-    def plot2d(self):
-        horizontal_contour = self.horizontal_beam.plot2d()
-        vertical_contours = [b.plot2d(self.horizontal_beam.length * i / len(self.vertical_beams))
+    def plot2d(self, reference_path: str = "#"):
+        horizontal_contour = self.horizontal_beam.plot2d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_contours = [b.plot2d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                      reference_path=f"{reference_path}/vertical_beams/{i}")
                              for i, b in enumerate(self.vertical_beams)]
-        return plot_data.PrimitiveGroup(primitives=[horizontal_contour] + vertical_contours, name="Contour")
+        labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
+        primtives = [horizontal_contour] + vertical_contours + labels
+        return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
 
 
 horizontal = HorizontalBeam(10, "H")
