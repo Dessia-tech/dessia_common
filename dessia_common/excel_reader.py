@@ -238,8 +238,8 @@ class ExcelReader:
         Process sub-objects based on cell data.
 
         Args:
-        - cell (openpyxl.cell.cell.Cell): The cell containing data.
-        - workbook (openpyxl.workbook.Workbook): The workbook containing the cell.
+        - cell (Cell): The cell containing data.
+        - workbook (Workbook): The workbook containing the cell.
 
         Returns:
         - object or any: The instantiated sub-object or original cell value.
