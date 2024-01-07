@@ -233,6 +233,31 @@ class ExcelReader:
         instantiated_objects[key] = objects
         return instantiated_objects
 
+    def process_sub_objects(self, cell, workbook):
+        """
+        Process sub-objects based on cell data.
+
+        Args:
+        - cell (openpyxl.cell.cell.Cell): The cell containing data.
+        - workbook (openpyxl.workbook.Workbook): The workbook containing the cell.
+
+        Returns:
+        - object or any: The instantiated sub-object or original cell value.
+        """
+        if isinstance(cell, openpyxl.cell.cell.Cell):
+            sheet_title, row_target = self.get_location(cell)
+            sub_module_name = workbook[sheet_title]["A2"].value
+            sub_class_name = workbook[sheet_title]["B2"].value
+            sheet_target = workbook[sheet_title]
+            sub_attributes = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
+            sub_object_class = f"{sub_module_name}.{sub_class_name}"
+            sub_class_ = get_python_class_from_class_name(full_class_name=sub_object_class)
+            sub_init_attributes = self.get_attributes_and_types(sub_class_)
+
+            moment_values = [cell.value for cell in sheet_target[int(row_target[1:])][1:]]
+            return self.create_object(sub_class_, moment_values, sub_attributes, sub_init_attributes)
+        return cell
+
     def process_multiple_hyperlink_rows(self, instantiated_objects, class_info, attributes, key, values):
         """
         Process multiple rows in a sheet, each representing an object with hyperlinks.
@@ -252,21 +277,8 @@ class ExcelReader:
         initial_attributes = self.get_attributes_and_types(class_)
         objects = []
         for value_set in values.values():
-            for i, cell in enumerate(value_set):
-                if isinstance(cell, openpyxl.cell.cell.Cell):
-                    sheet_target_title, row_target = self.get_location(cell)
-                    sub_module_name = self.workbook[sheet_target_title]["A2"].value
-                    sub_class_name = self.workbook[sheet_target_title]["B2"].value
-                    sheet_target = self.workbook[sheet_target_title]
-                    sub_attr = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
-                    sub_full_class_name = f"{sub_module_name}.{sub_class_name}"
-                    sub_obj_class = get_python_class_from_class_name(full_class_name=sub_full_class_name)
-                    sub_init_attributes = self.get_attributes_and_types(sub_obj_class)
-
-                    moment_value = [cell.value for cell in sheet_target[int(row_target[1:]) + 2][1:]]
-                    value_set[i] = sub_obj_class(**(self.get_data(moment_value, sub_attr, sub_init_attributes)))
-
-            objects.append(self.create_object(class_, value_set, attributes, initial_attributes))
+            sub_values = [self.process_sub_objects(cell, self.workbook) for cell in value_set]
+            objects.append(self.create_object(class_, sub_values, attributes, initial_attributes))
 
         instantiated_objects[key] = objects
         return instantiated_objects

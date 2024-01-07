@@ -134,7 +134,7 @@ class XLSXWriter:
             cell_link = f'#{value[0].__class__.__name__}!A2'
         elif is_hashable(value) and value in self.object_to_sheet_row:
             ref_sheet, ref_row_number, _ = self.object_to_sheet_row[value]
-            cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
+            cell_link = f'#{ref_sheet.title}!A{ref_row_number+2}'
 
         return cell_link
 
