@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 """ Tests for cars data. """
 
-import importlib_resources
+import importlib.resources
 from dessia_common.core import DessiaFilter
 from dessia_common.tests import Car, CarWithFeatures
 from dessia_common.files import StringFile
 
-ref = importlib_resources.files("dessia_common").joinpath("models/data/cars.csv")
+ref = importlib.resources.files("dessia_common").joinpath("models/data/cars.csv")
 with ref.open('rb') as csv_cars:
     stream = StringFile.from_stream(csv_cars)
 
