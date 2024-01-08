@@ -101,7 +101,7 @@ class DessiaObject(SerializableObject):
                            + 'Please store your attributes by yourself in your init'),
                           DeprecationWarning)
 
-        # The code below has shown to be inefficient and should be remove in future version (0.16?)
+        # The code below has shown to be inefficient and should be removed in future version (0.16?)
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 

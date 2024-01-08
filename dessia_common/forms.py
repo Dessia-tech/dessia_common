@@ -769,21 +769,6 @@ class MidLevel(DessiaObject):
         return cls(bottom_level=bottom_level, name=name)
 
 
-"""
-
-"""
-
-from typing import List
-from dessia_common.core import DessiaObject
-from dessia_common.decorators import plot_data_view
-
-import volmdlr as vm
-import volmdlr.primitives2d as p2d
-
-import plot_data
-from plot_data.colors import RED, BLUE, WHITE
-
-
 class Beam(DessiaObject):
     _standalone_in_db = True
 
@@ -808,8 +793,8 @@ class HorizontalBeam(Beam):
     @plot_data_view("2D View")
     def plot2d(self, reference_path: str = "#"):
         contour = self.contour(reference_path)
-        edge_style = plot_data.EdgeStyle(color_stroke=RED)
-        fill_style = plot_data.SurfaceStyle(color_fill=WHITE)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
 
@@ -827,8 +812,8 @@ class VerticalBeam(Beam):
     @plot_data_view("2D View")
     def plot2d(self, origin: float, reference_path: str = "#"):
         contour = self.contour(origin=origin, reference_path=reference_path)
-        edge_style = plot_data.EdgeStyle(color_stroke=BLUE)
-        fill_style = plot_data.SurfaceStyle(color_fill=WHITE)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
 
