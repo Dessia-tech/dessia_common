@@ -8,14 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.16.0
 
+
 ### Removed
 
 - Displays : Old markdown and 3D displays (without decorators) are not supported anymore
+
 
 ### Refactor
 
 - Displays : Stronger type for display than 'str'. Values other than "markdown", "plot_data" & "babylon_data" are now forbidden
 - PlotData : Adapt plot method to new decorator paradigm
+
+
+### Build
+
+- Global : remove usage of pkg_resources to use importlib.resources instead
 
 
 ## 0.15.3

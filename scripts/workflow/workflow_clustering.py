@@ -2,7 +2,7 @@
 Test for ClusteredDataset in workflow. Test filtering method
 """
 import json
-import importlib_resources
+import importlib.resources
 from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
@@ -13,7 +13,7 @@ from dessia_common.datatools.cluster import ClusteredDataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
-ref = importlib_resources.files("dessia_common").joinpath("models/data/cars.csv")
+ref = importlib.resources.files("dessia_common").joinpath("models/data/cars.csv")
 with ref.open('rb') as csv_cars:
     stream = StringFile.from_stream(csv_cars)
 
