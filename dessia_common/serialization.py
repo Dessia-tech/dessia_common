@@ -164,9 +164,9 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_to_refs, serialized_value, id_, path_to_value = memo[value]
+            path_to_refs, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {REF_MARKER: path_to_value}, memo
+            return {REF_MARKER: path_to_refs}, memo
         serialized = value.to_dict()
 
         if id_method:
