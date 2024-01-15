@@ -99,7 +99,7 @@ steps:
       path: /root/.cache/pip
 
 - name: check coverage
-  image: python3.9
+  image: python:3.9
 #  failure: ignore
   commands:
     - coverage json
