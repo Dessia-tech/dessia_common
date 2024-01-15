@@ -92,20 +92,28 @@ steps:
   - coverage run --source dessia_common ci_tutorials.py
   - cd ..
   - coverage combine tests/.coverage test_unittests/.coverage tutorials/.coverage
-  - coverage json
-  - coverage report
-  - coverage html
-  - python coverage.py
 
   volumes:
     # Mount pip cache from host
     - name: pip_cache
       path: /root/.cache/pip
 
+- name: check coverage
+  image: python:3.9
+  failure: ignore
+  commands:
+    - git fetch --tags
+    - pip install .
+    - pip install coverage
+    - coverage json
+    - coverage report
+    - coverage html
+    - python coverage.py
+
 - name: develop
   image: python:3.9
   commands:
-  - python setup.py develop
+  - pip install .
 
   volumes:
     # Mount pip cache from host
