@@ -239,7 +239,7 @@ class ExcelReader:
             sheet_target = workbook[sheet_title]
             sub_attributes = list(sheet_target.iter_rows(min_row=3, max_row=3, min_col=2, values_only=True))[0]
 
-            moment_values = [cell.value for cell in sheet_target[int(row_target[1:])][1:]]
+            moment_values = [c.value for c in sheet_target[int(row_target[1:])][1:]]
             extracted_data = ExcelDataExtract(class_module=sub_module_name, class_name=sub_class_name,
                                               attributes=sub_attributes, datas=None)
 
