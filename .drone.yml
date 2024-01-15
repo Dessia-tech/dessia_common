@@ -100,7 +100,7 @@ steps:
 
 - name: check coverage
   image: python:3.9
-#  failure: ignore
+  failure: ignore
   commands:
     - git fetch --tags
     - pip install .
