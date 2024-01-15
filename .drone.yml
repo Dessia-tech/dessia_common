@@ -102,6 +102,7 @@ steps:
   image: python:3.9
 #  failure: ignore
   commands:
+    - pip install coverage
     - coverage json
     - coverage report
     - coverage html
