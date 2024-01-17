@@ -844,14 +844,20 @@ structure = BeamStructure(horizontal_beam=horizontal, vertical_beams=verticals, 
 
 class Point:
 
+    def __init__(self, name: str = ""):
+        self.name = name
+
     def to_dict(self):
-        return {}
+        return {"name": self.name}
 
 
 class Vector:
 
+    def __init__(self, name: str = ""):
+        self.name = name
+
     def to_dict(self):
-        return {}
+        return {"name": self.name}
 
     def __eq__(self, other):
         return True
@@ -873,8 +879,8 @@ class Module(DessiaObject):
 class Vessel(DessiaObject):
     _standalone_in_db = True
 
-    def __init__(self, module: List[Module], name: str = ''):
-        self.module = module
+    def __init__(self, modules: List[Module], name: str = ''):
+        self.modules = modules
 
         DessiaObject.__init__(self, name=name)
 
