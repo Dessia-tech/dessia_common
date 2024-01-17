@@ -4,7 +4,7 @@
 
 import inspect
 from ast import literal_eval
-from typing import Dict, Tuple, List
+from typing import Dict, List
 
 import openpyxl
 
