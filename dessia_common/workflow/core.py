@@ -34,7 +34,7 @@ from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
-                                         serialize_dict, add_references, deserialize_argument)
+                                         serialize_dict, add_references, deserialize_argument, SerializableObject)
 from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
@@ -1930,12 +1930,63 @@ class WorkflowRun(WorkflowState):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
+    def instantiate_objet(self, obj_list):
+        class_name = f"{obj_list[0].__class__.__name__}"
+        if len(obj_list) > 1:
+            instances = '['
+            for obj_ in obj_list:
+                inst = f"{class_name}(**{obj_.__dict__})"
+                instances += inst + ","
+            instances += ']'
+            return instances
+
+        return f"{class_name}(**{obj_list[0].__dict__})"
+
+    @staticmethod
+    def get_builtins(obj_list):
+        element = obj_list[0]
+        if isinstance(element, (int, str, float, bool)):
+            if len(obj_list) > 1:
+                instances = [repr(obj) for obj in obj_list]
+                return f"[{', '.join(instances)}]"
+            else:
+                return repr(element)
+
+    @staticmethod
+    def get_file(type_files):
+        file_class = type_files[0].__class__.__name__
+        if len(type_files) > 1:
+            instances = "["
+            for _ in range(len(type_files)):
+                instances += f"{file_class}.from_file('Insert your path here')" + ","
+            instances += ']'
+            return instances
+        return f"{file_class}.from_file('Insert your path here')"
+
+    @staticmethod
+    def is_object_seq(seq):
+        return any(isinstance(element, SerializableObject) for element in seq)
+
+    @staticmethod
+    def is_file_seq(seq):
+        return any(isinstance(element, BinaryFile) for element in seq)
+
+    def get_sequence(self, seq):
+        if self.is_object_seq(seq):
+            value = self.instantiate_objet(seq)
+        elif self.is_file_seq(seq):
+            value = self.get_file(seq)
+        else:
+            value = self.get_builtins(seq)
+        return value
+
     def to_script(self):
         """
         Computes a script representing the workflowrun.
         """
+
         workflow_script = self.workflow.to_script()
-        workflow_script_import = self.workflow._to_script().imports
+        # workflow_script_import = self.workflow._to_script().imports
         input_str = ""
         default_value = ""
         add_import = ""
@@ -1957,16 +2008,23 @@ class WorkflowRun(WorkflowState):
                          f"{var.format(input_[1], i)}):" \
                          f" value_{str(input_[1]) + '_' + str(i)},\n"
 
-            if isinstance(values[i], str):
-                default_value_ = f"\nvalue_{input_[1]}_{i} = '{values[i]}'"
+            if isinstance(values[i], SerializableObject):
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.instantiate_objet([values[i]])}"
+
+            elif isinstance(values[i], (BinaryFile, StringFile)):
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_file([values[i].__class__.__name__])}"
+
+            elif is_sequence(values[i]):
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_sequence(values[i])}"
+
             else:
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {values[i]}"
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_builtins([values[i]])}"
             default_value += default_value_
 
-
+        # TODO: update
         for k, nbv in enumerate(self.workflow.nonblock_variables):
-           if not nbv.has_default_value:
-               liste_input_nbv.append((input_, k+j))
+            if not nbv.has_default_value:
+                liste_input_nbv.append((input_, k + j))
 
         for i, input_ in enumerate(liste_input_nbv):
             input_str += f"    workflow.input_index(" \
