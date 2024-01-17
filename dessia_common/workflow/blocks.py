@@ -749,10 +749,30 @@ class Display(Block):
             # Cover cases where kwargs do not correspond to method signature (missing reference_path, for ex)
             return [attrmethod_getter(object_, method)()]
 
+    @property
+    def display_class_name(self):
+        """ Get the class name of the current instance. """
+        return full_classname(self).split('.')[-1]
+
+    @property
+    def selector_class_name(self):
+        """ Get the class name of the Selector. """
+        return full_classname(self.selector).split('.')[-1]
+
+    def base_script(self) -> str:
+        """ Generate a chunk of script that denotes the arguments of a base block. """
+        return f"name=\"{self.name}\", load_by_default={self.load_by_default}, position={self.position}"
+
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"{self.__class__.__name__}(name='{self.name}')"
-        return ToScriptElement(declaration=script, imports=[self.full_classname])
+        imports = [self.full_classname]
+        script_selector = to_script_selector(self)
+        script = f"{self.display_class_name}(selector={self.selector_class_name}(" \
+                 f"class_={self.selector.class_.__name__}, name='{self.selector.name}')" \
+                 f", {self.base_script()})"
+
+        imports.extend(script_selector.imports)
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class DeprecatedMultiPlot(Display):
@@ -1452,3 +1472,11 @@ def get_attribute_type(attribute_name: str, parameters):
     if parameter.annotation == inspect.Parameter.empty:
         return None 
     return parameter.annotation
+
+
+def to_script_selector(display) -> ToScriptElement:
+    """ Write Block's Selector config into a chunk of script. """
+    script = f"{display.selector.__class__.__name__}(name='{display.name}')"
+    display_class_name = full_classname(display.selector.class_, compute_for="class")
+    selector_class_name = f"{display.selector.__module__}.{display.selector.__class__.__name__}"
+    return ToScriptElement(declaration=script, imports=[display_class_name, selector_class_name])
