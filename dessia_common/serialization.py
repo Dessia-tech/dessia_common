@@ -292,6 +292,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
     """ Transform a dict into an object. """
     class_argspec = None
 
+    print(dict_)
+
     if pointers_memo is None or global_dict is None:
         global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                           pointers_memo=pointers_memo)
