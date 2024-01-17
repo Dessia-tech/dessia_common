@@ -78,7 +78,7 @@ def is_tuple(obj) -> bool:
 
 
 def is_builtin(type_):
-    """ Return True if type_ is a simple python builtin, ie. int, float, bool or str. """
+    """ Return True if type_ is a simple python builtin (int, float, bool or str). """
     return type_ in TYPING_EQUIVALENCES
 
 
@@ -96,8 +96,18 @@ def isinstance_base_types(obj):
 
 
 def is_dessia_file(obj):
-    """Return if the object inherits from dessia files."""
+    """ Wether object inherits from dessia files. """
     return isinstance(obj, (BinaryFile, StringFile))
+
+
+def is_file_or_file_sequence(object_):
+    """ Whether object inherits from dessia file or is a container of such objects. """
+    is_file = is_dessia_file(object_)
+    if not is_file and is_sequence(object_):
+        for obj in object_:
+            if is_file_or_file_sequence(obj):
+                return True
+    return is_file
 
 
 def unfold_deep_annotation(typing_=None):
@@ -279,7 +289,7 @@ def recursive_type(obj):
 
 def typematch(type_: Type, match_against: Type) -> bool:
     """
-    Return wether type_ matches against match_against.
+    Return whether type_ matches against match_against.
 
     match_against needs to be "wider" than type_, and the check is not bilateral
     """

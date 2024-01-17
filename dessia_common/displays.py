@@ -1,5 +1,4 @@
 """ Displays for dessia_common. """
-import warnings
 import webbrowser
 import os
 import tempfile
@@ -7,11 +6,10 @@ import inspect
 import json
 
 
-from typing import Union, List, Optional
+from typing import Union, Optional
 from networkx import DiGraph, Graph, kamada_kawai_layout
 from dessia_common.templates import visjs_template
 from dessia_common.typings import JsonSerializable
-from dessia_common.utils.types import is_sequence
 
 
 class DisplaySetting:
@@ -48,28 +46,21 @@ class DisplaySetting:
         return {"selector": self.selector, "type": self.type, "method": self.method, "arguments": self.arguments,
                 "serialize_data": self.serialize_data, "load_by_default": self.load_by_default}
 
-    def compose(self, attribute: str, serialize_data: bool = False):
+    def compose(self, attribute: str):
         """
         Handles deep calls to method.
 
-        In case of a parent getting the display settings of a children this methods allow
+        In case of a parent getting the display settings of a children, this method allow
         to inject the attribute name to method name.
         """
-        return DisplaySetting(selector=self.selector, type_=self.type, method=f"{attribute}.{self.method}",
-                              arguments=self.arguments, serialize_data=serialize_data,
-                              load_by_default=self.load_by_default)
+        self.method = f"{attribute}.{self.method}"
 
 
 class DisplayObject:
     """ Container for data of display. A traceback can be set if display fails to be generated. """
 
-    def __init__(self, type_: str, data: Union[JsonSerializable, List[JsonSerializable], str],
+    def __init__(self, type_: str, data: Union[JsonSerializable, str],
                  reference_path: str = '', traceback: str = '', name: str = ''):
-        if type_ == "plot_data" and not is_sequence(data):
-            warnings.warn("A plot_data DisplayObject must be called with data as a sequence. "
-                          "Please return a list of PlotData objects as the result of plot_data method. "
-                          "Change have been made automatically", Warning)
-            data = [data]
         self.type_ = type_
         self.data = data
         self.traceback = traceback

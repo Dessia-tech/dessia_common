@@ -7,7 +7,6 @@ from parameterized import parameterized
 class TestMethodSchemas(unittest.TestCase):
     @parameterized.expand([
         ("add_standalone_object", 1),
-        ("add_embedded_object", 1),
         ("count_until", 2),
         ("add_float", 1),
         ("generate_from_text", 1),
@@ -22,7 +21,6 @@ class TestMethodSchemas(unittest.TestCase):
 
     @parameterized.expand([
         ("add_standalone_object", True),
-        ("add_embedded_object", True),
         ("count_until", True),
         ("add_float", True),
         ("generate_from_text", True),
@@ -40,7 +38,6 @@ class TestMethodSchemas(unittest.TestCase):
 
     @parameterized.expand([
         ("add_standalone_object", 4),
-        ("add_embedded_object", 4),
         ("count_until", 4),
         ("add_float", 3),
         ("generate_from_text", 4),
@@ -59,12 +56,11 @@ class TestComputedSchemas(unittest.TestCase):
         self.schemas = DEF_SO.method_schemas
 
     def test_schemas_statics(self):
-        assert len(self.schemas) == 8
-        assert set(DEF_SO._allowed_methods) == set(self.schemas.keys())
+        self.assertEqual(len(self.schemas), 7)
+        self.assertSetEqual(set(DEF_SO._allowed_methods), set(self.schemas.keys()))
 
     @parameterized.expand([
         ("add_standalone_object", ["0"]),
-        ("add_embedded_object", ["0"]),
         ("count_until", ["0"]),
         ("add_float", []),
         ("generate_from_text", ["0"]),
@@ -91,7 +87,6 @@ class TestComputedSchemas(unittest.TestCase):
 
     @parameterized.expand([
         ("add_standalone_object", 1),
-        ("add_embedded_object", 1),
         ("count_until", 2),
         ("add_float", 1),
         ("generate_from_text", 1),

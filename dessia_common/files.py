@@ -206,3 +206,16 @@ class DocxFile(BinaryFile):
     """ Base class for Word files in new XML format. """
 
     extension = 'docx'
+
+
+def generate_archive(zip_archive, value):
+    """ Write the contents of a file-like object to a ZipFile archive. """
+    if isinstance(value, StringFile):
+        with zip_archive.open(value.filename, 'w') as file:
+            file.write(value.getvalue().encode('utf-8'))
+    elif isinstance(value, BinaryFile):
+        with zip_archive.open(value.filename, 'w') as file:
+            file.write(value.getbuffer())
+    else:
+        raise ValueError(f"Archive input is not a file-like object. Got '{value}' of type {type(value)}")
+    return file

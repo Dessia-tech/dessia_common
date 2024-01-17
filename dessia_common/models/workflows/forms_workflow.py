@@ -1,24 +1,25 @@
 """ Tools for forms of workflows. """
-from dessia_common.workflow.core import TypedVariable, TypedVariableWithDefaultValue, Pipe, Workflow
-from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, ForEach,\
+from dessia_common.workflow.core import Variable, Pipe, Workflow
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, GetModelAttribute, ForEach,\
     MultiPlot, Unpacker, WorkflowBlock
 from dessia_common.forms import Generator, Optimizer
-from dessia_common.typings import MethodType
+from dessia_common.typings import MethodType, AttributeType
 
 instanciate_generator = InstantiateModel(model_class=Generator, name='Instantiate Generator')
 
 generate_method = MethodType(class_=Generator, name='generate')
 generator_generate = ModelMethod(method_type=generate_method, name='Generator Generate')
-attribute_selection = ModelAttribute(attribute_name='models', name='Attribute Selection')
+attribute = AttributeType(class_=Generator, name="models")
+attribute_selection = GetModelAttribute(attribute_type=attribute, name="Attribute Selection")
 
 # Sub-Workflow of model optimization
 instanciate_optimizer = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
-
 generate_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_type=generate_method, name='Optimization')
 
-model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
+attribute = AttributeType(class_=Optimizer, name="model_to_optimize")
+model_fetcher = GetModelAttribute(attribute_type=attribute, name="Model Fetcher")
 
 pipe1_opt = Pipe(input_variable=instanciate_optimizer.outputs[0], output_variable=optimization.inputs[0])
 pipe2_opt = Pipe(input_variable=optimization.outputs[1], output_variable=model_fetcher.inputs[0])
@@ -32,12 +33,12 @@ optimization_workflow_block = WorkflowBlock(workflow=optimization_workflow, name
 parallel_optimization = ForEach(workflow_block=optimization_workflow_block, iter_input_index=0, name='ForEach')
 
 multiplot_attributes = ['standalone_subobject/intarg', 'standalone_subobject/name', 'standalone_subobject/floatarg']
-multiplot = MultiPlot(attributes=multiplot_attributes, name='Multiplot')
+multiplot = MultiPlot(selector_name="Multiplot", attributes=multiplot_attributes, name='Multiplot')
 
 unpacker = Unpacker(indices=[0], name="Unpacker")
 
-int_variable = TypedVariable(type_=int, name="Some Integer")
-name_variable = TypedVariableWithDefaultValue(type_=str, name="Shared Name", default_value="Shared Name")
+int_variable = Variable(type_=int, name="Some Integer")
+name_variable = Variable(type_=str, name="Shared Name", default_value="Shared Name")
 
 pipe_int_1 = Pipe(input_variable=int_variable, output_variable=instanciate_generator.inputs[1])
 pipe_name_1 = Pipe(input_variable=name_variable, output_variable=instanciate_generator.inputs[3])
@@ -52,5 +53,3 @@ blocks = [instanciate_generator, generator_generate, attribute_selection,
           parallel_optimization, multiplot, unpacker]
 pipes = [pipe_int_1, pipe_name_1, pipe_name_2, pipe_gene, pipe_attr, pipe_opti, pipe_mult, pipe_unpack]
 workflow_ = Workflow(blocks=blocks, pipes=pipes, output=parallel_optimization.outputs[0], name="Workflow with NBVs")
-workflow_state = workflow_.start_run({})
-workflow_state.name = "WorkflowState with NBVs"

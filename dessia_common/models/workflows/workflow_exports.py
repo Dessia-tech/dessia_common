@@ -1,6 +1,6 @@
 """ Script for workflow with exports creationZ. """
 
-from dessia_common.workflow.core import TypedVariable, Pipe, Workflow
+from dessia_common.workflow.core import Variable, Pipe, Workflow
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, ModelAttribute, WorkflowBlock, ForEach,\
     Export, Unpacker, Archive, MultiPlot
 from dessia_common.forms import Generator, Optimizer, StandaloneObject
@@ -18,7 +18,6 @@ opti = InstantiateModel(model_class=Optimizer, name='Instantiate Optimizer')
 
 optimize_method = MethodType(class_=Optimizer, name='optimize')
 optimization = ModelMethod(method_type=optimize_method, name='Optimization')
-
 model_fetcher = ModelAttribute(attribute_name='model_to_optimize', name='Model Fetcher')
 
 pipe1_opt = Pipe(input_variable=opti.outputs[0], output_variable=optimization.inputs[0])
@@ -33,7 +32,7 @@ optimization_workflow_block = WorkflowBlock(workflow=opti_workflow, name='Workfl
 parallel_optimization = ForEach(workflow_block=optimization_workflow_block, iter_input_index=0, name='ForEach')
 
 display_attributes = ['intarg', 'strarg', 'standalone_subobject/floatarg']
-display_ = MultiPlot(attributes=display_attributes, name='Display')
+display_ = MultiPlot(selector_name="Multiplot", attributes=display_attributes, name='Display')
 
 unpack_results = Unpacker(indices=[0], name="Unpack Results")
 
@@ -45,7 +44,7 @@ export_xlsx = Export(method_type=xlsx_method, text=False, filename="export_xlsx"
 
 zip_export = Archive(number_exports=2, name="Zip")
 
-int_variable = TypedVariable(type_=int, name="Some Integer")
+int_variable = Variable(type_=int, name="Some Integer")
 
 pipe_int_1 = Pipe(input_variable=int_variable, output_variable=inst.inputs[1])
 pipe_1 = Pipe(input_variable=inst.outputs[0], output_variable=gene.inputs[0])

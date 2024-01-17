@@ -10,13 +10,19 @@ from dessia_common.datatools.dataset import Dataset
 
 # Tests on common_attributes
 
+class SubObject(DessiaObject):
+    def __init__(self, sub_attr: float = 1.5, name: str = ''):
+        self.sub_attr = sub_attr
+        DessiaObject.__init__(self, name=name)
 
-class Bidon(DessiaObject):
-    _vector_features = ['attr1']
 
-    def __init__(self, attr1: float = 1.2, name: str = ''):
+class TestObject(DessiaObject):
+    _vector_features = ['attr1', "sub_object/sub_attr"]
+
+    def __init__(self, attr1: float = 1.2, sub_object: SubObject = SubObject(), name: str = ''):
         self.attr1 = attr1
         self.attr2 = attr1 * 2
+        self.sub_object = sub_object
         DessiaObject.__init__(self, name=name)
 
     @property
@@ -24,15 +30,16 @@ class Bidon(DessiaObject):
         return self.attr1 + self.attr2
 
 
-bidon = Bidon()
-bidon_hlist = Dataset([bidon] * 10)
-bidon_hlist.plot_data()
-assert(bidon_hlist.common_attributes == ['attr1'])
+test_object = TestObject()
+sub_object_dataset = Dataset([SubObject()] * 10)
+test_dataset = Dataset([test_object] * 10)
+test_dataset.plot_data()
+assert(test_dataset.common_attributes == ['attr1', 'sub_object/sub_attr'])
+assert("Sub_object/sub_attr" in test_dataset.__str__())
+assert("Sub_attr" in sub_object_dataset.__str__())
 
 # Tests on common_attributes
-
-
-class Bidon(DessiaObject):
+class TestObject(DessiaObject):
     _vector_features = ['attr1', 'attr2', 'prop1', 'in_to_vector']
 
     def __init__(self, attr1: float = 1.2, name: str = ''):
@@ -48,11 +55,11 @@ class Bidon(DessiaObject):
         return [self.attr1, self.attr2, self.prop1, random.randint(0, 32)]
 
 
-bidon = Bidon()
-bidon_hlist = Dataset([bidon] * 10)
-bidon_hlist.plot_data()
-assert(all(value in bidon_hlist._print_object(6, [12, 12, 12, 12, 12]) for value in ["1.2", "2.4", "3.59999..."]))
-assert(bidon_hlist.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
+test_object = TestObject()
+test_dataset = Dataset([test_object] * 10)
+test_dataset.plot_data()
+assert(all(value in test_dataset._print_object(6, [12, 12, 12, 12, 12]) for value in ["1.2", "2.4", "3.59999..."]))
+assert(test_dataset.common_attributes == ['attr1', 'attr2', 'prop1', 'in_to_vector'])
 
 # When attribute _features is not specified in class Car
 all_cars_without_features = Dataset(all_cars_no_feat)
@@ -90,14 +97,7 @@ assert(all(item in all_cars_without_features.matrix[idx]
 
 # Tests for displays
 hlist_cars_plot_data = all_cars_without_features.plot_data()
-# all_cars_without_features.plot()
-# all_cars_with_features.plot()
-# RandData_heterogeneous.plot()
-# assert(json.dumps(hlist_cars_plot_data[0].to_dict())[150:200] == 'acceleration": 12.0, "model": 70.0}, {"mpg": 15.0,')
-# assert(json.dumps(hlist_cars_plot_data[1].to_dict())[10500:10548] == 'celeration": 12.5, "model": 72.0},
-#        {"mpg": 13.0,')
-# assert(json.dumps(hlist_cars_plot_data[2].to_dict())[50:100] == 'te_names": ["Index of reduced basis vector", "Sing')
-print(all_cars_with_features)
+assert(all(string in all_cars_with_features.__str__() for string in ["Chevrolet C...", "0.302 |", "+ 396 undisplayed"]))
 
 # Tests for metrics
 assert(int(all_cars_with_features.distance_matrix('minkowski')[25][151]) == 186)

@@ -3,13 +3,12 @@
 """ Serialization Tools. """
 
 import uuid
-import sys
 import warnings
 import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
@@ -19,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-
+from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
@@ -35,19 +34,7 @@ class SerializableObject(CoreDessiaObject):
 
     def base_dict(self):
         """ A base dict for to_dict: set up a dict with object class and version. """
-        package_name = self.__module__.split('.', maxsplit=1)[0]
-        if package_name in sys.modules:
-            package = sys.modules[package_name]
-            if hasattr(package, '__version__'):
-                package_version = package.__version__
-            else:
-                package_version = None
-        else:
-            package_version = None
-
         dict_ = {'object_class': self.full_classname}
-        if package_version:
-            dict_['package_version'] = package_version
         return dict_
 
     def _serializable_dict(self):
@@ -61,7 +48,7 @@ class SerializableObject(CoreDessiaObject):
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
-                id_method=True, id_memo=None) -> JsonSerializable:
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Generic to_dict method. """
         if memo is None:
             memo = {}
@@ -78,19 +65,12 @@ class SerializableObject(CoreDessiaObject):
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, **kwargs)
         if cls is not SerializableObject:
-            obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, class_=cls, **kwargs)
         raise NotImplementedError("No object_class in dict")
 
     @property
@@ -140,8 +120,7 @@ def serialize(value):
             return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
-            raise dc_err.SerializationError(msg)
+            raise dc_err.SerializationError(f"Element of value '{value}' is not json serializable")
         serialized_value = value
     return serialized_value
 
@@ -155,9 +134,9 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
     if isinstance(value, SerializableObject):
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
-            return {REF_MARKER: path_value}, memo
+            return {REF_MARKER: path_to_refs}, memo
         try:
             serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
         except TypeError:
@@ -166,18 +145,18 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
 
         if id_method:
             id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
+            path_to_refs = f"#/_references/{id_}"
+            memo[value] = path_to_refs, serialized, id_, path
             if value._standalone_in_db:
                 id_memo[id_] = serialized
-                serialized = {REF_MARKER: path_value}
+                serialized = {REF_MARKER: path_to_refs}
         else:
             memo[value] = path, serialized, None, path
 
     elif isinstance(value, type):
         # TODO Why do we serialize types with pointers ? These are only just strings.
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, _ = memo[value]
             id_memo[id_] = serialized_value
             return {REF_MARKER: memo[value]}, memo
         serialized = serialize_annotation(value)
@@ -185,15 +164,15 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
+            path_to_refs, serialized_value, id_, path_to_value = memo[value]
             id_memo[id_] = serialized_value
-            return {REF_MARKER: path}, memo
+            return {REF_MARKER: path_to_value}, memo
         serialized = value.to_dict()
 
         if id_method:
             id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
+            path_to_refs = f"#/_references/{id_}"
+            memo[value] = path_to_refs, serialized, id_, path
         else:
             memo[value] = path, serialized, None, path
 
@@ -379,7 +358,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         obj = class_(**subobjects)
     else:
         obj = subobjects
-
     return obj
 
 
@@ -483,9 +461,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
         if isinstance(argument, int) and type_ == float:
             # Explicit conversion in this case
             return float(argument)
-        # else ...
-        msg = f"Given built-in type and argument are incompatible: " \
-              f"{type(argument)} and {type_} in {argument}"
+        msg = f"Given built-in type and argument are incompatible: {type(argument)} and {type_} in {argument}"
         raise TypeError(msg)
 
     if type_ is Any:
@@ -498,7 +474,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    if issubclass(type_, Measure):
+        return argument
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):
@@ -554,10 +532,10 @@ def find_references_dict(dict_, path):
 
 def pointer_graph(value):
     """
-    Create a graph of subattributes of an object.
+    Create a graph of sub-attributes of an object.
 
     Edges representing either:
-     * the hierarchy of an subattribute to an attribute
+     * the hierarchy of an sub attribute to an attribute
      * the pointer link between the 2 elements
     """
     nodes = set()
@@ -678,12 +656,12 @@ def deserialization_order(dict_):
 
 def dereference_jsonpointers(dict_):  # , global_dict):
     """
-    Analyses given dict.
+    Analyze given dict.
 
      Useful in order to:
-    - find jsonpointers
+    - find JSON pointers
     - deserialize them in the right order to respect pointers graph
-    :returns: a dict with key the path of the item and the value is the python object
+    :returns: a dictionary with key the path of the item and the value is the python object
     """
     order = deserialization_order(dict_)
     pointers_memo = {}
@@ -757,10 +735,10 @@ def pointer_graph_elements_dict(dict_, path='#'):
 
 def pointers_analysis(obj):
     """
-    Analyse on object to output stats on pointer use in the object.
+    Analyze object to output stats on pointer use in it.
 
     Maybe useless now that we use uuids.
-    :returns: a tuple of 2 dicts: one giving the number of pointer use by class
+    :returns: a tuple of 2 dictionaries: one giving the number of pointer use by class
     """
     if isinstance(obj, dict):
         dict_ = obj

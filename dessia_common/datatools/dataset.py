@@ -96,7 +96,7 @@ class Dataset(DessiaObject):
 
     def __getitem__(self, key: Any):
         """
-        Custom getitem for Dataset.
+        Custom Dataset function to get item.
 
         In addition to work as numpy.arrays of dimension `(n,)`, allows to pick a sub-Dataset from a list of indexes.
         """
@@ -262,7 +262,7 @@ class Dataset(DessiaObject):
             string += end_bar
         return string
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, *args, **kwargs) -> str:
         """Render a markdown of the object output type: string."""
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
@@ -599,7 +599,7 @@ class Dataset(DessiaObject):
         This indicates that the used features can be combined into less new features, which do not necessarily \
             make sense for engineers.
 
-        More informations: https://en.wikipedia.org/wiki/Singular_value_decomposition
+        More information: https://en.wikipedia.org/wiki/Singular_value_decomposition
 
         :return:
             **normalized_singular_values**: list of normalized singular values
@@ -631,7 +631,8 @@ class Dataset(DessiaObject):
             # Dimensionality plot
             dimensionality_plot = self._plot_dimensionality()
             # Scatter Matrix
-            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
+            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(),
+                                                   axis=dimensionality_plot.axis,
                                                    point_style=dimensionality_plot.point_style)
             # Parallel plot
             parallel_plot = self._parallel_plot(data_list)
@@ -676,7 +677,7 @@ class Dataset(DessiaObject):
                 for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
-        return [PointFamily(BLUE, list(range(len(self))))]
+        return [PointFamily(GREY, list(range(len(self))))]
 
     def _parallel_plot(self, data_list: List[Dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
@@ -868,7 +869,7 @@ class Dataset(DessiaObject):
 
     def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
         """
-        Get successive Pareto sheets (i.e. optimal points in a DOE for pre-computed costs).
+        Get successive Pareto sheets (i.e. optimal points in a DOE for already computed costs).
 
         :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
         :type costs_attributes: List[str]

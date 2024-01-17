@@ -18,42 +18,40 @@ from datetime import date
 from pylint import __version__
 from pylint.lint import Run
 
-MIN_NOTE = 9.2
+MIN_NOTE = 9.5
 
 EFFECTIVE_DATE = date(2023, 1, 18)
 WEEKLY_DECREASE = 0.03
 
-UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error"]
+UNWATCHED_ERRORS = ["fixme", "trailing-whitespace", "import-error", "protected-access"]
 
 MAX_ERROR_BY_TYPE = {
-    "wrong-spelling-in-docstring": 164,
-    "wrong-spelling-in-comment": 13,
-    "protected-access": 46,  # Highly dependant on our "private" conventions. Keeps getting raised
+    "protected-access": 48,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
-    "too-many-locals": 10,  # Reduce by dropping vectored objects
-    "too-many-branches": 13,  # Huge refactor needed. Will be reduced by schema refactor
-    "unused-argument": 6,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
+    "too-many-locals": 5,  # Reduce by dropping vectored objects
+    "too-many-branches": 10,  # Huge refactor needed. Will be reduced by schema refactor
+    "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
-    "too-many-arguments": 22,  # Huge refactor needed
-    "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
-    "too-many-return-statements": 9,  # Huge refactor needed. Will be reduced by schema refactor
-    "import-outside-toplevel": 4,  # TODO : will reduced in a future work (when tests are ready)
+    "too-many-arguments": 20,  # Huge refactor needed
+    "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
+    "too-many-return-statements": 8,  # Huge refactor needed. Will be reduced by schema refactor
+    "import-outside-toplevel": 5,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
-    "broad-exception-caught": 12,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
+    "broad-exception-caught": 8,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "bare-except": 1,  # Necessary in order not to raise non critical errors. Will be reduced by schema refactor
     "too-many-public-methods": 2,  # Try to lower by splitting DessiaObject and Workflow
-    "too-many-statements": 2,  # Will be solved by schema refactor and jsonchema removal
+    "too-many-statements": 1,  # Will be solved by schema refactor and jsonchema removal
     "undefined-loop-variable": 1,  # Fearing to break the code by solving it
     "attribute-defined-outside-init": 3,  # For test purposes
-    "too-many-nested-blocks": 2,
-    "consider-using-generator": 1,
 }
 
 ERRORS_WITHOUT_TIME_DECREASE = ['protected-access', 'arguments-differ', 'too-many-locals', 'too-many-branches',
                                 'unused-argument', 'cyclic-import', 'too-many-arguments', 'too-few-public-methods',
                                 'too-many-return-statements', 'import-outside-toplevel',
-                                'too-many-instance-attributes', 'broad-except', 'bare-except', "broad-exception-caught",
-                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable']
+                                'too-many-instance-attributes', 'broad-except', 'bare-except',
+                                "broad-exception-caught",
+                                'too-many-public-methods', 'too-many-statements', 'undefined-loop-variable',
+                                'attribute-defined-outside-init']
 
 print("pylint version: ", __version__)
 

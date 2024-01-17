@@ -31,7 +31,7 @@ class BoundedAttributeValue(DessiaObject):
     :param attribute_name: Name of attribute to bound.
     :param min_value: Minimum value for this attribute.
     :param max_value: Maximum value for this attribute.
-    :param number: Number of values to generate betwwen those bounds.
+    :param number: Number of values to generate between those bounds.
         Only used for sampling. ClassSampler.full_fact method.
     :param name: Name of BoundedAttributeValue.
     """
@@ -51,7 +51,7 @@ class BoundedAttributeValue(DessiaObject):
         return self.min_value + dimless_value * self.interval_length
 
     def dimensionless_value(self, value: float):
-        """ Method to compute the dimensionless value out of the dimensioned one. """
+        """ Method to compute the dimensionless value out of the given one. """
         return (value - self.min_value) / self.interval_length
 
 
@@ -91,7 +91,7 @@ class DrivenModelOptimizer(Optimizer):
 
 
 class InstantiatingModelOptimizer(Optimizer):
-    """ Abstract class, to be subclassed by real class. Instantiate a new model at each point request. """
+    """ Abstract class, to be inherited by a real class. Instantiate a new model at each point request. """
 
     def __init__(self, fixed_parameters: List[FixedAttributeValue], optimization_bounds: List[BoundedAttributeValue],
                  name: str = ''):
