@@ -73,8 +73,7 @@ class ExcelDataExtract:
         return attribute_info
 
     def missed_attribute(self):
-        """
-        """
+        """ Checks for missing attributes in the current instance."""
         if len(self.attributes) != len(self.get_attributes_and_types.keys()):
             if len(self.attributes) > len(self.get_attributes_and_types.keys()):
                 missing_attributes = set(self.get_attributes_and_types.keys()) - set(self.attributes)
