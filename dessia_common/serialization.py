@@ -125,7 +125,7 @@ def serialize(value):
 
 
 def _find_in_memo(memo, value, id_memo):
-    """ Browse memo to find other occurences of given value. """
+    """ Browse memo to find other occurrences of given value. """
     path_to_refs, serialized_value, id_, _ = memo[value]
     id_memo[id_] = serialized_value
     return {REF_MARKER: path_to_refs}, memo
