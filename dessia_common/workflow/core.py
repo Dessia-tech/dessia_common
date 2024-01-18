@@ -125,7 +125,10 @@ class Variable(DessiaObject):
         import_str_list.append(import_str)
 
         for args_schema in schema.args_schemas:
-            if isinstance(args_schema, HeterogeneousSequence):
+            if isinstance(args_schema, HomogeneousSequence):
+                import_str_list = self.process_homogeneous_sequence(schema=args_schema,
+                                                                    import_str_list=import_str_list)
+            elif isinstance(args_schema, HeterogeneousSequence):
                 import_str_list = self.process_heterogeneous_sequence(args_schema, import_str_list)
             elif not isinstance(args_schema, BuiltinProperty):
                 import_str = f"{args_schema.serialized}"
