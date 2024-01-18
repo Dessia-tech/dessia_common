@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
 

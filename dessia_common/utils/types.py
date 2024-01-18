@@ -96,7 +96,7 @@ def isinstance_base_types(obj):
 
 
 def is_dessia_file(obj):
-    """ Wether object inherits from dessia files. """
+    """ Whether object inherits from dessia files. """
     return isinstance(obj, (BinaryFile, StringFile))
 
 
