@@ -29,7 +29,7 @@ MAX_ERROR_BY_TYPE = {
     "protected-access": 48,  # Highly dependant on our "private" conventions. Keeps getting raised
     "arguments-differ": 1,
     "too-many-locals": 5,  # Reduce by dropping vectored objects
-    "too-many-branches": 10,  # Huge refactor needed. Will be reduced by schema refactor
+    "too-many-branches": 9,  # Huge refactor needed. Will be reduced by schema refactor
     "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 20,  # Huge refactor needed
