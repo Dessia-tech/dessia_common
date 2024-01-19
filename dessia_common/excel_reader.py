@@ -35,15 +35,15 @@ class ExcelDataExtract:
     :param class_module: module name extracted from cell R2C1.
     :param class_name: class name extracted from cell R2C2.
     :param attributes: List of attribute names extracted from row 3, starting from column 2.
-    :param datas: Dictionary containing row-wise data (starting from row 4, column 2)
+    :param data: Dictionary containing row-wise data (starting from row 4, column 2)
                   with column values as per attributes.
     """
 
-    def __init__(self, class_module: str, class_name: str, attributes: List[str], datas: Dict[str, Any]):
+    def __init__(self, class_module: str, class_name: str, attributes: List[str], data: Dict[str, Any]):
         self.class_module = class_module
         self.class_name = class_name
         self.attributes = attributes
-        self.datas = datas
+        self.data = data
         self.missed_attribute()
 
     @property
@@ -92,7 +92,7 @@ class ExcelDatasExtracted:
     Collection of data extracted from Excel.
 
     :param extracted_datas: A dictionary containing information extracted from the workbook sheets.
-    Each key represents the sheet title, and its value the correspondinf ExcelDataExtract
+    Each key represents the sheet title, and its value the corresponding ExcelDataExtract
     """
 
     def __init__(self, extracted_datas: Dict[str, ExcelDataExtract]):
@@ -202,7 +202,7 @@ class ExcelReader:
         """
         objects = []
 
-        value_set = list(extracted_data.datas.values())[0]
+        value_set = list(extracted_data.data.values())[0]
         for index, value in enumerate(value_set):
             if isinstance(value, openpyxl.cell.cell.Cell):
                 replaced_value = instantiated_objects[self.get_location(value)[0]]
@@ -230,7 +230,7 @@ class ExcelReader:
 
             moment_values = [c.value for c in sheet_target[int(row_target[1:])][1:]]
             extracted_data = ExcelDataExtract(class_module=sub_module_name, class_name=sub_class_name,
-                                              attributes=sub_attributes, datas=None)
+                                              attributes=sub_attributes, data=None)
 
             return self.create_object(extracted_data, moment_values)
         return cell
@@ -247,7 +247,7 @@ class ExcelReader:
         """
 
         objects = []
-        for value_set in extracted_data.datas.values():
+        for value_set in (extracted_data.data.values()):
             sub_values = [self.process_sub_objects(cell, self.workbook) for cell in value_set]
             objects.append(self.create_object(extracted_data, sub_values))
 
@@ -265,7 +265,7 @@ class ExcelReader:
         :return: Updated dictionary of instantiated objects.
         """
         objects = []
-        value_set = list(extracted_data.datas.values())[0]
+        value_set = list(extracted_data.data.values())[0]
         for k, cell in enumerate(value_set):
             if isinstance(cell, openpyxl.cell.cell.Cell):
                 val_replace = instantiated_objects[self.get_location(cell)[0]]
@@ -287,7 +287,7 @@ class ExcelReader:
         :return: The updated dictionary of instantiated objects after processing the sheet.
         """
         objects = []
-        for value_set in extracted_data.datas.values():
+        for value_set in extracted_data.data.values():
             objects.append(self.create_object(extracted_data, value_set))
 
         instantiated_objects[key] = objects
@@ -320,8 +320,7 @@ class ExcelReader:
                 row_data[i] = column_values
 
             extracted_datas[sheet.title] = ExcelDataExtract(class_module=class_info[0], class_name=class_info[1],
-                                                            attributes=attributes,
-                                                            datas=row_data.copy())
+                                                            attributes=attributes, data=row_data.copy())
         return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
     def read_workbook(self):
@@ -348,9 +347,9 @@ class ExcelReader:
                 break
 
             is_cell_instance = any((any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for val
-                                    in extracted_data.datas.values()))
+                                    in extracted_data.data.values()))
             if is_cell_instance:
-                nb_objects_in_sheet = len(extracted_data.datas.keys())
+                nb_objects_in_sheet = len(extracted_data.data.keys())
                 if nb_objects_in_sheet > 1:
                     instantiated_objects = self.process_multiple_hyperlink_rows(instantiated_objects,
                                                                                 extracted_data, key)
@@ -391,8 +390,7 @@ class ExcelReader:
                 row_data[i] = column_values
 
             extracted_datas[sheet.title] = ExcelDataExtract(class_module=class_info[0], class_name=class_info[1],
-                                                            attributes=attributes,
-                                                            datas=row_data.copy())
+                                                            attributes=attributes, data=row_data.copy())
         return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
     def read_catalog(self):
