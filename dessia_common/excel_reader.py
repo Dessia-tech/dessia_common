@@ -4,22 +4,21 @@
 
 import inspect
 from ast import literal_eval
-from typing import Dict, List
+from typing import Dict, List, Optional, Any, Tuple, TypeVar
 
 import openpyxl
 
 from dessia_common.utils.helpers import get_python_class_from_class_name
 
 
-def check_duplicate_attributes(attributes):
+T = TypeVar("T")
+
+
+def check_duplicate_attributes(attributes: List[str]) -> Optional[str]:
     """
     Check for the presence of duplicate attributes in a list of attribute names.
 
-    Args:
-    - attributes (list): A list containing attribute names to be checked.
-
-    Returns:
-    - str or None: If duplicates are found, returns the first duplicated attribute name; otherwise, returns None.
+    If duplicates are found, return the first duplicated attribute name; otherwise, return None.
     """
     seen = set()
     for attribute in attributes:
@@ -30,9 +29,17 @@ def check_duplicate_attributes(attributes):
 
 
 class ExcelDataExtract:
-    """Data extracted from sheet of Excel file."""
+    """
+    Data extracted from sheet of Excel file.
 
-    def __init__(self, class_module: str, class_name: str, attributes: List[str], datas):
+    :param class_module: module name extracted from cell R2C1.
+    :param class_name: class name extracted from cell R2C2.
+    :param attributes: List of attribute names extracted from row 3, starting from column 2.
+    :param datas: Dictionary containing row-wise data (starting from row 4, column 2)
+                  with column values as per attributes.
+    """
+
+    def __init__(self, class_module: str, class_name: str, attributes: List[str], datas: Dict[str, Any]):
         self.class_module = class_module
         self.class_name = class_name
         self.attributes = attributes
@@ -41,21 +48,20 @@ class ExcelDataExtract:
 
     @property
     def object_class(self) -> str:
-        """Get the full name of the class."""
+        """ Get the full name of the class. """
         return f"{self.class_module}.{self.class_name}"
 
     @property
     def class_(self):
-        """Get the Python class object corresponding to the fully class name."""
+        """ Get the Python class object corresponding to the fully class name. """
         return get_python_class_from_class_name(self.object_class)
 
     @property
-    def get_attributes_and_types(self):
+    def get_attributes_and_types(self) -> Dict[str, Any]:
         """
         Retrieve attributes and their corresponding types from the __init__ method of a class.
 
-        Returns:
-        - dict: A dictionary containing attributes and their respective types defined in the class constructor.
+        Return a dictionary containing attributes and their respective types defined in the class constructor.
         """
         init_signature = inspect.signature(self.class_.__init__)
         init_parameters = init_signature.parameters
@@ -63,13 +69,10 @@ class ExcelDataExtract:
         attribute_info = {}
 
         for attr_name, param in init_parameters.items():
-            if attr_name != 'self':
-                attr_info = {
-                    'type': param.annotation if param.annotation != param.empty else None,
-                    'default_value': param.default if param.default != param.empty else "empty"
-                }
+            if attr_name != "self":
+                attr_info = {"type": param.annotation if param.annotation != param.empty else None,
+                             "default_value": param.default if param.default != param.empty else "empty"}
                 attribute_info[attr_name] = attr_info
-
         return attribute_info
 
     def missed_attribute(self):
@@ -80,12 +83,17 @@ class ExcelDataExtract:
             else:
                 missing_attributes = set(self.get_attributes_and_types.keys()) - set(self.attributes)
             for attr_name in missing_attributes:
-                if self.get_attributes_and_types[attr_name]['default_value'] == "empty":
+                if self.get_attributes_and_types[attr_name]["default_value"] == "empty":
                     raise ValueError(f"Missing attribute '{attr_name}' doesn't have a default value.")
 
 
 class ExcelDatasExtracted:
-    """Collection of data extracted from Excel."""
+    """
+    Collection of data extracted from Excel.
+
+    :param extracted_datas: A dictionary containing information extracted from the workbook sheets.
+    Each key represents the sheet title, and its value the correspondinf ExcelDataExtract
+    """
 
     def __init__(self, extracted_datas: Dict[str, ExcelDataExtract]):
         self.extracted_datas = extracted_datas
@@ -98,15 +106,11 @@ class ExcelReader:
         self.sheet_titles = [sheet.title for sheet in self.workbook.worksheets]
         self.main_sheet = self.workbook.worksheets[0].title
 
-    def get_location(self, cell):
+    def get_location(self, cell: openpyxl.cell.cell.Cell) -> Tuple[str, str]:
         """
-        Retrieve the location of a cell's hyperlink.
+        Retrieve the location of the given cell's hyperlink.
 
-        Args:
-        - cell: The cell containing the hyperlink.
-
-        Returns:
-        - tuple: A tuple containing the sheet name and cell address referred to by the hyperlink.
+        Return tuple containing the sheet name and cell address referred to by the hyperlink.
         """
         if cell.hyperlink.location:
             target = cell.hyperlink.location.split('!')
@@ -125,18 +129,13 @@ class ExcelReader:
         """
         Updates attribute values based on the provided cell and values.
 
-        Args:
-        - cell: The cell containing information about the data type.
-        - values: The values to be replaced.
-
-        Returns:
-        - Depending on the data type of the cell:
-          - For 'Dict' type: Returns a dictionary with keys extracted from the cell
+        - Depending on the data type of the cell it returns
+          - For 'Dict' type: a dictionary with keys extracted from the cell
             and replaced values from the 'values' parameter.
           - For other types (excluding 'List', 'Set', 'Tuple'): Replaces the values with
             the first element of 'values' if 'values' is a list and 'cell.value' does not
             contain any of the container types.
-          - Otherwise, returns 'values' itself.
+          - Otherwise, 'values' itself.
         """
         container = ["Dict", "List", "Set", "Tuple"]
         target = self.get_location(cell)
@@ -157,37 +156,33 @@ class ExcelReader:
             actual_value = values[0]
         else:
             actual_value = values
-
         return actual_value
 
     @staticmethod
-    def get_data(value, attributes, init_attributes):
+    def get_data(values: List[T], attributes: List[str], init_attributes: List[str]) -> Dict[str, T]:
         """
         Extracts relevant data based on attributes and initial attributes for object instantiation.
 
-        Args:
-        - value (list): List containing values corresponding to attributes.
-        - attributes (list): List of attributes related to the object.
-        - init_attributes (list): List of initial attributes for object instantiation.
+        :param values: List containing values corresponding to attributes.
+        :param attributes: List of attributes related to the object.
+        :param init_attributes: List of initial attributes for object instantiation.
 
-        Returns:
-        - dict: Dictionary containing extracted object data based on matching attributes and initial attributes.
+        :return: Dictionary containing extracted object data based on matching attributes and initial attributes.
         """
-
         object_data = {}
-        for i, attribute in enumerate(attributes):
+        for attribute, value in zip(attributes, values):
             if attribute in init_attributes:
-                if isinstance(value[i], str):
+                if isinstance(value, str):
                     try:
-                        object_data[attribute] = literal_eval(value[i])
+                        object_data[attribute] = literal_eval(value)
                     except (ValueError, SyntaxError):
-                        object_data[attribute] = value[i]
+                        object_data[attribute] = value
                 else:
-                    object_data[attribute] = value[i]
+                    object_data[attribute] = value
         return object_data
 
     def create_object(self, extracted_data, value_set):
-        """Create an object of a specified class using provided data."""
+        """ Create an object of a specified class using provided data. """
         object_data = self.get_data(value_set, extracted_data.attributes, extracted_data.get_attributes_and_types)
         object_ = extracted_data.class_(**object_data)
         if not object_.name:
@@ -199,13 +194,11 @@ class ExcelReader:
         """
         Instantiate main objects based on provided values and attributes.
 
-        Args:
-        - instantiated_objects (dict): Dictionary containing instantiated objects.
-        - key (str): Key to identify the instantiated objects.
-        - values (list): List containing module name, class name, and attributes.
+        :param instantiated_objects: Dictionary containing instantiated objects.
+        :param key: Key to identify the instantiated objects.
+        :param extracted_data: Object containing module name, class name, and attributes.
 
-        Returns:
-        - dict: Updated dictionary of instantiated objects.
+        :return: Updated dictionary of instantiated objects.
         """
         objects = []
 
@@ -216,20 +209,17 @@ class ExcelReader:
                 value_set[index] = self.update_attribute_values(value, replaced_value)
 
         objects.append(self.create_object(extracted_data, value_set))
-
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_sub_objects(self, cell, workbook):
+    def process_sub_objects(self, cell: openpyxl.cell.cell.Cell, workbook: openpyxl.Workbook):
         """
         Process sub-objects based on cell data.
 
-        Args:
-        - cell (Cell): The cell containing data.
-        - workbook (Workbook): The workbook containing the cell.
+        :param cell: The cell containing data.
+        :param workbook: The workbook containing the cell.
 
-        Returns:
-        - object or any: The instantiated sub-object or original cell value.
+        :return: object or any. The instantiated sub-object or original cell value.
         """
         if isinstance(cell, openpyxl.cell.cell.Cell):
             sheet_title, row_target = self.get_location(cell)
@@ -245,17 +235,15 @@ class ExcelReader:
             return self.create_object(extracted_data, moment_values)
         return cell
 
-    def process_multiple_hyperlink_rows(self, instantiated_objects, extracted_data, key):
+    def process_multiple_hyperlink_rows(self, instantiated_objects: Dict, extracted_data: ExcelDataExtract, key: str):
         """
         Process multiple rows in a sheet, each representing an object with hyperlinks.
 
-        Args:
-        - instantiated_objects (dict): Dictionary containing instantiated objects.
-        - key (str): Key to associate with the list of instantiated objects.
-        - values (list): List containing information to process.
+        :param instantiated_objects: Dictionary containing instantiated objects.
+        :param key: Key to associate with the list of instantiated objects.
+        :param extracted_data: Object containing information to process.
 
-        Returns:
-        - dict: Updated dictionary of instantiated objects.
+        :return: Updated dictionary of instantiated objects.
         """
 
         objects = []
@@ -266,20 +254,16 @@ class ExcelReader:
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_single_hyperlink_row(self, instantiated_objects, extracted_data, key):
+    def process_single_hyperlink_row(self, instantiated_objects: Dict, extracted_data: ExcelDataExtract, key: str):
         """
         Process a single row in a sheet representing an object with hyperlinks.
 
-        Args:
-        - instantiated_objects (dict): Dictionary containing instantiated objects.
-        - key (str): Key to associate with the list of instantiated objects.
-        - values (list): List containing information to process.
-        - stack (list): Stack to handle unprocessed items.
+        :param instantiated_objects: Dictionary containing instantiated objects.
+        :param key: Key to associate with the list of instantiated objects.
+        :param extracted_data: Object containing information to process.
 
-        Returns:
-        - dict: Updated dictionary of instantiated objects.
+        :return: Updated dictionary of instantiated objects.
         """
-
         objects = []
         value_set = list(extracted_data.datas.values())[0]
         for k, cell in enumerate(value_set):
@@ -290,22 +274,18 @@ class ExcelReader:
         objects.append(self.create_object(extracted_data, value_set))
 
         instantiated_objects[key] = objects
-
         return instantiated_objects
 
-    def process_simple_sheet(self, instantiated_objects, extracted_data: ExcelDataExtract, key: str):
+    def process_simple_sheet(self, instantiated_objects: Dict, extracted_data: ExcelDataExtract, key: str):
         """
         Process a sheet without hyperlinks containing simple cell values to instantiate objects.
 
-        Args:
-        instantiated_objects (dict): A dictionary containing instantiated objects.
-        key (str): The key representing the current sheet being processed.
-        values (list): A list of values containing module name, class name, attributes, and data.
+        :param instantiated_objects: A dictionary containing instantiated objects.
+        :param key: The key representing the current sheet being processed.
+        :param extracted_data: A list of values containing module name, class name, attributes, and data.
 
-        Returns:
-        dict: The updated dictionary of instantiated objects after processing the sheet.
+        :return: The updated dictionary of instantiated objects after processing the sheet.
         """
-
         objects = []
         for value_set in extracted_data.datas.values():
             objects.append(self.create_object(extracted_data, value_set))
@@ -313,23 +293,14 @@ class ExcelReader:
         instantiated_objects[key] = objects
         return instantiated_objects
 
-    def process_workbook(self):
+    def process_workbook(self) -> ExcelDatasExtracted:
         """
         Process the workbook's sheets and extract information.
 
         This function iterates through each sheet in the workbook and gathers specific data from each sheet.
         It collects module and class names along with attributes and associated data.
-
-        Returns:
-        dict: A dictionary containing information extracted from the workbook sheets.
-              Each key represents the sheet title, and its value is a list consisting of:
-              - Tuple containing module and class names extracted from cells (row=2, column=1) and (row=2, column=2).
-              - List of attributes extracted from row 3, starting from column 2.
-              - Dictionary containing row-wise data (starting from row 4, column 2) with column values as per
-               attributes.
         """
         extracted_datas = {}
-
         for sheet in self.workbook.worksheets:
             class_info = (sheet.cell(row=2, column=1).value, sheet.cell(row=2, column=2).value)
 
@@ -351,7 +322,6 @@ class ExcelReader:
             extracted_datas[sheet.title] = ExcelDataExtract(class_module=class_info[0], class_name=class_info[1],
                                                             attributes=attributes,
                                                             datas=row_data.copy())
-
         return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
     def read_workbook(self):
@@ -365,8 +335,7 @@ class ExcelReader:
         This method does not support processing variables of complex types, such as `List[Tuple[float, float]]`, due to
         limitations in interpreting complex nested structures within Excel sheets.
 
-        Returns:
-        object: The instantiated object obtained from the main sheet's data.
+        :return: The instantiated object obtained from the main sheet's data.
         """
         instantiated_objects = {}
         data_structure = self.process_workbook()
@@ -374,47 +343,30 @@ class ExcelReader:
 
         while stack:
             key, extracted_data = stack.pop()
-
             if key == self.main_sheet:
-                instantiated_objects = self.instantiate_main_object(instantiated_objects,
-                                                                    extracted_data,
-                                                                    key)
+                instantiated_objects = self.instantiate_main_object(instantiated_objects, extracted_data, key)
                 break
 
             is_cell_instance = any((any(isinstance(cell_value, openpyxl.cell.cell.Cell) for cell_value in val) for val
                                     in extracted_data.datas.values()))
             if is_cell_instance:
-
                 nb_objects_in_sheet = len(extracted_data.datas.keys())
                 if nb_objects_in_sheet > 1:
                     instantiated_objects = self.process_multiple_hyperlink_rows(instantiated_objects,
-                                                                                extracted_data,
-                                                                                key)
+                                                                                extracted_data, key)
 
                 else:
-                    instantiated_objects = self.process_single_hyperlink_row(instantiated_objects,
-                                                                             extracted_data,
-                                                                             key)
-
+                    instantiated_objects = self.process_single_hyperlink_row(instantiated_objects, extracted_data, key)
             else:
                 instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data, key)
-
         return instantiated_objects[self.main_sheet][0]
 
-    def process_workbook_catalog(self):
+    def process_workbook_catalog(self) -> ExcelDatasExtracted:
         """
         Process the workbook's sheets and extract information (Catalog).
 
         This function iterates through each sheet in the workbook and gathers specific data from each sheet.
         It collects module and class names along with attributes and associated data.
-
-        Returns:
-        dict: A dictionary containing information extracted from the workbook sheets.
-              Each key represents the sheet title, and its value is a list consisting of:
-              - Tuple containing module and class names extracted from cells (row=1, column=1) and (row=1, column=2).
-              - List of attributes extracted from row 2, starting from column 1.
-              - Dictionary containing row-wise data (starting from row 3, column 1) with column values as per
-               attributes.
         """
 
         extracted_datas = {}
@@ -441,7 +393,6 @@ class ExcelReader:
             extracted_datas[sheet.title] = ExcelDataExtract(class_module=class_info[0], class_name=class_info[1],
                                                             attributes=attributes,
                                                             datas=row_data.copy())
-
         return ExcelDatasExtracted(extracted_datas=extracted_datas)
 
     def read_catalog(self):
@@ -451,9 +402,7 @@ class ExcelReader:
         This method retrieves cell values from a workbook, processes them, and creates instantiated
         objects based on the processed data.
 
-        Returns:
-        instantiated_objects (dict): A dictionary containing instantiated objects created from
-        the processed workbook data.
+        :return: A dictionary containing instantiated objects created from the processed workbook data.
         """
         instantiated_objects = {}
         data_structure = self.process_workbook_catalog()
@@ -462,7 +411,6 @@ class ExcelReader:
         while stack:
             key, extracted_data = stack.pop()
             instantiated_objects = self.process_simple_sheet(instantiated_objects, extracted_data, key)
-
         return instantiated_objects
 
     def close(self):
