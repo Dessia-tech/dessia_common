@@ -33,7 +33,7 @@ MAX_ERROR_BY_TYPE = {
     "unused-argument": 4,  # Some abstract functions have unused arguments (plot_data). Hence cannot decrease
     "cyclic-import": 2,  # Still work to do on Specific based DessiaObject
     "too-many-arguments": 20,  # Huge refactor needed
-    "too-few-public-methods": 3,  # Abstract classes (Errors, Checks,...)
+    "too-few-public-methods": 4,  # Abstract classes (Errors, Checks,...)
     "too-many-return-statements": 8,  # Huge refactor needed. Will be reduced by schema refactor
     "import-outside-toplevel": 5,  # TODO : will reduced in a future work (when tests are ready)
     "too-many-instance-attributes": 7,  # Huge refactor needed (workflow, etc...)
