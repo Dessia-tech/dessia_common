@@ -14,12 +14,8 @@ MIN_GLOBAL_COVERAGE = 80.0
 RATCHET_COVERAGE = 3.
 
 untracked_modules = ["dessia_common/templates.py",
-                     "dessia_common/utils.py",
                      "dessia_common/optimization.py",
-                     'workflows/forms_simulation.py',
-                     "utils/jsonschema.py",
-                     "utils/serialization.py"
-                     ]
+                     'workflows/forms_simulation.py']
 
 print("untracked modules:", untracked_modules)
 

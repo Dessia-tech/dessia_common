@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
 
@@ -767,3 +769,89 @@ class MidLevel(DessiaObject):
         object2 = NotStandalone(attribute=1, name="2")
         bottom_level = BottomLevel([object1, object2])
         return cls(bottom_level=bottom_level, name=name)
+
+
+class Beam(DessiaObject):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        self.length = length
+        self.width = length / 10
+
+        super().__init__(name)
+
+
+class HorizontalBeam(Beam):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        super().__init__(length=length, name=name)
+
+    def contour(self, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(0, 0), vm.Point2D(0, self.width),
+                  vm.Point2D(self.length, self.width), vm.Point2D(self.length, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+
+class VerticalBeam(Beam):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        super().__init__(length=length, name=name)
+
+    def contour(self, origin: float, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(origin, 0), vm.Point2D(origin, self.length),
+                  vm.Point2D(origin + self.width, self.length), vm.Point2D(origin + self.width, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, origin: float, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+
+class BeamStructure(DessiaObject):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, horizontal_beam: HorizontalBeam, vertical_beams: List[VerticalBeam], name: str = ""):
+        self.horizontal_beam = horizontal_beam
+        self.vertical_beams = vertical_beams
+
+        super().__init__(name=name)
+
+    @plot_data_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        horizontal_contour = self.horizontal_beam.plot2d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_contours = [b.plot2d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                      reference_path=f"{reference_path}/vertical_beams/{i}")
+                             for i, b in enumerate(self.vertical_beams)]
+        labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
+        primtives = [horizontal_contour] + vertical_contours + labels
+        return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
+
+
+horizontal = HorizontalBeam(10, "H")
+verticals = [VerticalBeam(5, "V1"), VerticalBeam(10, "V2"), VerticalBeam(7.5, "V3")]
+structure = BeamStructure(horizontal_beam=horizontal, vertical_beams=verticals, name="Structure")
