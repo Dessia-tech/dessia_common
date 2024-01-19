@@ -228,7 +228,6 @@ class XLSXWriter:
 
     def write(self):
         """ Generate the whole file. """
-        # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
         self.write_object_to_row(self.object, self.main_sheet, 4)
@@ -236,13 +235,14 @@ class XLSXWriter:
 
         for class_name, obj_paths in self.paths.items():
             sheet = self.classes_to_sheets[class_name]
-
+            
             sheet['A1'] = 'Module'
             sheet['B1'] = 'Class'
             obj_info = list(obj_paths.keys())[0]
             sheet['A2'] = obj_info.__module__
             sheet['B2'] = obj_info.__class__.__name__
 
+            obj = ""
             for obj, path in obj_paths.items():
                 _, row_number, path = self.object_to_sheet_row[obj]
                 self.write_object_to_row(obj, sheet, row_number+2, path)
