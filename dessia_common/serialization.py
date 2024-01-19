@@ -139,6 +139,7 @@ def _serialize_and_set_in_memo(memo, value, id_memo, id_method, path):
     except TypeError:
         if is_dessia_object:
             warnings.warn('Specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
+        print(value)
         serialized = value.to_dict()
 
     if id_method:
@@ -161,13 +162,12 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
         id_memo = {}
 
     # Objects (DessiaObjects and Regular)
-    if hasattr(value, 'to_dict'):
+    if isinstance(value, type):
+        serialized = serialize_annotation(value)
+    elif hasattr(value, 'to_dict'):
         if value in memo:
             return _find_in_memo(memo, value, id_memo)
         serialized = _serialize_and_set_in_memo(memo=memo, value=value, id_memo=id_memo, id_method=id_method, path=path)
-
-    elif isinstance(value, type):
-        serialized = serialize_annotation(value)
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
