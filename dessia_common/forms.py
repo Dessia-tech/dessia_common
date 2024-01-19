@@ -773,6 +773,7 @@ class MidLevel(DessiaObject):
 
 class Beam(DessiaObject):
     """ A dummy class to test 2D/3D form interactions. """
+
     _standalone_in_db = True
 
     def __init__(self, length: float, name: str = ""):
@@ -784,6 +785,7 @@ class Beam(DessiaObject):
 
 class HorizontalBeam(Beam):
     """ A dummy class to test 2D/3D form interactions. """
+
     _standalone_in_db = True
 
     def __init__(self, length: float, name: str = ""):
@@ -806,6 +808,7 @@ class HorizontalBeam(Beam):
 
 class VerticalBeam(Beam):
     """ A dummy class to test 2D/3D form interactions. """
+
     _standalone_in_db = True
 
     def __init__(self, length: float, name: str = ""):
@@ -828,6 +831,7 @@ class VerticalBeam(Beam):
 
 class BeamStructure(DessiaObject):
     """ A dummy class to test 2D/3D form interactions. """
+
     _standalone_in_db = True
 
     def __init__(self, horizontal_beam: HorizontalBeam, vertical_beams: List[VerticalBeam], name: str = ""):
