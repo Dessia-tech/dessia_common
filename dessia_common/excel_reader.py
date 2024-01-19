@@ -100,6 +100,7 @@ class ExcelDatasExtracted:
 
 
 class ExcelReader:
+    """ An API to read an object structure that follows Dessia's convetions. """
     def __init__(self, stream):
         self.stream = stream
         self.workbook = openpyxl.load_workbook(stream, data_only=True)
@@ -245,7 +246,6 @@ class ExcelReader:
 
         :return: Updated dictionary of instantiated objects.
         """
-
         objects = []
         for value_set in (extracted_data.data.values()):
             sub_values = [self.process_sub_objects(cell, self.workbook) for cell in value_set]
@@ -330,9 +330,9 @@ class ExcelReader:
         Reads the processed workbook data, instantiates objects, and organizes them based on the provided classes and
         modules.
 
-        Note:
-        This method does not support processing variables of complex types, such as `List[Tuple[float, float]]`, due to
-        limitations in interpreting complex nested structures within Excel sheets.
+        Note that this method does not support processing variables of complex types,
+        such as `List[Tuple[float, float]]`,
+        due to limitations in interpreting complex nested structures within Excel sheets.
 
         :return: The instantiated object obtained from the main sheet's data.
         """
@@ -367,7 +367,6 @@ class ExcelReader:
         This function iterates through each sheet in the workbook and gathers specific data from each sheet.
         It collects module and class names along with attributes and associated data.
         """
-
         extracted_datas = {}
         for sheet in self.workbook.worksheets:
             class_info = (sheet.cell(row=1, column=1).value, sheet.cell(row=1, column=2).value)
