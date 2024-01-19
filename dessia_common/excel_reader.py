@@ -101,6 +101,7 @@ class ExcelDatasExtracted:
 
 class ExcelReader:
     """ An API to read an object structure that follows Dessia's conventions. """
+
     def __init__(self, stream):
         self.stream = stream
         self.workbook = openpyxl.load_workbook(stream, data_only=True)
