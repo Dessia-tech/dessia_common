@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Global : remove usage of pkg_resources to use importlib.resources instead
 
+### Fix
+
+- Serialization : Fix wrong path in serialization that result in pointers cycles in some cases
+
+### Refactor
+
+- Serialization : Mutualize DessiaObject and Regular objects pointer serialization
+
 
 ## 0.15.3
 

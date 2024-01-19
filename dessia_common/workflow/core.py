@@ -283,7 +283,7 @@ class Workflow(Block):
         for pipe in self.pipes:
             self.handle_pipe(pipe)
 
-        self._utd_graph = False
+        self._cached_graph = None
 
         inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
 
@@ -737,9 +737,8 @@ class Workflow(Block):
 
     def _get_graph(self):
         """ Cached property for graph. """
-        if not self._utd_graph:
+        if self._cached_graph is None:
             self._cached_graph = self._graph()
-            self._utd_graph = True
         return self._cached_graph
 
     graph = property(_get_graph)
