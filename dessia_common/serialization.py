@@ -139,7 +139,6 @@ def _serialize_and_set_in_memo(memo, value, id_memo, id_method, path):
     except TypeError:
         if is_dessia_object:
             warnings.warn('Specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
-        print(value)
         serialized = value.to_dict()
 
     if id_method:
