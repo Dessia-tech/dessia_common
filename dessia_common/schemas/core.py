@@ -1279,7 +1279,7 @@ class InstanceOfProperty(TypingProperty):
         return issues
 
     def process_schema(self, import_str_list):
-        """ Process a homogeneous sequence schema and update the import list."""
+        """ Process a InstanceOfProperty schema and update the import list."""
         import_str = f"{self.origin.__module__}.{self.origin.__name__}"
         import_str_list.append(import_str)
 
