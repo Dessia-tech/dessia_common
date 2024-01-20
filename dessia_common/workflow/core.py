@@ -19,8 +19,7 @@ from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
                                         serialize_annotation, deserialize_annotation, pretty_annotation,
-                                        UNDEFINED, Schema, SchemaAttribute, BuiltinProperty, HeterogeneousSequence,
-                                        HomogeneousSequence)
+                                        UNDEFINED, Schema, SchemaAttribute)
 from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
@@ -107,53 +106,6 @@ class Variable(DessiaObject):
         else:
             copied_default_value = UNDEFINED
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
-    
-    def process_heterogeneous_sequence(self, schema, import_str_list):
-        """ Process a heterogeneous sequence schema and update the import list."""
-        import_str = f"{schema.annotation.__class__.__module__}.{schema.annotation._name}"
-        import_str_list.append(import_str)
-
-        if not isinstance(schema.args_schemas[0], BuiltinProperty):
-            import_str = f"{schema.args_schemas[0].serialized}"
-            import_str_list.append(import_str)
-
-        return import_str_list
-
-    def process_homogeneous_sequence(self, schema, import_str_list):
-        """ Process a homogeneous sequence schema and update the import list."""
-        import_str = f"{schema.annotation.__class__.__module__}.{schema.annotation._name}"
-        import_str_list.append(import_str)
-
-        for args_schema in schema.args_schemas:
-            if isinstance(args_schema, HomogeneousSequence):
-                import_str_list = self.process_homogeneous_sequence(schema=args_schema,
-                                                                    import_str_list=import_str_list)
-            elif isinstance(args_schema, HeterogeneousSequence):
-                import_str_list = self.process_heterogeneous_sequence(args_schema, import_str_list)
-            elif not isinstance(args_schema, BuiltinProperty):
-                import_str = f"{args_schema.serialized}"
-                import_str_list.append(import_str)
-
-        return import_str_list
-
-    def process_schema(self):
-        """ Process the schema for the type and return the pretty annotation and import string list. """
-        import_str_list = []
-        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
-
-        if isinstance(schema, HomogeneousSequence):
-            import_str_list = self.process_homogeneous_sequence(schema=schema,
-                                                                import_str_list=import_str_list)
-
-        elif isinstance(schema, HeterogeneousSequence):
-            import_str_list = self.process_heterogeneous_sequence(schema=schema,
-                                                                  import_str_list=import_str_list)
-
-        elif not isinstance(schema, BuiltinProperty):
-            import_str = f"{schema.annotation.__class__.__module__}.{schema.annotation._name}"
-            import_str_list.append(import_str)
-
-        return schema.pretty_annotation, import_str_list
 
     def _to_script(self) -> ToScriptElement:
         script = self._get_to_script_elements()
@@ -163,8 +115,9 @@ class Variable(DessiaObject):
         return script
 
     def _get_to_script_elements(self):
-        type_, imports = self.process_schema()
-        declaration = f"name='{self.name}', position={self.position}, type_={type_}"
+        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
+        imports = schema.process_schema(import_str_list=[])
+        declaration = f"name='{self.name}', position={self.position}, type_={schema.pretty_annotation}"
         return ToScriptElement(declaration=declaration, imports=imports, imports_as_is=[])
 
 

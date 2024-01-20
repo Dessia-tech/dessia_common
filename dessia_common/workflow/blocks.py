@@ -752,12 +752,19 @@ class Display(Block):
     @property
     def display_class_name(self):
         """ Get the class name of the current instance. """
-        return full_classname(self).split('.')[-1]
+        return self.__class__.__name__
 
     @property
     def selector_class_name(self):
         """ Get the class name of the Selector. """
-        return full_classname(self.selector).split('.')[-1]
+        return self.selector.__class__.__name__
+
+    def to_script_selector(self) -> ToScriptElement:
+        """ Write Block's Selector config into a chunk of script. """
+        script = f"{self.selector_class_name}(name='{self.name}')"
+        selector_class_ = full_classname(self.selector.class_, compute_for="class")
+        selector_class_name = f"{self.selector.__module__}.{self.selector_class_name}"
+        return ToScriptElement(declaration=script, imports=[selector_class_, selector_class_name])
 
     def base_script(self) -> str:
         """ Generate a chunk of script that denotes the arguments of a base block. """
@@ -766,7 +773,7 @@ class Display(Block):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         imports = [self.full_classname]
-        script_selector = to_script_selector(self)
+        script_selector = self.to_script_selector()
         script = f"{self.display_class_name}(selector={self.selector_class_name}(" \
                  f"class_={self.selector.class_.__name__}, name='{self.selector.name}')" \
                  f", {self.base_script()})"
@@ -1472,11 +1479,3 @@ def get_attribute_type(attribute_name: str, parameters):
     if parameter.annotation == inspect.Parameter.empty:
         return None 
     return parameter.annotation
-
-
-def to_script_selector(display) -> ToScriptElement:
-    """ Write Block's Selector config into a chunk of script. """
-    script = f"{display.selector.__class__.__name__}(name='{display.name}')"
-    display_class_name = full_classname(display.selector.class_, compute_for="class")
-    selector_class_name = f"{display.selector.__module__}.{display.selector.__class__.__name__}"
-    return ToScriptElement(declaration=script, imports=[display_class_name, selector_class_name])

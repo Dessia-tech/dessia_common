@@ -9,15 +9,16 @@ from dessia_common.files import BinaryFile
 from dessia_common.core import DessiaObject
 
 
-class MyObj(DessiaObject):
+class ConnectionNode(DessiaObject):
     def __init__(self, name: str = "", number_connection: int = 2, file: BinaryFile = None):
         self.number_connection = number_connection
         self.file = file
         super().__init__(name=name)
 
 
-class MyExp(DessiaObject):
-    def __init__(self, name: str = "", obj_inter: List[MyObj] = None, file: Tuple[BinaryFile, BinaryFile] = None,
+class ExperimentObject(DessiaObject):
+    def __init__(self, name: str = "", obj_inter: List[ConnectionNode] = None,
+                 file: Tuple[BinaryFile, BinaryFile] = None,
                  numbers: List[int] = None, bools: List[float] = None, strings: List[str] = None,
                  dict_val: Dict[str, int] = None,
                  list_tuple: List[List[Tuple[float, float]]] = None):
@@ -43,27 +44,29 @@ class MyExp(DessiaObject):
 
 
 # Blocks
-block_0 = [InstantiateModel(model_class=MyExp, name="MyObjInstance", position=[-1910.252, 116.630]),
-           'InstantiateModel(model_class=MyExp, name="MyObjInstance", position=[-1910.252, 116.63])']
+block_0 = [InstantiateModel(model_class=ExperimentObject, name="MyObjInstance", position=[-1910.252, 116.630]),
+           'InstantiateModel(model_class=ExperimentObject, name="MyObjInstance", position=[-1910.252, 116.63])']
 
-block_1 = [ModelMethod(method_type=MethodType(MyExp, 'run_driver'), name="run_driver_custom",
-                       position=[-13.917, 49.856]), 'ModelMethod(method_type=MethodType(MyExp, \'run_driver\'), '
-                                                    'name="run_driver_custom", position=[-13.917, 49.856])']
+block_1 = [ModelMethod(method_type=MethodType(ExperimentObject, 'run_driver'), name="run_driver_custom",
+                       position=[-13.917, 49.856]),
+           'ModelMethod(method_type=MethodType(ExperimentObject, \'run_driver\'), '
+           'name="run_driver_custom", position=[-13.917, 49.856])']
 
 block_2 = [
-    Markdown(selector=MarkdownType(class_=MyExp, name="Markdown"), name='Display markdown', load_by_default=False,
-             position=(0, 0)),
-    'Markdown(selector=MarkdownType(class_=MyExp, name=\'Markdown\'), name="Display markdown", '
+    Markdown(selector=MarkdownType(class_=ExperimentObject, name="Markdown"), name='Display markdown',
+             load_by_default=False, position=(0, 0)),
+    'Markdown(selector=MarkdownType(class_=ExperimentObject, name=\'Markdown\'), name="Display markdown", '
     'load_by_default=False, position=(0, 0))']
-block_4 = [PlotData(selector=PlotDataType(class_=MyExp, name="PlotData"), name='Display plot_data',
-                    load_by_default=True, position=(0, 0)), 'PlotData(selector=PlotDataType(class_=MyExp, '
+block_4 = [PlotData(selector=PlotDataType(class_=ExperimentObject, name="PlotData"), name='Display plot_data',
+                    load_by_default=True, position=(0, 0)), 'PlotData(selector=PlotDataType(class_=ExperimentObject, '
                                                             'name=\'PlotData\'), name="Display plot_data", '
                                                             'load_by_default=True, position=(0, 0))']
 
-block_5 = [Export(method_type=MethodType(MyExp, 'save_to_stream'), name='Export', filename="filename", extension="json",
-                  text=True, position=(99, 88.88)), 'Export(method_type=MethodType(MyExp, \'save_to_stream\'),'
-                                                    ' filename=\'filename\', extension=\'json\', text=True,'
-                                                    ' name="Export", position=(99, 88.88))']
+block_5 = [Export(method_type=MethodType(ExperimentObject, 'save_to_stream'), name='Export', filename="filename",
+                  extension="json", text=True, position=(99, 88.88)),
+           'Export(method_type=MethodType(ExperimentObject, \'save_to_stream\'),'
+           ' filename=\'filename\', extension=\'json\', text=True,'
+           ' name="Export", position=(99, 88.88))']
 
 blocks = [block_0, block_1, block_2, block_4, block_5]
 
@@ -72,8 +75,8 @@ variable_list = [[Variable(name='variable_0', position=[-6.77, 34.65], type_=str
                   "Variable(name='variable_0', position=[-6.77, 34.65], type_=str)"],
                  [Variable(name='variable_1', position=[-632.77, 34.65], type_=List[BinaryFile]),
                   "Variable(name='variable_1', position=[-632.77, 34.65], type_=List[BinaryFile])"],
-                 [Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[MyObj]),
-                  "Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[MyObj])"],
+                 [Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[ConnectionNode]),
+                  "Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[ConnectionNode])"],
                  [Variable(name='variable_3', position=[197.91, 95.02], type_=List[int]),
                   "Variable(name='variable_3', position=[197.91, 95.02], type_=List[int])"],
                  [Variable(name='variable_4', position=[-1035.71, -269.35], type_=List[str]),

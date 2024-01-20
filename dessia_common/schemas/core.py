@@ -500,6 +500,10 @@ class Property:
         """
         return CheckList([])
 
+    def process_schema(self, import_str_list):
+        """ Process a Property schema and update the import list."""
+        return import_str_list
+
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
@@ -764,6 +768,10 @@ class MeasureProperty(BuiltinProperty):
             return default_measure.to_dict()
         return {"object_class": f"{Measure.__module__}.{Measure.__class__.__name__}", "value": None}
 
+    def process_schema(self, import_str_list):
+        """ Process a MeasureProperty schema and update the import list."""
+        return [self.serialized]
+
 
 File = Union[StringFile, BinaryFile]
 
@@ -813,6 +821,11 @@ class FileProperty(Property):
             return CheckWarning(msg)
         msg = f"{self.check_prefix}File input doesn't define a default value, as it should."
         return PassedCheck(msg)
+
+    def process_schema(self, import_str_list):
+        """ Process a FileProperty schema and update the import list."""
+        import_str_list.append(self.serialized)
+        return import_str_list
 
 
 class CustomClass(Property):
@@ -868,6 +881,11 @@ class CustomClass(Property):
             return WrongType(f"{self.check_prefix}Class '{self.serialized}' is not a subclass of DessiaObject.")
         msg = f"{self.check_prefix}Class '{self.serialized}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
+
+    def process_schema(self, import_str_list):
+        """ Process a CustomClass schema and update the import list."""
+        import_str_list.append(self.serialized)
+        return import_str_list
 
 
 class UnionProperty(TypingProperty):
@@ -939,6 +957,17 @@ class UnionProperty(TypingProperty):
         msg = f"{self.check_prefix}'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
               f"are not consistent. They should be all standalone in db or none of them should."
         return WrongType(msg)
+
+    def process_schema(self, import_str_list):
+        """ Process a UnionProperty sequence schema and update the import list."""
+        import_str = f"{self.origin.__module__}.{self.origin._name}"
+        import_str_list.append(import_str)
+
+        for args_schema in self.args_schemas:
+            import_str = f"{args_schema.serialized}"
+            import_str_list.append(import_str)
+
+        return import_str_list
 
 
 class HeterogeneousSequence(TypingProperty):
@@ -1042,6 +1071,15 @@ class HeterogeneousSequence(TypingProperty):
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
+    def process_schema(self, import_str_list):
+        """ Process a heterogeneous sequence schema and update the import list."""
+        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_str_list.append(import_str)
+
+        for args_schema in self.args_schemas:
+            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
+        return import_str_list
+
 
 class HomogeneousSequence(TypingProperty):
     """
@@ -1090,6 +1128,15 @@ class HomogeneousSequence(TypingProperty):
             return UnsupportedDefault(msg)
         msg = f"{self.check_prefix}Mutable List doesn't define a default value other than None."
         return PassedCheck(msg)
+
+    def process_schema(self, import_str_list):
+        """ Process a homogeneous sequence schema and update the import list."""
+        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_str_list.append(import_str)
+
+        for args_schema in self.args_schemas:
+            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
+        return import_str_list
 
 
 class DynamicDict(TypingProperty):
@@ -1173,6 +1220,12 @@ class DynamicDict(TypingProperty):
         msg = f"{self.check_prefix}Mutable Dict doesn't define a default value other than None."
         return PassedCheck(msg)
 
+    def process_schema(self, import_str_list):
+        """ Process a DynamicDict schema and update the import list."""
+        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_str_list.append(import_str)
+        return import_str_list
+
 
 BaseClass = TypeVar("BaseClass", bound=CoreDessiaObject)
 
@@ -1224,6 +1277,17 @@ class InstanceOfProperty(TypingProperty):
         issues = super().check_list()
         issues += CheckList([self.has_one_arg()])
         return issues
+
+    def process_schema(self, import_str_list):
+        """ Process a homogeneous sequence schema and update the import list."""
+        import_str = f"{self.origin.__module__}.{self.origin.__name__}"
+        import_str_list.append(import_str)
+
+        for args_schema in self.args_schemas:
+            import_str = f"{args_schema.serialized}"
+            import_str_list.append(import_str)
+
+        return import_str_list
 
 
 class SubclassProperty(TypingProperty):
@@ -1309,12 +1373,12 @@ class AttributeTypeProperty(TypingProperty):
             }
         })
         return chunk
-    
+
     def default_value(self) -> Dict[str, Any]:
         """ Sets AttributeType object_class and argument class_ if it is different from Type. """
         if self.has_default_value:
             return self.attribute.default_value.to_dict()
-        
+
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
             classname = full_classname(object_=self.class_, compute_for="class")
         else:
