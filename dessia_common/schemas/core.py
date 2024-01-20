@@ -770,7 +770,8 @@ class MeasureProperty(BuiltinProperty):
 
     def process_schema(self, import_str_list):
         """ Process a MeasureProperty schema and update the import list."""
-        return [self.serialized]
+        import_str_list.append(self.serialized)
+        return import_str_list
 
 
 File = Union[StringFile, BinaryFile]
@@ -1284,9 +1285,7 @@ class InstanceOfProperty(TypingProperty):
         import_str_list.append(import_str)
 
         for args_schema in self.args_schemas:
-            import_str = f"{args_schema.serialized}"
-            import_str_list.append(import_str)
-
+            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
         return import_str_list
 
 
