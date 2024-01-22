@@ -501,7 +501,8 @@ class Property:
         return CheckList([])
 
     def get_import_names(self, import_names):
-        """ Process a Property schema and update the import list."""
+        """ Process Property and get/update the import names list."""
+        import_names.append(self.serialized)
         return import_names
 
 
@@ -727,6 +728,10 @@ class BuiltinProperty(Property):
             return self.attribute.default_value
         return None
 
+    def get_import_names(self, import_names):
+        """ Process BuiltinProperty and get/update the import names list."""
+        return import_names
+
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
@@ -769,8 +774,8 @@ class MeasureProperty(BuiltinProperty):
         return {"object_class": f"{Measure.__module__}.{Measure.__class__.__name__}", "value": None}
 
     def get_import_names(self, import_names):
-        """ Process a MeasureProperty schema and update the import list."""
-        import_names.append(self.serialized)
+        """ Process MeasureProperty and get/update the import names list."""
+        import_names = Property.get_import_names(self, import_names=import_names)
         return import_names
 
 
@@ -822,11 +827,6 @@ class FileProperty(Property):
             return CheckWarning(msg)
         msg = f"{self.check_prefix}File input doesn't define a default value, as it should."
         return PassedCheck(msg)
-
-    def get_import_names(self, import_names):
-        """ Process a FileProperty schema and update the import list."""
-        import_names.append(self.serialized)
-        return import_names
 
 
 class CustomClass(Property):
@@ -882,11 +882,6 @@ class CustomClass(Property):
             return WrongType(f"{self.check_prefix}Class '{self.serialized}' is not a subclass of DessiaObject.")
         msg = f"{self.check_prefix}Class '{self.serialized}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
-
-    def get_import_names(self, import_names):
-        """ Process a CustomClass schema and update the import list."""
-        import_names.append(self.serialized)
-        return import_names
 
 
 class UnionProperty(TypingProperty):
@@ -960,7 +955,7 @@ class UnionProperty(TypingProperty):
         return WrongType(msg)
 
     def get_import_names(self, import_names):
-        """ Process a UnionProperty sequence schema and update the import list."""
+        """ Process UnionProperty and get/update the import names list."""
         import_name = f"{self.origin.__module__}.{self.origin._name}"
         import_names.append(import_name)
 
@@ -1073,7 +1068,7 @@ class HeterogeneousSequence(TypingProperty):
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
     def get_import_names(self, import_names):
-        """ Process a heterogeneous sequence schema and update the import list."""
+        """ Process HeterogeneousSequence and get/update the import names list."""
         import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
         import_names.append(import_name)
 
@@ -1131,7 +1126,7 @@ class HomogeneousSequence(TypingProperty):
         return PassedCheck(msg)
 
     def get_import_names(self, import_names):
-        """ Process a homogeneous sequence schema and update the import list."""
+        """ Process HomogeneousSequence and get/update the import names list."""
         import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
         import_names.append(import_name)
 
@@ -1222,7 +1217,7 @@ class DynamicDict(TypingProperty):
         return PassedCheck(msg)
 
     def get_import_names(self, import_names):
-        """ Process a DynamicDict schema and update the import list."""
+        """ Process DynamicDict and get/update the import names list."""
         import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
         import_names.append(import_name)
         return import_names
@@ -1280,7 +1275,7 @@ class InstanceOfProperty(TypingProperty):
         return issues
 
     def get_import_names(self, import_names):
-        """ Process a InstanceOfProperty schema and update the import list."""
+        """ Process InstanceOfProperty and get/update the import names list."""
         import_name = f"{self.origin.__module__}.{self.origin.__name__}"
         import_names.append(import_name)
 
