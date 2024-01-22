@@ -10,7 +10,6 @@ import openpyxl
 
 from dessia_common.utils.helpers import get_python_class_from_class_name
 
-
 T = TypeVar("T")
 
 
@@ -97,6 +96,15 @@ class ExcelDatasExtracted:
 
     def __init__(self, extracted_datas: Dict[str, ExcelDataExtract]):
         self.extracted_datas = extracted_datas
+
+    def get_extracted_data(self, key: str):
+        """ Retrieve extracted data based on the provided key. """
+        extracted_data = self.extracted_datas.get(key, None)
+
+        if not extracted_data:
+            raise KeyError(f"Data with key '{key}' does not exist.")
+
+        return extracted_data
 
 
 class ExcelReader:
