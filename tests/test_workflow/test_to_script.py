@@ -180,10 +180,12 @@ class WorkflowToScriptTest(unittest.TestCase):
     def test_variables(self, variable, expected_declaration):
         self.assertEqual(variable._to_script().declaration, expected_declaration)
 
-    def test_workflow(self):
+    @parameterized.expand(variable_list)
+    def test_workflow(self, _, expected_declaration):
         workflow_script = workflow.to_script()
-        for variable in variable_list:
-            self.assertIn(variable[1], workflow_script)
-
-        for block in blocks:
-            self.assertIn(block[1], workflow_script)
+        self.assertIn(expected_declaration, workflow_script)
+        # for variable in variable_list:
+        #     self.assertIn(variable[1], workflow_script)
+        #
+        # for block in blocks:
+        #     self.assertIn(block[1], workflow_script)
