@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 
+- Export: Enhanced .zip export
 - Serialization : Mutualize DessiaObject and Regular objects pointer serialization
 
 
