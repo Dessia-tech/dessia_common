@@ -432,7 +432,7 @@ class DessiaObject(SerializableObject):
         track = ""
         try:
             data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-        except:
+        except Exception:
             data = None
             track = tb.format_exc()
 

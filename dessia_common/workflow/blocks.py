@@ -965,7 +965,7 @@ class CadView(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'CadViewType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = Variable(type_=DessiaObject, name="Model")
+        input_ = Variable(type_=selector.class_, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -1015,7 +1015,7 @@ class Markdown(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'MarkdownType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = Variable(type_=DessiaObject, name="Model")
+        input_ = Variable(type_=selector.class_, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
@@ -1067,7 +1067,7 @@ class PlotData(Display):
         if isinstance(selector, str):
             raise TypeError("Argument 'selector' should be of type 'PlotDataType' and not 'str',"
                             " which is deprecated. See upgrading guide if needed.")
-        input_ = Variable(type_=DessiaObject, name="Model")
+        input_ = Variable(type_=selector.class_, name="Model")
         Display.__init__(self, inputs=[input_], load_by_default=load_by_default, selector=selector,
                          name=name, position=position)
 
