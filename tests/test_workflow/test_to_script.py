@@ -140,7 +140,6 @@ variable_list = [
     ]
 ]
 
-
 # Pipes
 pipe_1 = Pipe(blocks[0][0].outputs[0], blocks[1][0].inputs[0])
 pipe_2 = Pipe(variable_list[1][0], blocks[0][0].inputs[2])
@@ -161,13 +160,14 @@ pipe_14 = Pipe(variable_list[12][0], blocks[0][0].inputs[12])
 pipe_15 = Pipe(blocks[1][0].outputs[0], blocks[2][0].inputs[0])
 pipe_16 = Pipe(blocks[1][0].outputs[0], blocks[3][0].inputs[0])
 
-
 workflow = Workflow([block[0] for block in blocks],
                     [
                         pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7,
                         pipe_8, pipe_9, pipe_10, pipe_11, pipe_12, pipe_13, pipe_14, pipe_15, pipe_16
                     ],
                     output=blocks[1][0].outputs[0], name="TestExport")
+
+workflow_script = workflow.to_script()
 
 
 class WorkflowToScriptTest(unittest.TestCase):
@@ -181,11 +181,10 @@ class WorkflowToScriptTest(unittest.TestCase):
         self.assertEqual(variable._to_script().declaration, expected_declaration)
 
     @parameterized.expand(variable_list)
-    def test_workflow(self, _, expected_declaration):
-        workflow_script = workflow.to_script()
+    def test_workflow_variables(self, _, expected_declaration):
         self.assertIn(expected_declaration, workflow_script)
-        # for variable in variable_list:
-        #     self.assertIn(variable[1], workflow_script)
-        #
-        # for block in blocks:
-        #     self.assertIn(block[1], workflow_script)
+
+    @parameterized.expand(blocks)
+    def test_workflow_blocks(self, _, expected_declaration):
+        self.assertIn(expected_declaration, workflow_script)
+

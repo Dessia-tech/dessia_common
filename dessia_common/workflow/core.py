@@ -116,7 +116,7 @@ class Variable(DessiaObject):
 
     def _get_to_script_elements(self):
         schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
-        imports = schema.process_schema(import_str_list=[])
+        imports = schema.get_import_names(import_names=[])
         declaration = f"name='{self.name}', position={self.position}, type_={schema.pretty_annotation}"
         return ToScriptElement(declaration=declaration, imports=imports, imports_as_is=[])
 

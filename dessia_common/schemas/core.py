@@ -500,9 +500,9 @@ class Property:
         """
         return CheckList([])
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a Property schema and update the import list."""
-        return import_str_list
+        return import_names
 
 
 class TypingProperty(Property):
@@ -768,10 +768,10 @@ class MeasureProperty(BuiltinProperty):
             return default_measure.to_dict()
         return {"object_class": f"{Measure.__module__}.{Measure.__class__.__name__}", "value": None}
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a MeasureProperty schema and update the import list."""
-        import_str_list.append(self.serialized)
-        return import_str_list
+        import_names.append(self.serialized)
+        return import_names
 
 
 File = Union[StringFile, BinaryFile]
@@ -823,10 +823,10 @@ class FileProperty(Property):
         msg = f"{self.check_prefix}File input doesn't define a default value, as it should."
         return PassedCheck(msg)
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a FileProperty schema and update the import list."""
-        import_str_list.append(self.serialized)
-        return import_str_list
+        import_names.append(self.serialized)
+        return import_names
 
 
 class CustomClass(Property):
@@ -883,10 +883,10 @@ class CustomClass(Property):
         msg = f"{self.check_prefix}Class '{self.serialized}' is properly typed as a subclass of DessiaObject."
         return PassedCheck(msg)
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a CustomClass schema and update the import list."""
-        import_str_list.append(self.serialized)
-        return import_str_list
+        import_names.append(self.serialized)
+        return import_names
 
 
 class UnionProperty(TypingProperty):
@@ -959,16 +959,16 @@ class UnionProperty(TypingProperty):
               f"are not consistent. They should be all standalone in db or none of them should."
         return WrongType(msg)
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a UnionProperty sequence schema and update the import list."""
-        import_str = f"{self.origin.__module__}.{self.origin._name}"
-        import_str_list.append(import_str)
+        import_name = f"{self.origin.__module__}.{self.origin._name}"
+        import_names.append(import_name)
 
         for args_schema in self.args_schemas:
-            import_str = f"{args_schema.serialized}"
-            import_str_list.append(import_str)
+            import_name = f"{args_schema.serialized}"
+            import_names.append(import_name)
 
-        return import_str_list
+        return import_names
 
 
 class HeterogeneousSequence(TypingProperty):
@@ -1072,14 +1072,14 @@ class HeterogeneousSequence(TypingProperty):
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a heterogeneous sequence schema and update the import list."""
-        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_str_list.append(import_str)
+        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_names.append(import_name)
 
         for args_schema in self.args_schemas:
-            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
-        return import_str_list
+            import_names = args_schema.get_import_names(import_names=import_names)
+        return import_names
 
 
 class HomogeneousSequence(TypingProperty):
@@ -1130,14 +1130,14 @@ class HomogeneousSequence(TypingProperty):
         msg = f"{self.check_prefix}Mutable List doesn't define a default value other than None."
         return PassedCheck(msg)
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a homogeneous sequence schema and update the import list."""
-        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_str_list.append(import_str)
+        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_names.append(import_name)
 
         for args_schema in self.args_schemas:
-            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
-        return import_str_list
+            import_names = args_schema.get_import_names(import_names=import_names)
+        return import_names
 
 
 class DynamicDict(TypingProperty):
@@ -1221,11 +1221,11 @@ class DynamicDict(TypingProperty):
         msg = f"{self.check_prefix}Mutable Dict doesn't define a default value other than None."
         return PassedCheck(msg)
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a DynamicDict schema and update the import list."""
-        import_str = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_str_list.append(import_str)
-        return import_str_list
+        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+        import_names.append(import_name)
+        return import_names
 
 
 BaseClass = TypeVar("BaseClass", bound=CoreDessiaObject)
@@ -1279,14 +1279,14 @@ class InstanceOfProperty(TypingProperty):
         issues += CheckList([self.has_one_arg()])
         return issues
 
-    def process_schema(self, import_str_list):
+    def get_import_names(self, import_names):
         """ Process a InstanceOfProperty schema and update the import list."""
-        import_str = f"{self.origin.__module__}.{self.origin.__name__}"
-        import_str_list.append(import_str)
+        import_name = f"{self.origin.__module__}.{self.origin.__name__}"
+        import_names.append(import_name)
 
         for args_schema in self.args_schemas:
-            import_str_list = args_schema.process_schema(import_str_list=import_str_list)
-        return import_str_list
+            import_names = args_schema.get_import_names(import_names=import_names)
+        return import_names
 
 
 class SubclassProperty(TypingProperty):
