@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.16.0
 
+###
+
+- Excel Reader
+
 ### Build
 
 - Global : remove usage of pkg_resources to use importlib.resources instead
