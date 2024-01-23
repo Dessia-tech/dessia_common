@@ -34,6 +34,7 @@ import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
 from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
+from dessia_common.excel_reader import ExcelReader
 
 
 def __getattr__(name):
@@ -295,6 +296,26 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
+    @classmethod
+    def from_xlsx_stream(cls, stream: dcf.BinaryFile):
+        """
+        Load object from a xlsx stream.
+
+        :param stream: either a string representing the stream
+        """
+        reader = ExcelReader(stream)
+        return reader.read_workbook()
+
+    @classmethod
+    def from_xlsx(cls, filepath: str):
+        """
+        Load object from a xlsx file.
+
+        :param filepath: either a string representing the filepath
+        """
+        stream = dcf.BinaryFile.from_file(filepath=filepath)
+        return cls.from_xlsx_stream(stream=stream)
+
     def check_list(self, level: str = 'error', check_platform: bool = True) -> dcc.CheckList:
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = dcc.CheckList([])
@@ -420,7 +441,7 @@ class DessiaObject(SerializableObject):
             settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
                                            serialize_data=serialize_data, load_by_default=load_by_default))
         return settings
-    
+
     @classmethod
     def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
         """ Return a list, computed from decorated functions, of objects describing how to call displays. """
