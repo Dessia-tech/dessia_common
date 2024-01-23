@@ -607,7 +607,7 @@ class TypingProperty(Property):
         """ Get class module and name as string."""
         if isinstance(self, InstanceOfProperty):
             return f"{self.origin.__module__}.{self.origin.__name__}"
-        elif isinstance(self, UnionProperty):
+        if isinstance(self, UnionProperty):
             return f"{self.origin.__module__}.{self.origin._name}"
         return f"{self.annotation.__class__.__module__}.{self.annotation._name}"
 
