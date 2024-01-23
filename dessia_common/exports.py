@@ -128,13 +128,14 @@ class XLSXWriter:
     def compute_cell_link(self, value):
         """ Compute the hyperlink for given value."""
         cell_link = None
-        if isinstance(value, dict):
-            cell_link = f'#{list(value.values())[0].__class__.__name__}!A2'
-        elif isinstance(value, (list, set)) and not is_builtins_list(value):
-            cell_link = f'#{value[0].__class__.__name__}!A2'
-        elif is_hashable(value) and value in self.object_to_sheet_row:
-            ref_sheet, ref_row_number, _ = self.object_to_sheet_row[value]
-            cell_link = f'#{ref_sheet.title}!A{ref_row_number+2}'
+        if value:
+            if isinstance(value, dict):
+                cell_link = f'#{list(value.values())[0].__class__.__name__}!A2'
+            elif isinstance(value, (list, set)) and not is_builtins_list(value):
+                cell_link = f'#{value[0].__class__.__name__}!A2'
+            elif is_hashable(value) and value in self.object_to_sheet_row:
+                ref_sheet, ref_row_number, _ = self.object_to_sheet_row[value]
+                cell_link = f'#{ref_sheet.title}!A{ref_row_number+2}'
 
         return cell_link
 
@@ -239,8 +240,13 @@ class XLSXWriter:
             sheet['A1'] = 'Module'
             sheet['B1'] = 'Class'
             obj_info = list(obj_paths.keys())[0]
-            sheet['A2'] = obj_info.__module__
-            sheet['B2'] = obj_info.__class__.__name__
+
+            if hasattr(obj_info, 'to_dict'):
+                sheet['A2'] = obj_info.__module__
+                sheet['B2'] = obj_info.__class__.__name__
+            else:
+                sheet['A2'] = 'No Module'
+                sheet['B2'] = "No class name"
 
             obj = ""
             for obj, path in obj_paths.items():
