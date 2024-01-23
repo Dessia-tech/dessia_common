@@ -602,6 +602,24 @@ class TypingProperty(Property):
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}has exactly one argument in its definition.")
 
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        if isinstance(self, InstanceOfProperty):
+            return f"{self.origin.__module__}.{self.origin.__name__}"
+        elif isinstance(self, UnionProperty):
+            return f"{self.origin.__module__}.{self.origin._name}"
+        return f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+
+    def get_import_names(self, import_names):
+        """ Process TypingProperty and get/update the import names list."""
+        import_name = self.get_import_name
+        import_names.append(import_name)
+
+        for args_schema in self.args_schemas:
+            import_names = args_schema.get_import_names(import_names=import_names)
+        return import_names
+
 
 class ProxyProperty(TypingProperty):
     """
@@ -954,17 +972,6 @@ class UnionProperty(TypingProperty):
               f"are not consistent. They should be all standalone in db or none of them should."
         return WrongType(msg)
 
-    def get_import_names(self, import_names):
-        """ Process UnionProperty and get/update the import names list."""
-        import_name = f"{self.origin.__module__}.{self.origin._name}"
-        import_names.append(import_name)
-
-        for args_schema in self.args_schemas:
-            import_name = f"{args_schema.serialized}"
-            import_names.append(import_name)
-
-        return import_names
-
 
 class HeterogeneousSequence(TypingProperty):
     """
@@ -1067,15 +1074,6 @@ class HeterogeneousSequence(TypingProperty):
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}is not an ill-defined ellipsed tuple : '{self.annotation}'.")
 
-    def get_import_names(self, import_names):
-        """ Process HeterogeneousSequence and get/update the import names list."""
-        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_names.append(import_name)
-
-        for args_schema in self.args_schemas:
-            import_names = args_schema.get_import_names(import_names=import_names)
-        return import_names
-
 
 class HomogeneousSequence(TypingProperty):
     """
@@ -1124,15 +1122,6 @@ class HomogeneousSequence(TypingProperty):
             return UnsupportedDefault(msg)
         msg = f"{self.check_prefix}Mutable List doesn't define a default value other than None."
         return PassedCheck(msg)
-
-    def get_import_names(self, import_names):
-        """ Process HomogeneousSequence and get/update the import names list."""
-        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_names.append(import_name)
-
-        for args_schema in self.args_schemas:
-            import_names = args_schema.get_import_names(import_names=import_names)
-        return import_names
 
 
 class DynamicDict(TypingProperty):
@@ -1216,12 +1205,6 @@ class DynamicDict(TypingProperty):
         msg = f"{self.check_prefix}Mutable Dict doesn't define a default value other than None."
         return PassedCheck(msg)
 
-    def get_import_names(self, import_names):
-        """ Process DynamicDict and get/update the import names list."""
-        import_name = f"{self.annotation.__class__.__module__}.{self.annotation._name}"
-        import_names.append(import_name)
-        return import_names
-
 
 BaseClass = TypeVar("BaseClass", bound=CoreDessiaObject)
 
@@ -1273,15 +1256,6 @@ class InstanceOfProperty(TypingProperty):
         issues = super().check_list()
         issues += CheckList([self.has_one_arg()])
         return issues
-
-    def get_import_names(self, import_names):
-        """ Process InstanceOfProperty and get/update the import names list."""
-        import_name = f"{self.origin.__module__}.{self.origin.__name__}"
-        import_names.append(import_name)
-
-        for args_schema in self.args_schemas:
-            import_names = args_schema.get_import_names(import_names=import_names)
-        return import_names
 
 
 class SubclassProperty(TypingProperty):
