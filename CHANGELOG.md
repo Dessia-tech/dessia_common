@@ -78,6 +78,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : Block input and output names have been enhanced
 - Workflow : Inputs now have entries for Imposed Variable Values
 
+### Fixed
+
+- Document generator : Fix add_picture to .docx
+
 ### Removed
 
 - Workflow : jointjs plot
