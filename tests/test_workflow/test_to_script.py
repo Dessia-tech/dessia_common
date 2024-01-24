@@ -87,56 +87,57 @@ blocks = [block_0, block_1, block_2, block_4, block_5]
 # Variables
 variable_list = [
     [
-        Variable(name='variable_0', position=[-6.77, 34.65], type_=str),
-        "Variable(name='variable_0', position=[-6.77, 34.65], type_=str)"
+        Variable(name='variable_0', label='', position=[-6.77, 34.65], type_=str),
+        "Variable(name='variable_0', label='', position=[-6.77, 34.65], type_=str)"
     ],
     [
-        Variable(name='variable_1', position=[-632.77, 34.65], type_=List[BinaryFile]),
-        "Variable(name='variable_1', position=[-632.77, 34.65], type_=List[BinaryFile])"
+        Variable(name='variable_1', label='', position=[-632.77, 34.65], type_=List[BinaryFile]),
+        "Variable(name='variable_1', label='', position=[-632.77, 34.65], type_=List[BinaryFile])"
     ],
     [
-        Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[ConnectionNode]),
-        "Variable(name='variable_2', position=[-2342.61, 18.72], type_=List[ConnectionNode])"
+        Variable(name='variable_2', label='', position=[-2342.61, 18.72], type_=List[ConnectionNode]),
+        "Variable(name='variable_2', label='', position=[-2342.61, 18.72], type_=List[ConnectionNode])"
     ],
     [
-        Variable(name='variable_3', position=[197.91, 95.02], type_=List[int]),
-        "Variable(name='variable_3', position=[197.91, 95.02], type_=List[int])"
+        Variable(name='variable_3', label='', position=[197.91, 95.02], type_=List[int]),
+        "Variable(name='variable_3', label='', position=[197.91, 95.02], type_=List[int])"
     ],
     [
-        Variable(name='variable_4', position=[-1035.71, -269.35], type_=List[str]),
-        "Variable(name='variable_4', position=[-1035.71, -269.35], type_=List[str])"
+        Variable(name='variable_4', label='', position=[-1035.71, -269.35], type_=List[str]),
+        "Variable(name='variable_4', label='', position=[-1035.71, -269.35], type_=List[str])"
     ],
     [
-        Variable(name='variable_5', position=[2620.96, -486.85], type_=List[bool]),
-        "Variable(name='variable_5', position=[2620.96, -486.85], type_=List[bool])"
+        Variable(name='variable_5', label='', position=[2620.96, -486.85], type_=List[bool]),
+        "Variable(name='variable_5', label='', position=[2620.96, -486.85], type_=List[bool])"
     ],
     [
-        Variable(name='variable_6', position=[2620.96, -486.85], type_=Dict[str, int]),
-        "Variable(name='variable_6', position=[2620.96, -486.85], type_=Dict[str, int])"
+        Variable(name='variable_6', label='', position=[2620.96, -486.85], type_=Dict[str, int]),
+        "Variable(name='variable_6', label='', position=[2620.96, -486.85], type_=Dict[str, int])"
     ],
     [
-        Variable(name='variable_7', position=[2620.9, -486.8], type_=List[List[Tuple[float, float]]]),
-        "Variable(name='variable_7', position=[2620.9, -486.8], type_=List[List[Tuple[float, float]]])"
+        Variable(name='variable_7', label='', position=[2620.9, -486.8], type_=List[List[Tuple[float, float]]]),
+        "Variable(name='variable_7', label='', position=[2620.9, -486.8], type_=List[List[Tuple[float, float]]])"
     ],
     [
-        Variable(name='variable_8', position=[2620.96, -486.84], type_=InstanceOf[EmbeddedSubobject]),
-        "Variable(name='variable_8', position=[2620.96, -486.84], type_=InstanceOf[EmbeddedSubobject])"
+        Variable(name='variable_8', label='', position=[2620.96, -486.84], type_=InstanceOf[EmbeddedSubobject]),
+        "Variable(name='variable_8', label='', position=[2620.96, -486.84], type_=InstanceOf[EmbeddedSubobject])"
     ],
     [
-        Variable(name='variable_9', position=[2.6, -4.8], type_=Union[EmbeddedSubobject, StandaloneBuiltinsSubobject]),
-        "Variable(name='variable_9', position=[2.6, -4.8], type_=Union[EmbeddedSubobject, StandaloneBuiltinsSubobject])"
+        Variable(name='variable_9', label='', type_=Union[EmbeddedSubobject, StandaloneBuiltinsSubobject]),
+        "Variable(name='variable_9', label='', position=(0, 0),"
+        " type_=Union[EmbeddedSubobject, StandaloneBuiltinsSubobject])"
     ],
     [
-        Variable(name='variable_10', position=[2620.96, -486.84], type_=List[List[List[Tuple[float, float]]]]),
-        "Variable(name='variable_10', position=[2620.96, -486.84], type_=List[List[List[Tuple[float, float]]]])"
+        Variable(name='variable_10', label='', position=[26.96, -486.84], type_=List[List[List[Tuple[float, float]]]]),
+        "Variable(name='variable_10', label='', position=[26.96, -486.84], type_=List[List[List[Tuple[float, float]]]])"
     ],
     [
-        Variable(name='variable_11', position=[26.96, -486.84], type_=Measure),
-        "Variable(name='variable_11', position=[26.96, -486.84], type_=Measure)"
+        Variable(name='variable_11', label='', position=[26.96, -486.84], type_=Measure),
+        "Variable(name='variable_11', label='', position=[26.96, -486.84], type_=Measure)"
     ],
     [
-        Variable(name='variable_12', position=[26.96, -486.84], type_=Distance),
-        "Variable(name='variable_12', position=[26.96, -486.84], type_=Distance)"
+        Variable(name='variable_12', label='', position=[26.96, -486.84], type_=Distance),
+        "Variable(name='variable_12', label='', position=[26.96, -486.84], type_=Distance)"
     ]
 ]
 
