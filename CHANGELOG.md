@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Refactor
 
+- Export: Add all export formats in zip file by iterating over _export_formats()
 - Serialization : Mutualize DessiaObject and Regular objects pointer serialization
 
 
