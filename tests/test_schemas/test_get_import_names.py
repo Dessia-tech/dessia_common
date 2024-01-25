@@ -1,16 +1,16 @@
-from typing import List, Tuple, Union
-
-from dessia_common.measures import Measure
-from dessia_common.schemas.core import ClassProperty, MethodTypeProperty, AttributeTypeProperty, SchemaAttribute,\
-    UnionProperty, HeterogeneousSequence, HomogeneousSequence, BuiltinProperty, MeasureProperty
-from dessia_common.forms import StandaloneObject, EmbeddedSubobject, StandaloneBuiltinsSubobject
-from dessia_common.typings import MethodType, ClassMethodType, AttributeType, ClassAttributeType
-from typing import Type
-
-
 import unittest
-from parameterized import parameterized
+from typing import Dict, List, Tuple, Union
 
+from dessia_common.files import BinaryFile
+from dessia_common.forms import EmbeddedSubobject, StandaloneBuiltinsSubobject
+from dessia_common.measures import Measure
+from dessia_common.schemas.core import (BuiltinProperty, DynamicDict,
+                                        HeterogeneousSequence,
+                                        HomogeneousSequence,
+                                        InstanceOfProperty, MeasureProperty,
+                                        SchemaAttribute, UnionProperty)
+from dessia_common.typings import InstanceOf
+from parameterized import parameterized
 
 schemas = [
     (BuiltinProperty(annotation=str, attribute=SchemaAttribute(name="BuiltinProperty")), []),
@@ -21,9 +21,24 @@ schemas = [
                    attribute=SchemaAttribute(name="UnionProperty")),
      ['typing.Union', 'dessia_common.forms.EmbeddedSubobject', 'dessia_common.forms.StandaloneBuiltinsSubobject']),
 
+    (HeterogeneousSequence(annotation=Tuple[BinaryFile, BinaryFile], attribute=SchemaAttribute("HeterogeneousSequence")),
+     ['typing.Tuple', 'dessia_common.files.BinaryFile', 'dessia_common.files.BinaryFile']
+     ),
+
     (HomogeneousSequence(annotation=List[Tuple[bool]], attribute=SchemaAttribute(name="HomogeneousSequence")),
      ['typing.List', 'typing.Tuple']),
-    # (), (), (), ()
+
+    (DynamicDict(annotation=Dict[str, int], attribute=SchemaAttribute(name="DynamicDict")),
+     ['typing.Dict']),
+
+    (HomogeneousSequence(annotation=List[List[List[Tuple[float, float]]]],
+                         attribute=SchemaAttribute(name="HomogeneousSequence")),
+     ['typing.List', 'typing.List', 'typing.List', 'typing.Tuple']),
+
+    (InstanceOfProperty(annotation=InstanceOf[EmbeddedSubobject],
+                         attribute=SchemaAttribute(name="InstanceOfProperty")),
+     ['dessia_common.typings.InstanceOf', 'dessia_common.forms.EmbeddedSubobject']),
+
 ]
 
 
