@@ -44,12 +44,6 @@ def is_jsonable(obj):
         return False
 
 
-def is_serializable(_):
-    """ Return True if object is deeply serializable as Dessia's standards, else False. """
-    msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
-    raise NotImplementedError(msg)
-
-
 def is_sequence(obj) -> bool:
     """
     Return True if object is sequence (but not string), else False.
@@ -96,7 +90,7 @@ def isinstance_base_types(obj):
 
 
 def is_dessia_file(obj):
-    """ Wether object inherits from dessia files. """
+    """ Whether object inherits from dessia files. """
     return isinstance(obj, (BinaryFile, StringFile))
 
 
