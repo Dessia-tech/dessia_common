@@ -107,6 +107,20 @@ class Variable(DessiaObject):
             copied_default_value = UNDEFINED
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
 
+    def _to_script(self) -> ToScriptElement:
+        script = self._get_to_script_elements()
+        script.declaration = f"{self.__class__.__name__}({script.declaration})"
+
+        script.imports.append(self.full_classname)
+        return script
+
+    def _get_to_script_elements(self):
+        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
+        imports = schema.get_import_names(import_names=[])
+        declaration = f"name='{self.name}', label='{self.label}', position={self.position}," \
+                      f" type_={schema.pretty_annotation}"
+        return ToScriptElement(declaration=declaration, imports=imports, imports_as_is=[])
+
 
 class TypedVariable(Variable):
     """ Backward compatibility for <0.15.0. Should not be used anymore. """
@@ -1325,7 +1339,7 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        for block, mem_start in dict(self.after_block_memory_usage):
+        for block, mem_start in dict(self.after_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",

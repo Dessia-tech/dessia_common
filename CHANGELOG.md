@@ -19,9 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Serialization : Fix wrong path in serialization that result in pointers cycles in some cases
+- Workflow : Fix export workflow in .py script
 
 ### Refactor
 
+- Export: Add all export formats in zip file by iterating over _export_formats()
 - Serialization : Mutualize DessiaObject and Regular objects pointer serialization
 
 
@@ -77,6 +79,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PhysicalObject: Pool to_stem and to_step_stream
 - Workflow : Block input and output names have been enhanced
 - Workflow : Inputs now have entries for Imposed Variable Values
+
+### Fixed
+
+- Document generator : Fix add_picture to .docx
 
 ### Removed
 
