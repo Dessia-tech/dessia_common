@@ -605,10 +605,6 @@ class TypingProperty(Property):
     @property
     def get_import_name(self):
         """ Get class module and name as string."""
-        if isinstance(self, InstanceOfProperty):
-            return f"{self.origin.__module__}.{self.origin.__name__}"
-        if isinstance(self, UnionProperty):
-            return f"{self.origin.__module__}.{self.origin._name}"
         return f"{self.annotation.__class__.__module__}.{self.annotation._name}"
 
     def get_import_names(self, import_names):
@@ -972,6 +968,11 @@ class UnionProperty(TypingProperty):
               f"are not consistent. They should be all standalone in db or none of them should."
         return WrongType(msg)
 
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.origin.__module__}.{self.origin._name}"
+
 
 class HeterogeneousSequence(TypingProperty):
     """
@@ -1256,6 +1257,11 @@ class InstanceOfProperty(TypingProperty):
         issues = super().check_list()
         issues += CheckList([self.has_one_arg()])
         return issues
+
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.origin.__module__}.{self.origin.__name__}"
 
 
 class SubclassProperty(TypingProperty):
