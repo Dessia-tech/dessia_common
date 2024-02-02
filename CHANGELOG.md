@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Serialization : Fix wrong path in serialization that result in pointers cycles in some cases
+- Workflow : Fix export workflow in .py script
 
 ### Refactor
 
