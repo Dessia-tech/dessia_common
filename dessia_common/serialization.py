@@ -61,7 +61,6 @@ class SerializableObject(CoreDessiaObject):
                                                                 id_memo=id_memo)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
-
         return serialized_dict
 
     @classmethod
@@ -125,6 +124,35 @@ def serialize(value):
     return serialized_value
 
 
+def _find_in_memo(memo, value, id_memo):
+    """ Browse memo to find other occurrences of given value. """
+    path_to_refs, serialized_value, id_, _ = memo[value]
+    id_memo[id_] = serialized_value
+    return {REF_MARKER: path_to_refs}, memo
+
+
+def _serialize_and_set_in_memo(memo, value, id_memo, id_method, path):
+    """ Serialize object depending on its nature and set it in memo.  """
+    is_dessia_object = isinstance(value, SerializableObject)
+    try:
+        serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
+    except TypeError:
+        if is_dessia_object:
+            warnings.warn('Specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
+        serialized = value.to_dict()
+
+    if id_method:
+        id_ = str(uuid.uuid1())
+        path_to_refs = f"#/_references/{id_}"
+        memo[value] = path_to_refs, serialized, id_, path
+        if is_dessia_object and value._standalone_in_db:
+            id_memo[id_] = serialized
+            serialized = {REF_MARKER: path_to_refs}
+    else:
+        memo[value] = path, serialized, None, path
+    return serialized
+
+
 def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
     """ Main function for serialization with pointers. """
     if memo is None:
@@ -132,49 +160,13 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     if id_memo is None:
         id_memo = {}
 
-    if isinstance(value, SerializableObject):
-        if value in memo:
-            path_to_refs, serialized_value, id_, _ = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: path_to_refs}, memo
-        try:
-            serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
-        except TypeError:
-            warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
-            serialized = value.to_dict()
-
-        if id_method:
-            id_ = str(uuid.uuid1())
-            path_to_refs = f"#/_references/{id_}"
-            memo[value] = path_to_refs, serialized, id_, path
-            if value._standalone_in_db:
-                id_memo[id_] = serialized
-                serialized = {REF_MARKER: path_to_refs}
-        else:
-            memo[value] = path, serialized, None, path
-
-    elif isinstance(value, type):
-        # TODO Why do we serialize types with pointers ? These are only just strings.
-        if value in memo:
-            path_to_refs, serialized_value, id_, _ = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: memo[value]}, memo
+    # Objects (DessiaObjects and Regular)
+    if isinstance(value, type):
         serialized = serialize_annotation(value)
-
-    # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_to_refs, serialized_value, id_, path_to_value = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: path_to_value}, memo
-        serialized = value.to_dict()
-
-        if id_method:
-            id_ = str(uuid.uuid1())
-            path_to_refs = f"#/_references/{id_}"
-            memo[value] = path_to_refs, serialized, id_, path
-        else:
-            memo[value] = path, serialized, None, path
+            return _find_in_memo(memo, value, id_memo)
+        serialized = _serialize_and_set_in_memo(memo=memo, value=value, id_memo=id_memo, id_method=id_method, path=path)
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,

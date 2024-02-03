@@ -285,7 +285,7 @@ class Workflow(Block):
         for pipe in self.pipes:
             self.handle_pipe(pipe)
 
-        self._utd_graph = False
+        self._cached_graph = None
 
         inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
 
@@ -739,9 +739,8 @@ class Workflow(Block):
 
     def _get_graph(self):
         """ Cached property for graph. """
-        if not self._utd_graph:
+        if self._cached_graph is None:
             self._cached_graph = self._graph()
-            self._utd_graph = True
         return self._cached_graph
 
     graph = property(_get_graph)
@@ -1328,7 +1327,7 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        for block, mem_start in dict(self.after_block_memory_usage):
+        for block, mem_start in dict(self.after_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
