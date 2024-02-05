@@ -256,7 +256,7 @@ class ModelMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelMethod':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
-        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        method_type = MethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
