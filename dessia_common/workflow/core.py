@@ -1995,10 +1995,11 @@ class WorkflowRun(WorkflowState):
         block_input = "block_{}.inputs[{}]"
 
         values_dict = self.input_values
-        sorted_dict = {k: values_dict[k] for k in sorted(values_dict)}
+        sorted_dict = {i: value for i, value in enumerate(values_dict.values())}
         values = list(sorted_dict.values())
         liste_input = []
         liste_input_nbv = []
+        processed_index = []
 
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
@@ -2027,16 +2028,18 @@ class WorkflowRun(WorkflowState):
             import_ = schema.get_import_names(import_names=[])
             add_import.extend(import_)
 
-        # TODO: update
+            processed_index.append(input_[2])
+
+        new_values = [values[i] for i in range(len(values)) if i not in processed_index]
+
         for k, nbv in enumerate(self.workflow.nonblock_variables):
-            if not nbv.has_default_value:
-                liste_input_nbv.append((nbv, k + j))
+            liste_input_nbv.append((nbv, k))
 
         for i, input_ in enumerate(liste_input_nbv):
             input_str += f"    workflow.input_index(" \
                          f"variable_{i}):" \
                          f" value_{i},\n"
-            default_value_ = f"\nvalue_{i} = '{values[input_[1]]}'"
+            default_value_ = f"\nvalue_{i} = '{new_values[i]}'"
 
             default_value += default_value_
 
