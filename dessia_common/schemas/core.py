@@ -670,6 +670,11 @@ class OptionalProperty(ProxyProperty):
         """ Deserialize Optional annotation. """
         raise NotImplementedError("Optional property deserialization not implemented yet. ")
 
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.origin.__module__}.{self.origin.__name__}"
+
 
 class AnnotatedProperty(ProxyProperty):
     """

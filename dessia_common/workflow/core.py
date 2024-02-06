@@ -1221,6 +1221,8 @@ class Workflow(Block):
                       f" name=\"{self.name}\")\n"
 
         self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
+        imports.append(self.full_classname)
+        full_script = f'documentation = """{self.documentation}"""\n\n' + full_script
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
@@ -1230,12 +1232,10 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
         self_script = self._to_script()
-        self_script.imports.append(self.full_classname)
 
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
-               f'documentation = """{self.documentation}"""\n\n' \
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):
@@ -1998,11 +1998,10 @@ class WorkflowRun(WorkflowState):
         Computes a script representing the workflowrun.
         """
 
-        workflow_script = self.workflow.to_script()
-        # workflow_script_import = self.workflow._to_script().imports
+        workflow_script = self.workflow._to_script()
         input_str = ""
         default_value = ""
-        add_import = ""
+        add_import = []
         var = "block_{}.inputs[{}]"
 
         values_dict = self.input_values
@@ -2013,7 +2012,7 @@ class WorkflowRun(WorkflowState):
 
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
-                if not var.format(j, i) in workflow_script:
+                if not var.format(j, i) in workflow_script.declaration:
                     liste_input.append((input_, j))
 
         for i, input_ in enumerate(liste_input):
@@ -2031,8 +2030,13 @@ class WorkflowRun(WorkflowState):
                 default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_sequence(values[i])}"
 
             else:
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_builtins([values[i]])}"
+                default_value_ = f"\nvalue_{input_[1]}_{i} = {repr(values[i])}"
             default_value += default_value_
+
+            schema = get_schema(annotation=input_[0].type_, attribute=SchemaAttribute(input_[0].name))
+            import_ = schema.get_import_names(import_names=[])
+            add_import.extend(import_)
+
 
         # TODO: update
         for k, nbv in enumerate(self.workflow.nonblock_variables):
@@ -2047,16 +2051,22 @@ class WorkflowRun(WorkflowState):
 
             default_value += default_value_
 
-        input_str = add_import + workflow_script + "\n" + default_value + "\ninput_values = {\n" + input_str + "}"
-        return input_str + "\n" + "\nworkflow_run = workflow.run(input_values=input_values)\n"
+        workflow_script.declaration = workflow_script.declaration + "\n" + \
+                                      default_value + "\ninput_values = {\n" + input_str + "}" + "\n" +\
+                                      "\nworkflow_run = workflow.run(input_values=input_values)\n"
+        workflow_script.imports.extend(add_import)
+
+        return workflow_script
 
     def save_script_to_stream(self, stream: io.StringIO):
         """
         Save the workflowrun to a python script to a stream
         """
-        string = self.to_script()
+        script = self.to_script()
         stream.seek(0)
-        stream.write(string)
+        script_imports = script.imports_to_str()
+        stream.write(script_imports + "\n")
+        stream.write(script.declaration + "\n")
 
     def save_script_to_file(self, filename: str):
         """
