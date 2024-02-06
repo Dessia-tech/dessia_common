@@ -2003,24 +2003,24 @@ class WorkflowRun(WorkflowState):
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
                 if not block_input.format(j, i) in workflow_script.declaration:
-                    liste_input.append((input_, j))
+                    liste_input.append((input_, j, i))
 
-        for i, input_ in enumerate(liste_input):
+        for input_ in liste_input:
             input_str += f"    workflow.input_index(" \
-                         f"{block_input.format(input_[1], i)}):" \
-                         f" value_{str(input_[1]) + '_' + str(i)},\n"
+                         f"{block_input.format(input_[1], input_[2])}):" \
+                         f" value_{str(input_[1]) + '_' + str(input_[2])},\n"
 
-            if isinstance(values[i], SerializableObject):
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.instantiate_objet([values[i]])}"
+            if isinstance(values[input_[2]], SerializableObject):
+                default_value_ = f"\nvalue_{input_[1]}_{input_[2]} = {self.instantiate_objet([values[input_[2]]])}"
 
-            elif isinstance(values[i], (BinaryFile, StringFile)):
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_file([values[i].__class__.__name__])}"
+            elif isinstance(values[input_[2]], (BinaryFile, StringFile)):
+                default_value_ = f"\nvalue_{input_[1]}_{input_[2]} = {self.get_file([values[input_[2]].__class__.__name__])}"
 
-            elif is_sequence(values[i]):
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {self.get_sequence(values[i])}"
+            elif is_sequence(values[input_[2]]):
+                default_value_ = f"\nvalue_{input_[1]}_{input_[2]} = {self.get_sequence(values[input_[2]])}"
 
             else:
-                default_value_ = f"\nvalue_{input_[1]}_{i} = {repr(values[i])}"
+                default_value_ = f"\nvalue_{input_[1]}_{input_[2]} = {repr(values[input_[2]])}"
             default_value += default_value_
 
             schema = get_schema(annotation=input_[0].type_, attribute=SchemaAttribute(input_[0].name))
@@ -2030,7 +2030,7 @@ class WorkflowRun(WorkflowState):
         # TODO: update
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             if not nbv.has_default_value:
-                liste_input_nbv.append((input_, k + j))
+                liste_input_nbv.append((nbv, k + j))
 
         for i, input_ in enumerate(liste_input_nbv):
             input_str += f"    workflow.input_index(" \
