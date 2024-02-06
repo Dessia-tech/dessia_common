@@ -1948,22 +1948,12 @@ class WorkflowRun(WorkflowState):
         if len(obj_list) > 1:
             instances = '['
             for obj_ in obj_list:
-                inst = f"{class_name}(**{obj_.__dict__})"
-                instances += inst + ","
+                inst = f"{class_name}('Put here your object')"
+                instances += inst + ", "
             instances += ']'
             return instances
 
-        return f"{class_name}(**{obj_list[0].__dict__})"
-
-    @staticmethod
-    def get_builtins(obj_list):
-        element = obj_list[0]
-        if isinstance(element, (int, str, float, bool)):
-            if len(obj_list) > 1:
-                instances = [repr(obj) for obj in obj_list]
-                return f"[{', '.join(instances)}]"
-            else:
-                return repr(element)
+        return f"{class_name}('Put here your object')"
 
     @staticmethod
     def get_file(type_files):
@@ -1971,7 +1961,7 @@ class WorkflowRun(WorkflowState):
         if len(type_files) > 1:
             instances = "["
             for _ in range(len(type_files)):
-                instances += f"{file_class}.from_file('Insert your path here')" + ","
+                instances += f"{file_class}.from_file('Insert your path here')" + ", "
             instances += ']'
             return instances
         return f"{file_class}.from_file('Insert your path here')"
@@ -1990,19 +1980,19 @@ class WorkflowRun(WorkflowState):
         elif self.is_file_seq(seq):
             value = self.get_file(seq)
         else:
-            value = self.get_builtins(seq)
+            value = repr(seq)
         return value
 
     def to_script(self):
         """
-        Computes a script representing the workflowrun.
+        Computes a script representing the WorkflowRun.
         """
 
         workflow_script = self.workflow._to_script()
         input_str = ""
         default_value = ""
         add_import = []
-        var = "block_{}.inputs[{}]"
+        block_input = "block_{}.inputs[{}]"
 
         values_dict = self.input_values
         sorted_dict = {k: values_dict[k] for k in sorted(values_dict)}
@@ -2012,12 +2002,12 @@ class WorkflowRun(WorkflowState):
 
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
-                if not var.format(j, i) in workflow_script.declaration:
+                if not block_input.format(j, i) in workflow_script.declaration:
                     liste_input.append((input_, j))
 
         for i, input_ in enumerate(liste_input):
             input_str += f"    workflow.input_index(" \
-                         f"{var.format(input_[1], i)}):" \
+                         f"{block_input.format(input_[1], i)}):" \
                          f" value_{str(input_[1]) + '_' + str(i)},\n"
 
             if isinstance(values[i], SerializableObject):
@@ -2037,7 +2027,6 @@ class WorkflowRun(WorkflowState):
             import_ = schema.get_import_names(import_names=[])
             add_import.extend(import_)
 
-
         # TODO: update
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             if not nbv.has_default_value:
@@ -2052,7 +2041,7 @@ class WorkflowRun(WorkflowState):
             default_value += default_value_
 
         workflow_script.declaration = workflow_script.declaration + "\n" + \
-                                      default_value + "\ninput_values = {\n" + input_str + "}" + "\n" +\
+                                      default_value + "\n\ninput_values = {\n" + input_str + "}" + "\n" +\
                                       "\nworkflow_run = workflow.run(input_values=input_values)\n"
         workflow_script.imports.extend(add_import)
 
