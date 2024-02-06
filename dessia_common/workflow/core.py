@@ -2041,6 +2041,10 @@ class WorkflowRun(WorkflowState):
                          f" value_{i},\n"
             default_value_ = f"\nvalue_{i} = '{new_values[i]}'"
 
+            schema = get_schema(annotation=input_[0].type_, attribute=SchemaAttribute(input_[0].name))
+            import_ = schema.get_import_names(import_names=[])
+            add_import.extend(import_)
+
             default_value += default_value_
 
         workflow_script.declaration = workflow_script.declaration + "\n" + \
