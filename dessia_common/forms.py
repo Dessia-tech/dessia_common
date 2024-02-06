@@ -345,9 +345,7 @@ class StandaloneObject(MovingObject):
         intarg = self.standalone_subobject.intarg
         points = [vm.Point2D(intarg, intarg), vm.Point2D(intarg, intarg + 1),
                   vm.Point2D(intarg + 1, intarg + 1), vm.Point2D(intarg + 1, 0)]
-
-        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-        return crls
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
 
     def volmdlr_primitives(self, **kwargs):
         """ Volmdlr primitives of a cube. """
@@ -805,12 +803,17 @@ class HorizontalBeam(Beam):
         fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
+    def primitive3d(self, reference_path: str = "#"):
+        """ Generate 3D primitives. """
+        contour = self.contour(reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        return p3d.ExtrudedProfile(frame=frame, outer_contour2d=contour, inner_contours2d=[],
+                                   extrusion_length=1, reference_path=reference_path)
+
     @cad_view("CAD View")
     def plot3d(self, reference_path: str = "#"):
         """ A dummy 3D method to test form interactions. """
-        contour = self.contour(reference_path)
-        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
-        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        primitive = self.primitive3d(reference_path)
         return vm.core.VolumeModel([primitive]).babylon_data()
 
 
@@ -836,12 +839,17 @@ class VerticalBeam(Beam):
         fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
+    def primitive3d(self, origin: float, reference_path: str = "#"):
+        """ Generate 3D primitives. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        return p3d.ExtrudedProfile(frame=frame, outer_contour2d=contour, inner_contours2d=[],
+                                   extrusion_length=1, reference_path=reference_path)
+
     @cad_view("CAD View")
     def plot3d(self, origin: float = 0, reference_path: str = "#"):
         """ A dummy 3D method to test form interactions. """
-        contour = self.contour(origin=origin, reference_path=reference_path)
-        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
-        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        primitive = self.primitive3d(origin=origin, reference_path=reference_path)
         return vm.core.VolumeModel([primitive]).babylon_data()
 
 
@@ -870,9 +878,9 @@ class BeamStructure(DessiaObject):
     @cad_view("CAD View")
     def plot3d(self, reference_path: str = "#"):
         """ A dummy 3D method to test form interactions. """
-        horizontal_primitive = self.horizontal_beam.plot3d(reference_path=f"{reference_path}/horizontal_beam")
-        vertical_primitives = [b.plot3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
-                                        reference_path=f"{reference_path}/vertical_beams/{i}")
+        horizontal_primitive = self.horizontal_beam.primitive3d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_primitives = [b.primitive3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                             reference_path=f"{reference_path}/vertical_beams/{i}")
                                for i, b in enumerate(self.vertical_beams)]
         primitives = [horizontal_primitive] + vertical_primitives
         return vm.core.VolumeModel(primitives).babylon_data()
