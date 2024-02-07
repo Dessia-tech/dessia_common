@@ -1943,7 +1943,8 @@ class WorkflowRun(WorkflowState):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    def instantiate_objects(self, objects):
+    @staticmethod
+    def instantiate_objects(objects):
         """
         Instantiates objects from a list of objects.
         """
@@ -2027,7 +2028,7 @@ class WorkflowRun(WorkflowState):
                     schema = get_schema(annotation=input_.type_, attribute=SchemaAttribute(input_.name))
                     add_import.extend(schema.get_import_names(import_names=[]))
                     processed_index.add(i + index_)
-            index_ = i
+            index_ += i
 
         # NBVs
         new_values = [values[i] for i in range(len(values)) if i not in processed_index]
@@ -2060,7 +2061,7 @@ class WorkflowRun(WorkflowState):
 
     def save_script_to_stream(self, stream: io.StringIO):
         """
-        Save the workflowrun to a python script to a stream
+        Save the WorkflowRun to a python script to a stream
         """
         script = self.to_script()
         stream.seek(0)
@@ -2070,7 +2071,7 @@ class WorkflowRun(WorkflowState):
 
     def save_script_to_file(self, filename: str):
         """
-        Save the workflowrun to a python script to a file on the disk
+        Save the WorkflowRun to a python script to a file on the disk
         """
         if not filename.endswith('.py'):
             filename += '.py'
