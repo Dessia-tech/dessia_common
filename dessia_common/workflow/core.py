@@ -2101,9 +2101,10 @@ class WorkflowRun(WorkflowState):
         return template.substitute(name=self.name, workflow_name=self.workflow.name,
                                    output_table=output_table, execution_info=execution_info)
 
-
     def _export_formats(self):
-        """ Export !. """
+        """
+        Returns a list of export formats.
+        """
         export_formats = super()._export_formats()
         script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
         export_formats.append(script_export)
