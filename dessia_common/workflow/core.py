@@ -1903,8 +1903,11 @@ class WorkflowRun(WorkflowState):
         workflow_settings = [display_setting for display_setting in self.workflow.display_settings()
                              if display_setting.selector != "Documentation"]
         block_settings = self.workflow.blocks_display_settings
+
+        displays_by_default = [s.load_by_default for s in block_settings]
         display_documentation = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
-                                               load_by_default=False)
+                                               load_by_default=True)
+        display_documentation.load_by_default = not any(displays_by_default)
 
         workflow_settings_to_keep = []
         for settings in workflow_settings:
