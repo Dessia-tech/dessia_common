@@ -1999,17 +1999,10 @@ class WorkflowRun(WorkflowState):
             value = repr(sequence)
         return value
 
-    def to_script(self):
+    def _compute_input_values(self):
         """
-        Computes a script representing the WorkflowRun.
+        Computes the input values for blocks and non-block variables.
         """
-
-        workflow_script = self.workflow._to_script()
-        input_str = ""
-        default_value = ""
-        add_import = []
-        block_input = "block_{}.inputs[{}]"
-
         values_nonblock_variables = []
         values_blocks = []
         for i, variable in enumerate(self.workflow.inputs):
@@ -2017,6 +2010,19 @@ class WorkflowRun(WorkflowState):
                 values_nonblock_variables.append(self.input_values[i])
             else:
                 values_blocks.append(self.input_values[i])
+
+        return values_nonblock_variables, values_blocks
+
+    def _to_script(self, workflow_script):
+        """
+        Computes elements for a to_script interpretation.
+        """
+        input_str = ""
+        default_value = ""
+        add_import = []
+        block_input = "block_{}.inputs[{}]"
+
+        values_nonblock_variables, values_blocks = self._compute_input_values()
 
         # Blocks
         index_ = 0
@@ -2037,6 +2043,15 @@ class WorkflowRun(WorkflowState):
             default_value += self._generate_default_value(values_nonblock_variables[k], k)
             schema = get_schema(annotation=nbv.type_, attribute=SchemaAttribute(nbv.name))
             add_import.extend(schema.get_import_names(import_names=[]))
+
+        return input_str, default_value, add_import
+
+    def to_script(self):
+        """
+        Computes a script representing the WorkflowRun.
+        """
+        workflow_script = self.workflow._to_script()
+        input_str, default_value, add_import = self._to_script(workflow_script)
 
         workflow_script.declaration = f"{workflow_script.declaration}\n{default_value}\n\ninput_values =" \
                                       f" {{\n{input_str}}}\nworkflow_run = workflow.run(input_values=input_values)\n"
