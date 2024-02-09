@@ -2010,31 +2010,31 @@ class WorkflowRun(WorkflowState):
         add_import = []
         block_input = "block_{}.inputs[{}]"
 
-        values_dict = self.input_values
-        sorted_dict = {i: value for i, value in enumerate(values_dict.values())}
-        values = list(sorted_dict.values())
+        values_nonblock_variables = []
+        values_blocks = []
+        for i, variable in enumerate(self.workflow.inputs):
+            if variable in self.workflow.nonblock_variables:
+                values_nonblock_variables.append(self.input_values[i])
+            else:
+                values_blocks.append(self.input_values[i])
 
         # Blocks
         index_ = 0
-        processed_index = set()
         for j, block in enumerate(self.workflow.blocks):
-            i = 0
             for i, input_ in enumerate(block.inputs):
                 input_key = block_input.format(j, i)
                 if input_key not in workflow_script.declaration:
                     input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    value = values[i+index_]
+                    value = values_blocks[index_]
+                    index_ += 1
                     default_value += self._generate_default_value(value, j, i)
                     schema = get_schema(annotation=input_.type_, attribute=SchemaAttribute(input_.name))
                     add_import.extend(schema.get_import_names(import_names=[]))
-                    processed_index.add(i + index_)
-            index_ += i
 
         # NBVs
-        new_values = [values[i] for i in range(len(values)) if i not in processed_index]
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
-            default_value += self._generate_default_value(new_values[k], k)
+            default_value += self._generate_default_value(values_nonblock_variables[k], k)
             schema = get_schema(annotation=nbv.type_, attribute=SchemaAttribute(nbv.name))
             add_import.extend(schema.get_import_names(import_names=[]))
 
@@ -2048,7 +2048,7 @@ class WorkflowRun(WorkflowState):
         """
         Generate a value for a given input.
         """
-        if not input_index:
+        if not input_index and input_index != 0:
             input_index = ''
         if isinstance(value, SerializableObject):
             return f"\nvalue_{block_index}_{input_index} = {self.instantiate_objects([value])}"

@@ -673,7 +673,7 @@ class OptionalProperty(ProxyProperty):
     @property
     def get_import_name(self):
         """ Get class module and name as string."""
-        return f"{self.origin.__module__}.{self.origin.__name__}"
+        return self.schema.get_import_names([])[0]
 
 
 class AnnotatedProperty(ProxyProperty):
