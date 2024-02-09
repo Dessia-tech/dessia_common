@@ -2017,9 +2017,12 @@ class WorkflowRun(WorkflowState):
         """
         Computes elements for a to_script interpretation.
         """
-        input_str = ""
-        default_value = ""
-        add_import = []
+        input_info = {
+            "input_str": "",
+            "default_value": "",
+            "add_import": [],
+        }
+
         block_input = "block_{}.inputs[{}]"
 
         values_nonblock_variables, values_blocks = self._compute_input_values()
@@ -2030,22 +2033,22 @@ class WorkflowRun(WorkflowState):
             for i, input_ in enumerate(block.inputs):
                 input_key = block_input.format(j, i)
                 if input_key not in workflow_script.declaration:
-                    input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    default_value += self._generate_default_value(values_blocks[index_], j, i)
+                    input_info["input_str"] += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
+                    input_info["default_value"] += self._generate_default_value(values_blocks[index_], j, i)
                     index_ += 1
-                    add_import.extend(
-                        get_schema(annotation=input_.type_,
-                                   attribute=SchemaAttribute(input_.name)).get_import_names(import_names=[])
-                                      )
+                    input_info["add_import"].extend(get_schema(annotation=input_.type_,
+                                                               attribute=SchemaAttribute(input_.name)).get_import_names(
+                        import_names=[]))
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
-            input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
-            default_value += self._generate_default_value(values_nonblock_variables[k], k)
-            add_import.extend(get_schema(annotation=nbv.type_,
-                                         attribute=SchemaAttribute(nbv.name)).get_import_names(import_names=[]))
+            input_info["input_str"] += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
+            input_info["default_value"] += self._generate_default_value(values_nonblock_variables[k], k)
+            input_info["add_import"].extend(get_schema(annotation=nbv.type_,
+                                                       attribute=SchemaAttribute(nbv.name)).get_import_names(
+                import_names=[]))
 
-        return input_str, default_value, add_import
+        return input_info["input_str"], input_info["default_value"], input_info["add_import"]
 
     def to_script(self):
         """
