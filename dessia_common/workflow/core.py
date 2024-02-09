@@ -1945,9 +1945,7 @@ class WorkflowRun(WorkflowState):
 
     @staticmethod
     def instantiate_objects(objects):
-        """
-        Instantiates objects from a list of objects.
-        """
+        """ Instantiates objects from a list of objects. """
         class_name = f"{objects[0].__class__.__name__}"
         if len(objects) > 1:
             instances = '['
@@ -1961,9 +1959,7 @@ class WorkflowRun(WorkflowState):
 
     @staticmethod
     def get_files(type_files):
-        """
-        Generates file instances from a list of file types.
-        """
+        """ Generates file instances from a list of file types. """
         file_class = type_files[0].__class__.__name__
         if len(type_files) > 1:
             instances = "["
@@ -1975,22 +1971,16 @@ class WorkflowRun(WorkflowState):
 
     @staticmethod
     def is_object_sequence(seq):
-        """
-        Checks if a sequence contains serializable objects.
-        """
+        """ Checks if a sequence contains serializable objects. """
         return any(isinstance(element, SerializableObject) for element in seq)
 
     @staticmethod
     def is_file_sequence(sequence):
-        """
-        Checks if a sequence contains binary files.
-        """
+        """ Checks if a sequence contains binary files. """
         return any(isinstance(element, BinaryFile) for element in sequence)
 
     def get_sequence(self, sequence):
-        """
-        Processes a sequence based on its content.
-        """
+        """ Processes a sequence based on its content. """
         if self.is_object_sequence(sequence):
             value = self.instantiate_objects(sequence)
         elif self.is_file_sequence(sequence):
@@ -2000,9 +1990,7 @@ class WorkflowRun(WorkflowState):
         return value
 
     def _compute_input_values(self):
-        """
-        Computes the input values for blocks and non-block variables.
-        """
+        """ Computes the input values for blocks and non-block variables. """
         values_nonblock_variables = []
         values_blocks = []
         for i, variable in enumerate(self.workflow.inputs):
@@ -2014,9 +2002,7 @@ class WorkflowRun(WorkflowState):
         return values_nonblock_variables, values_blocks
 
     def _to_script(self, workflow_script):
-        """
-        Computes elements for a to_script interpretation.
-        """
+        """ Computes elements for a to_script interpretation. """
         input_info = {
             "input_str": "",
             "default_value": "",
@@ -2051,9 +2037,7 @@ class WorkflowRun(WorkflowState):
         return input_info["input_str"], input_info["default_value"], input_info["add_import"]
 
     def to_script(self):
-        """
-        Computes a script representing the WorkflowRun.
-        """
+        """ Computes a script representing the WorkflowRun. """
         workflow_script = self.workflow._to_script()
         input_str, default_value, add_import = self._to_script(workflow_script)
 
@@ -2064,9 +2048,7 @@ class WorkflowRun(WorkflowState):
         return workflow_script
 
     def _generate_default_value(self, value, block_index, input_index=None):
-        """
-        Generate a value for a given input.
-        """
+        """ Generate a value for a given input. """
         if not input_index and input_index != 0:
             input_index = ''
         if isinstance(value, SerializableObject):
@@ -2078,9 +2060,7 @@ class WorkflowRun(WorkflowState):
         return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
 
     def save_script_to_stream(self, stream: io.StringIO):
-        """
-        Save the WorkflowRun to a python script to a stream
-        """
+        """ Save the WorkflowRun to a python script to a stream. """
         script = self.to_script()
         stream.seek(0)
         script_imports = script.imports_to_str()
@@ -2088,9 +2068,7 @@ class WorkflowRun(WorkflowState):
         stream.write(script.declaration + "\n")
 
     def save_script_to_file(self, filename: str):
-        """
-        Save the WorkflowRun to a python script to a file on the disk
-        """
+        """ Save the WorkflowRun to a python script to a file on the disk. """
         if not filename.endswith('.py'):
             filename += '.py'
             print(f'Changing filename to {filename}')
@@ -2120,9 +2098,7 @@ class WorkflowRun(WorkflowState):
                                    output_table=output_table, execution_info=execution_info)
 
     def _export_formats(self):
-        """
-        Returns a list of export formats.
-        """
+        """ Returns a list of export formats. """
         export_formats = super()._export_formats()
         script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
         export_formats.append(script_export)
