@@ -2031,18 +2031,19 @@ class WorkflowRun(WorkflowState):
                 input_key = block_input.format(j, i)
                 if input_key not in workflow_script.declaration:
                     input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    value = values_blocks[index_]
+                    default_value += self._generate_default_value(values_blocks[index_], j, i)
                     index_ += 1
-                    default_value += self._generate_default_value(value, j, i)
-                    schema = get_schema(annotation=input_.type_, attribute=SchemaAttribute(input_.name))
-                    add_import.extend(schema.get_import_names(import_names=[]))
+                    add_import.extend(
+                        get_schema(annotation=input_.type_,
+                                   attribute=SchemaAttribute(input_.name)).get_import_names(import_names=[])
+                                      )
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
             default_value += self._generate_default_value(values_nonblock_variables[k], k)
-            schema = get_schema(annotation=nbv.type_, attribute=SchemaAttribute(nbv.name))
-            add_import.extend(schema.get_import_names(import_names=[]))
+            add_import.extend(get_schema(annotation=nbv.type_,
+                                         attribute=SchemaAttribute(nbv.name)).get_import_names(import_names=[]))
 
         return input_str, default_value, add_import
 
@@ -2059,7 +2060,7 @@ class WorkflowRun(WorkflowState):
 
         return workflow_script
 
-    def _generate_default_value(self, value, block_index, input_index=None, input_=None):
+    def _generate_default_value(self, value, block_index, input_index=None):
         """
         Generate a value for a given input.
         """
@@ -2067,12 +2068,11 @@ class WorkflowRun(WorkflowState):
             input_index = ''
         if isinstance(value, SerializableObject):
             return f"\nvalue_{block_index}_{input_index} = {self.instantiate_objects([value])}"
-        elif isinstance(value, (BinaryFile, StringFile)):
+        if isinstance(value, (BinaryFile, StringFile)):
             return f"\nvalue_{block_index}_{input_index} = {self.get_files([value.__class__.__name__])}"
-        elif is_sequence(value):
+        if is_sequence(value):
             return f"\nvalue_{block_index}_{input_index} = {self.get_sequence(value)}"
-        else:
-            return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
+        return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
 
     def save_script_to_stream(self, stream: io.StringIO):
         """
