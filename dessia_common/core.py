@@ -33,7 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS
 from dessia_common.excel_reader import ExcelReader
 
 
@@ -657,6 +657,26 @@ class PhysicalObject(DessiaObject):
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
+
+    @classmethod
+    def _export_formats_from_decorator_name(cls, decorator_name: str):
+        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
+        settings = []
+        for method in methods:
+            name = method.__name__
+            extension = getattr(method, "extension")
+            method_name = getattr(method, "method_name")
+            text = getattr(method, "text")
+            selector = getattr(method, "selector", None)
+            if selector is None:
+                selector = name
+            settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
+        return settings
+
+    @classmethod
+    def _export_formats_from_decorators(cls):
+        """ Return a list, computed from decorated functions, of objects describing how to call exports. """
+        return [s for d in EXPORT_DECORATORS for s in cls._export_formats_from_decorator_name(d)]
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
