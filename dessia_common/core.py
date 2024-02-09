@@ -608,12 +608,33 @@ class DessiaObject(SerializableObject):
         with open(filepath, 'wb') as file:
             file.write(archive.getbuffer())
 
+    @classmethod
+    def _export_formats_from_decorator_name(cls, decorator_name: str):
+        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
+        settings = []
+        for method in methods:
+            name = method.__name__
+            extension = getattr(method, "extension")
+            method_name = getattr(method, "method_name")
+            text = getattr(method, "text")
+            selector = getattr(method, "selector", None)
+            if selector is None:
+                selector = name
+            settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
+        return settings
+
+    @classmethod
+    def _export_formats_from_decorators(cls):
+        """ Return a list, computed from decorated functions, of objects describing how to call exports. """
+        return [s for d in EXPORT_DECORATORS for s in cls._export_formats_from_decorator_name(d)]
+
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
-                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
-                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
-                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
+                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False)]
+
+        formats.extend(self._export_formats_from_decorators())
+        formats.append(ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False))
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -657,26 +678,6 @@ class PhysicalObject(DessiaObject):
         display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
                                                method='volmdlr_volume_model().babylon_data', serialize_data=True))
         return display_settings
-
-    @classmethod
-    def _export_formats_from_decorator_name(cls, decorator_name: str):
-        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
-        settings = []
-        for method in methods:
-            name = method.__name__
-            extension = getattr(method, "extension")
-            method_name = getattr(method, "method_name")
-            text = getattr(method, "text")
-            selector = getattr(method, "selector", None)
-            if selector is None:
-                selector = name
-            settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
-        return settings
-
-    @classmethod
-    def _export_formats_from_decorators(cls):
-        """ Return a list, computed from decorated functions, of objects describing how to call exports. """
-        return [s for d in EXPORT_DECORATORS for s in cls._export_formats_from_decorator_name(d)]
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
@@ -747,15 +748,6 @@ class PhysicalObject(DessiaObject):
         :type debug: bool, optional
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
-
-    def _export_formats(self) -> List[ExportFormat]:
-        """ Return a list of objects describing how to call 3D exports. """
-        formats = DessiaObject._export_formats(self)
-        formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
-                     ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
-                     ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
-        formats.extend(formats3d)
-        return formats
 
 
 class MovingObject(PhysicalObject):

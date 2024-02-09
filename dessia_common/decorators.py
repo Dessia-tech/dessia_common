@@ -7,7 +7,7 @@ import textwrap
 
 
 DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
-EXPORT_DECORATORS = ["export_step", "export_stl", "export_html", "export_docx"]
+EXPORT_DECORATORS = ["export_text", "export_binary"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -91,49 +91,35 @@ def cad_view(selector: str, load_by_default: bool = False):
     return decorator
 
 
-def export_step(selector: str = "step"):
+def export_text(selector: str, extension: str):
     """
-    Decorator for export step.
+    Decorator for export text.
 
     :param str selector: Unique name that identifies the export method.
+    :param str extension: File extension for the exported text data.
     """
 
     def decorator(function):
         """ Decorator for export methods. """
         set_decorated_function_metadata_export(function=function, text=True, selector=selector,
-                                               extension="step", method_name=function.__name__)
+                                               extension=extension, method_name=function.__name__)
         return function
 
     return decorator
 
 
-def export_stl(selector: str = "stl"):
+def export_binary(selector: str, extension: str):
     """
-    Decorator for export stl.
+    Decorator for export binary.
 
     :param str selector: Unique name that identifies the export method.
+    :param str extension: File extension for the exported binary data.
     """
 
     def decorator(function):
         """ Decorator for export methods. """
         set_decorated_function_metadata_export(function=function, text=False, selector=selector,
-                                               extension="stl", method_name=function.__name__)
-        return function
-
-    return decorator
-
-
-def export_html(selector: str = "html"):
-    """
-    Decorator for export html.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-
-    def decorator(function):
-        """ Decorator for export methods. """
-        set_decorated_function_metadata_export(function=function, text=True, selector=selector,
-                                               extension="html", method_name=function.__name__)
+                                               extension=extension, method_name=function.__name__)
         return function
 
     return decorator
