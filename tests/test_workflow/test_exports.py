@@ -9,7 +9,7 @@ class TestWorkflowExports(unittest.TestCase):
         self.export_formats = workflow_export_run._export_formats()
 
     def test_length(self):
-        self.assertEqual(len(self.export_formats), 7)
+        self.assertEqual(len(self.export_formats), 8)
 
     @parameterized.expand([
         (0, "json"),
