@@ -1905,11 +1905,11 @@ class WorkflowRun(WorkflowState):
         block_settings = self.workflow.blocks_display_settings
 
         displays_by_default = [s.load_by_default for s in block_settings]
-        display_documentation = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
-                                               load_by_default=True)
-        display_documentation.load_by_default = not any(displays_by_default)
+        documentation = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
+                                       load_by_default=True)
+        documentation.load_by_default = not any(displays_by_default)
 
-        workflow_settings_to_keep = []
+        workflow_settings_to_keep = [documentation]
         for settings in workflow_settings:
             # Update workflow settings
             settings.compose("workflow")
@@ -1919,7 +1919,7 @@ class WorkflowRun(WorkflowState):
 
             if settings.selector != "Tasks":
                 workflow_settings_to_keep.append(settings)
-        return [display_documentation] + workflow_settings_to_keep + block_settings
+        return workflow_settings_to_keep + block_settings
 
     def method_dict(self, method_name: str = None, method_jsonschema=None):
         """ Get run again default dict. """
