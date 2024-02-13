@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - ModelMethod : Call the right dict_to_object of MethodType
+- MultiPlot : Add selector_name MultiPlot script
 
 
 ## 0.16.0

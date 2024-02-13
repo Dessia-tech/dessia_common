@@ -901,7 +901,7 @@ class MultiPlot(Display):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        script = f"MultiPlot(selector_name='{self.selector.name}', attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
