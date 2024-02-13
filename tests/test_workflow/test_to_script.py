@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 from dessia_common.typings import MethodType, MarkdownType, PlotDataType, InstanceOf
 from dessia_common.workflow.core import Pipe, Workflow, Variable
-from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, PlotData, Markdown, Export
+from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, PlotData, Markdown, Export, MultiPlot
 from dessia_common.decorators import markdown_view, plot_data_view
 from dessia_common.files import BinaryFile
 from dessia_common.core import DessiaObject
@@ -82,7 +82,13 @@ block_5 = [Export(method_type=MethodType(ExperimentObject, 'save_to_stream'), na
            ' filename=\'filename\', extension=\'json\', text=True,'
            ' name="Export", position=(99, 88.88))']
 
-blocks = [block_0, block_1, block_2, block_4, block_5]
+block_6 = [MultiPlot(selector_name='MultiPlotBlock', attributes=['param_1', 'param_2', 'param_3', 'param_4'],
+                     name="MultiPlotBlock", load_by_default=False, position=[516.89, -4.307]),
+           'MultiPlot(selector_name=\'MultiPlotBlock\', attributes=[\'param_1\', \'param_2\', \'param_3\','
+           ' \'param_4\'], name="MultiPlotBlock", load_by_default=False, position=[516.89, -4.307])'
+           ]
+
+blocks = [block_0, block_1, block_2, block_4, block_5, block_6]
 
 # Variables
 variable_list = [
