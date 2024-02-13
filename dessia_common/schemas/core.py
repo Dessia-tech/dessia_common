@@ -1616,17 +1616,15 @@ def typing_schema(typing_: Type[T], attribute: SchemaAttribute) -> Property:
 def custom_class_schema(annotation: Type[T], attribute: SchemaAttribute) -> Property:
     """ Get schema Property object for non typing annotations. """
     if issubclass(annotation, Measure):
-        schema_type = MeasureProperty
-    elif issubclass(annotation, (BinaryFile, StringFile)):
-        schema_type = FileProperty
-    elif issubclass(annotation, CoreDessiaObject):
+        return MeasureProperty(annotation=annotation, attribute=attribute)
+    if issubclass(annotation, (BinaryFile, StringFile)):
+        return FileProperty(annotation=annotation, attribute=attribute)
+    if issubclass(annotation, CoreDessiaObject):
         # Dessia custom classes
-        schema_type = CustomClass
-    elif issubclass(annotation, DisplayObject):
-        schema_type = Property
-    else:
-        raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
-    return schema_type(annotation=annotation, attribute=attribute)
+        return CustomClass(annotation=annotation, attribute=attribute)
+    if issubclass(annotation, DisplayObject):
+        return Property(annotation=annotation, attribute=attribute)
+    raise NotImplementedError(f"No Schema defined for type '{annotation}'.")
 
 
 def object_default(default_value: CoreDessiaObject = UNDEFINED, class_schema: ClassSchema = None) \
