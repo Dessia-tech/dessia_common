@@ -14,8 +14,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         self.display_settings = self.workflow_run.display_settings()
 
     @parameterized.expand([
-        (0, "Workflow"),
-        (1, "Documentation"),
+        (0, "Documentation"),
+        (1, "Workflow"),
         (2, "Scatter Plot"),
         (3, "Markdown")
     ])

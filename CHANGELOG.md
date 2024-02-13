@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ModelMethod : Call the right dict_to_object of MethodType
 - MultiPlot : Add selector_name MultiPlot script
+- WorkflowRun : Add markdown to display_settings
 
 
 ## 0.16.0
