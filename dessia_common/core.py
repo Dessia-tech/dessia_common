@@ -613,7 +613,6 @@ class DessiaObject(SerializableObject):
         methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
         settings = []
         for method in methods:
-            name = method.__name__
             extension = getattr(method, "extension")
             method_name = getattr(method, "method_name")
             text = getattr(method, "text")
