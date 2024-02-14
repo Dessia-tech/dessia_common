@@ -618,8 +618,8 @@ class DessiaObject(SerializableObject):
             method_name = getattr(method, "method_name")
             text = getattr(method, "text")
             selector = getattr(method, "selector", None)
-            if selector is None:
-                selector = name
+            if not selector:
+                selector = extension
             settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
         return settings
 
@@ -748,6 +748,16 @@ class PhysicalObject(DessiaObject):
         :type debug: bool, optional
         """
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
+
+    def _export_formats(self) -> List[ExportFormat]:
+        """ Return a list of objects describing how to call 3D exports. """
+        formats = DessiaObject._export_formats(self)
+        # TODO: Deprecated
+        formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
+                     ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
+                     ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
+        formats.extend(formats3d)
+        return formats
 
 
 class MovingObject(PhysicalObject):

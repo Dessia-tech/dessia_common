@@ -7,7 +7,7 @@ import textwrap
 
 
 DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
-EXPORT_DECORATORS = ["export_text", "export_binary"]
+EXPORT_DECORATORS = ["export_decorator", "export_step", "export_stl", "export_html", "export_docx", "export_xlsx"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -91,38 +91,66 @@ def cad_view(selector: str, load_by_default: bool = False):
     return decorator
 
 
-def export_text(selector: str, extension: str):
+def export_decorator(selector: str, extension: str, is_text: bool):
     """
-    Decorator for export text.
+    Decorator factory for export methods.
 
     :param str selector: Unique name that identifies the export method.
-    :param str extension: File extension for the exported text data.
+    :param str extension: File extension for the exported data.
+    :param bool is_text: Indicates whether the data is text or binary.
     """
-
     def decorator(function):
         """ Decorator for export methods. """
-        set_decorated_function_metadata_export(function=function, text=True, selector=selector,
+        set_decorated_function_metadata_export(function=function, text=is_text, selector=selector,
                                                extension=extension, method_name=function.__name__)
         return function
 
     return decorator
 
 
-def export_binary(selector: str, extension: str):
+def export_step(selector: str):
     """
-    Decorator for export binary.
+    Decorator for exporting STEP files.
 
     :param str selector: Unique name that identifies the export method.
-    :param str extension: File extension for the exported binary data.
     """
+    return export_decorator(selector, 'step', is_text=True)
 
-    def decorator(function):
-        """ Decorator for export methods. """
-        set_decorated_function_metadata_export(function=function, text=False, selector=selector,
-                                               extension=extension, method_name=function.__name__)
-        return function
 
-    return decorator
+def export_stl(selector: str):
+    """
+    Decorator for exporting STL files.
+
+    :param str selector: Unique name that identifies the export method.
+    """
+    return export_decorator(selector, 'stl', is_text=False)
+
+
+def export_html(selector: str):
+    """
+    Decorator for exporting HTML files.
+
+    :param str selector: Unique name that identifies the export method.
+    """
+    return export_decorator(selector, 'html', is_text=True)
+
+
+def export_docx(selector: str):
+    """
+    Decorator for exporting DOCX files.
+
+    :param str selector: Unique name that identifies the export method.
+    """
+    return export_decorator(selector, 'docx', is_text=True)
+
+
+def export_xlsx(selector: str):
+    """
+    Decorator for exporting XLSX files.
+
+    :param str selector: Unique name that identifies the export method.
+    """
+    return export_decorator(selector, 'xlsx', is_text=False)
 
 
 def set_decorated_function_metadata(function, type_: str, selector: str = None,
