@@ -1982,6 +1982,13 @@ class WorkflowRun(WorkflowState):
                         v not in self.workflow.nonblock_variables]
         return nbv_values, block_values
 
+    @staticmethod
+    def _update_imports(input_type, input_name):
+        """ Update imports based on the schema of the input. """
+        schema = get_schema(annotation=input_type, attribute=SchemaAttribute(input_name))
+        imports = schema.get_import_names(import_names=[])
+        return imports
+
     def _to_script(self, workflow_script):
         """ Computes elements for a to_script interpretation. """
         input_str = ""
@@ -1999,15 +2006,13 @@ class WorkflowRun(WorkflowState):
                     input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
                     default_value += self._generate_default_value(block_values[index_], j, i)
                     index_ += 1
-                    schema = get_schema(annotation=input_.type_, attribute=SchemaAttribute(input_.name))
-                    add_import.extend(schema.get_import_names(import_names=[]))
+                    add_import.extend(self._update_imports(input_.type_, input_.name))
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
             default_value += self._generate_default_value(nbv_values[k], k)
-            schema = get_schema(annotation=nbv.type_, attribute=SchemaAttribute(nbv.name))
-            add_import.extend(schema.get_import_names(import_names=[]))
+            add_import.extend(self._update_imports(nbv.type_, nbv.name))
 
         return input_str, default_value, add_import
 
@@ -2029,7 +2034,8 @@ class WorkflowRun(WorkflowState):
         if isinstance(value, SerializableObject):
             return f"\nvalue_{block_index}_{input_index} = {self.generate_object_input_string([value])}"
         if is_dessia_file(value):
-            return f"\nvalue_{block_index}_{input_index} = {self.generate_file_input_string([value.__class__.__name__])}"
+            return f"\nvalue_{block_index}_{input_index} =" \
+                   f" {self.generate_file_input_string([value.__class__.__name__])}"
         if is_sequence(value):
             return f"\nvalue_{block_index}_{input_index} = {self.process_sequence(value)}"
         return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
