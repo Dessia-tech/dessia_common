@@ -44,7 +44,7 @@ class ToScriptElement:
 
 
 def blocks_to_script(blocks, prefix: str, imports):
-    """ Set B locks to script. """
+    """ Set Blocks to script. """
     blocks_str = ""
     for iblock, block in enumerate(blocks):
         block_script = block._to_script(prefix)

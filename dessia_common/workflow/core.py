@@ -1944,8 +1944,8 @@ class WorkflowRun(WorkflowState):
         return self.method_schemas
 
     @staticmethod
-    def instantiate_objects(objects):
-        """ Instantiates objects from a list of objects. """
+    def set_objects_input(objects):
+        """ Set objects input. """
         signature = "('Set your arguments here')"
         if len(objects) > 1:
             instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects]
@@ -1953,8 +1953,8 @@ class WorkflowRun(WorkflowState):
         return f"{objects[0].__class__.__name__}{signature}"
 
     @staticmethod
-    def get_files(type_files):
-        """ Generates file instances from a list of file types. """
+    def set_files_input(type_files):
+        """ Set files input. """
         signature = ".from_file('Set your filepath here')"
         if len(type_files) > 1:
             instances = [f"\n\t{o.__class__.__name__}{signature}" for o in type_files]
@@ -1962,22 +1962,17 @@ class WorkflowRun(WorkflowState):
         return f"{type_files[0].__class__.__name__}{signature}"
 
     @staticmethod
-    def is_object_sequence(seq):
+    def is_object_sequence(sequence):
         #  todo: remove
         """ Checks if a sequence contains serializable objects. """
-        return any(isinstance(element, SerializableObject) for element in seq)
+        return any(isinstance(element, SerializableObject) for element in sequence)
 
-    @staticmethod
-    def is_file_sequence(sequence):
-        """ Checks if a sequence contains binary files. """
-        return any(isinstance(element, BinaryFile) for element in sequence)
-
-    def get_sequence(self, sequence):
+    def process_sequence(self, sequence):
         """ Processes a sequence based on its content. """
         if self.is_object_sequence(sequence):
-            value = self.instantiate_objects(sequence)
+            value = self.set_objects_input(sequence)
         elif is_file_or_file_sequence(sequence):
-            value = self.get_files(sequence)
+            value = self.set_files_input(sequence)
         else:
             value = repr(sequence)
         return value
@@ -1992,11 +1987,9 @@ class WorkflowRun(WorkflowState):
 
     def _to_script(self, workflow_script):
         """ Computes elements for a to_script interpretation. """
-        input_info = {
-            "input_str": "",
-            "default_value": "",
-            "add_import": [],
-        }
+        input_str = ""
+        default_value = ""
+        add_import = []
 
         nbv_values, block_values = self._split_input_values()
 
@@ -2006,22 +1999,20 @@ class WorkflowRun(WorkflowState):
             for i, input_ in enumerate(block.inputs):
                 input_key = f"block_{j}.inputs[{i}]"
                 if input_key not in workflow_script.declaration:
-                    input_info["input_str"] += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    input_info["default_value"] += self._generate_default_value(block_values[index_], j, i)
+                    input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
+                    default_value += self._generate_default_value(block_values[index_], j, i)
                     index_ += 1
-                    input_info["add_import"].extend(get_schema(annotation=input_.type_,
-                                                               attribute=SchemaAttribute(input_.name)).get_import_names(
-                        import_names=[]))
+                    schema = get_schema(annotation=input_.type_, attribute=SchemaAttribute(input_.name))
+                    add_import.extend(schema.get_import_names(import_names=[]))
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
-            input_info["input_str"] += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
-            input_info["default_value"] += self._generate_default_value(nbv_values[k], k)
-            input_info["add_import"].extend(get_schema(annotation=nbv.type_,
-                                                       attribute=SchemaAttribute(nbv.name)).get_import_names(
-                import_names=[]))
+            input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
+            default_value += self._generate_default_value(nbv_values[k], k)
+            schema = get_schema(annotation=nbv.type_, attribute=SchemaAttribute(nbv.name))
+            add_import.extend(schema.get_import_names(import_names=[]))
 
-        return input_info["input_str"], input_info["default_value"], input_info["add_import"]
+        return input_str, default_value, add_import
 
     def to_script(self):
         """ Computes a script representing the WorkflowRun. """
@@ -2034,16 +2025,16 @@ class WorkflowRun(WorkflowState):
 
         return workflow_script
 
-    def _generate_default_value(self, value, block_index, input_index=None):
+    def _generate_default_value(self, value, block_index: int, input_index: int = None):
         """ Generate a value for a given input. """
         if not input_index and input_index != 0:
             input_index = ''
         if isinstance(value, SerializableObject):
-            return f"\nvalue_{block_index}_{input_index} = {self.instantiate_objects([value])}"
+            return f"\nvalue_{block_index}_{input_index} = {self.set_objects_input([value])}"
         if is_dessia_file(value):
-            return f"\nvalue_{block_index}_{input_index} = {self.get_files([value.__class__.__name__])}"
+            return f"\nvalue_{block_index}_{input_index} = {self.set_files_input([value.__class__.__name__])}"
         if is_sequence(value):
-            return f"\nvalue_{block_index}_{input_index} = {self.get_sequence(value)}"
+            return f"\nvalue_{block_index}_{input_index} = {self.process_sequence(value)}"
         return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
 
     def save_script_to_stream(self, stream: io.StringIO):
