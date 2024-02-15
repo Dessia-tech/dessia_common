@@ -1944,8 +1944,8 @@ class WorkflowRun(WorkflowState):
         return self.method_schemas
 
     @staticmethod
-    def set_objects_input(objects):
-        """ Set objects input. """
+    def generate_object_input_string(objects):
+        """ Generate input string for object(s). """
         signature = "('Set your arguments here')"
         if len(objects) > 1:
             instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects]
@@ -1953,8 +1953,8 @@ class WorkflowRun(WorkflowState):
         return f"{objects[0].__class__.__name__}{signature}"
 
     @staticmethod
-    def set_files_input(type_files):
-        """ Set files input. """
+    def generate_file_input_string(type_files):
+        """ Generate input string for file(s). """
         signature = ".from_file('Set your filepath here')"
         if len(type_files) > 1:
             instances = [f"\n\t{o.__class__.__name__}{signature}" for o in type_files]
@@ -1963,19 +1963,16 @@ class WorkflowRun(WorkflowState):
 
     @staticmethod
     def is_object_sequence(sequence):
-        #  todo: remove
         """ Checks if a sequence contains serializable objects. """
         return any(isinstance(element, SerializableObject) for element in sequence)
 
     def process_sequence(self, sequence):
         """ Processes a sequence based on its content. """
         if self.is_object_sequence(sequence):
-            value = self.set_objects_input(sequence)
-        elif is_file_or_file_sequence(sequence):
-            value = self.set_files_input(sequence)
-        else:
-            value = repr(sequence)
-        return value
+            return self.generate_object_input_string(sequence)
+        if is_file_or_file_sequence(sequence):
+            return self.generate_file_input_string(sequence)
+        return repr(sequence)
 
     def _split_input_values(self):
         """ Split the input values for blocks and non-block variables. """
@@ -2030,9 +2027,9 @@ class WorkflowRun(WorkflowState):
         if not input_index and input_index != 0:
             input_index = ''
         if isinstance(value, SerializableObject):
-            return f"\nvalue_{block_index}_{input_index} = {self.set_objects_input([value])}"
+            return f"\nvalue_{block_index}_{input_index} = {self.generate_object_input_string([value])}"
         if is_dessia_file(value):
-            return f"\nvalue_{block_index}_{input_index} = {self.set_files_input([value.__class__.__name__])}"
+            return f"\nvalue_{block_index}_{input_index} = {self.generate_file_input_string([value.__class__.__name__])}"
         if is_sequence(value):
             return f"\nvalue_{block_index}_{input_index} = {self.process_sequence(value)}"
         return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
