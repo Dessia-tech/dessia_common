@@ -158,9 +158,10 @@ variables = [
     "value_0_10 = None",
     "value_3_1 = ''",
     "value_5_1 = 'filename'",
-    "value_0_ = [ConnectionNode('Put here your object'), ConnectionNode('Put here your object'),"
-    " ConnectionNode('Put here your object'), ]",
-    "value_1_ = [BinaryFile.from_file('Insert your path here'), BinaryFile.from_file('Insert your path here'), ]",
+    "value_0_ = [\n\tConnectionNode('Set your arguments here'),\n\tConnectionNode('Set your arguments here'),"
+    "\n\tConnectionNode('Set your arguments here')\n]",
+    "value_1_ = [\n\tBinaryFile.from_file('Set your filepath here'),\n\tBinaryFile.from_file('Set your filepath "
+    "here')\n]",
     "value_2_ = [1, 2, 3, 4]",
 ]
 

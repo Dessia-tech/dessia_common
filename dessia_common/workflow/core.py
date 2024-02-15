@@ -21,7 +21,7 @@ from dessia_common.core import DessiaObject
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
                                         serialize_annotation, deserialize_annotation, pretty_annotation,
                                         UNDEFINED, Schema, SchemaAttribute)
-from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
+from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence, is_dessia_file
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
 from dessia_common.utils.helpers import prettyname
@@ -1946,31 +1946,24 @@ class WorkflowRun(WorkflowState):
     @staticmethod
     def instantiate_objects(objects):
         """ Instantiates objects from a list of objects. """
-        class_name = f"{objects[0].__class__.__name__}"
+        signature = "('Set your arguments here')"
         if len(objects) > 1:
-            instances = '['
-            for _ in objects:
-                inst = f"{class_name}('Put here your object')"
-                instances += inst + ", "
-            instances += ']'
-            return instances
-
-        return f"{class_name}('Put here your object')"
+            instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects]
+            return f"[{','.join(instances)}\n]"
+        return f"{objects[0].__class__.__name__}{signature}"
 
     @staticmethod
     def get_files(type_files):
         """ Generates file instances from a list of file types. """
-        file_class = type_files[0].__class__.__name__
+        signature = ".from_file('Set your filepath here')"
         if len(type_files) > 1:
-            instances = "["
-            for _ in range(len(type_files)):
-                instances += f"{file_class}.from_file('Insert your path here')" + ", "
-            instances += ']'
-            return instances
-        return f"{file_class}.from_file('Insert your path here')"
+            instances = [f"\n\t{o.__class__.__name__}{signature}" for o in type_files]
+            return f"[{','.join(instances)}\n]"
+        return f"{type_files[0].__class__.__name__}{signature}"
 
     @staticmethod
     def is_object_sequence(seq):
+        #  todo: remove
         """ Checks if a sequence contains serializable objects. """
         return any(isinstance(element, SerializableObject) for element in seq)
 
@@ -1983,23 +1976,19 @@ class WorkflowRun(WorkflowState):
         """ Processes a sequence based on its content. """
         if self.is_object_sequence(sequence):
             value = self.instantiate_objects(sequence)
-        elif self.is_file_sequence(sequence):
+        elif is_file_or_file_sequence(sequence):
             value = self.get_files(sequence)
         else:
             value = repr(sequence)
         return value
 
-    def _compute_input_values(self):
-        """ Computes the input values for blocks and non-block variables. """
-        values_nonblock_variables = []
-        values_blocks = []
-        for i, variable in enumerate(self.workflow.inputs):
-            if variable in self.workflow.nonblock_variables:
-                values_nonblock_variables.append(self.input_values[i])
-            else:
-                values_blocks.append(self.input_values[i])
-
-        return values_nonblock_variables, values_blocks
+    def _split_input_values(self):
+        """ Split the input values for blocks and non-block variables. """
+        nbv_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
+                      v in self.workflow.nonblock_variables]
+        block_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
+                        v not in self.workflow.nonblock_variables]
+        return nbv_values, block_values
 
     def _to_script(self, workflow_script):
         """ Computes elements for a to_script interpretation. """
@@ -2009,18 +1998,16 @@ class WorkflowRun(WorkflowState):
             "add_import": [],
         }
 
-        block_input = "block_{}.inputs[{}]"
-
-        values_nonblock_variables, values_blocks = self._compute_input_values()
+        nbv_values, block_values = self._split_input_values()
 
         # Blocks
         index_ = 0
         for j, block in enumerate(self.workflow.blocks):
             for i, input_ in enumerate(block.inputs):
-                input_key = block_input.format(j, i)
+                input_key = f"block_{j}.inputs[{i}]"
                 if input_key not in workflow_script.declaration:
                     input_info["input_str"] += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    input_info["default_value"] += self._generate_default_value(values_blocks[index_], j, i)
+                    input_info["default_value"] += self._generate_default_value(block_values[index_], j, i)
                     index_ += 1
                     input_info["add_import"].extend(get_schema(annotation=input_.type_,
                                                                attribute=SchemaAttribute(input_.name)).get_import_names(
@@ -2029,7 +2016,7 @@ class WorkflowRun(WorkflowState):
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             input_info["input_str"] += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
-            input_info["default_value"] += self._generate_default_value(values_nonblock_variables[k], k)
+            input_info["default_value"] += self._generate_default_value(nbv_values[k], k)
             input_info["add_import"].extend(get_schema(annotation=nbv.type_,
                                                        attribute=SchemaAttribute(nbv.name)).get_import_names(
                 import_names=[]))
@@ -2053,7 +2040,7 @@ class WorkflowRun(WorkflowState):
             input_index = ''
         if isinstance(value, SerializableObject):
             return f"\nvalue_{block_index}_{input_index} = {self.instantiate_objects([value])}"
-        if isinstance(value, (BinaryFile, StringFile)):
+        if is_dessia_file(value):
             return f"\nvalue_{block_index}_{input_index} = {self.get_files([value.__class__.__name__])}"
         if is_sequence(value):
             return f"\nvalue_{block_index}_{input_index} = {self.get_sequence(value)}"
