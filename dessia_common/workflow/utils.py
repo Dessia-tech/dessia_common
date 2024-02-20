@@ -4,6 +4,10 @@
 
 from typing import List, Dict
 
+from dessia_common.schemas.core import get_schema, SchemaAttribute
+from dessia_common.serialization import SerializableObject
+from dessia_common.utils.types import is_file_or_file_sequence
+
 
 class ToScriptElement:
     """ Class meant to improve to_script readability. """
@@ -65,3 +69,41 @@ def nonblock_variables_to_script(nonblock_variables, prefix, imports, imports_as
         imports_as_is.extend(nbv_script.imports_as_is)
         nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
     return nbvs_str
+
+
+def update_imports(input_type, input_name):
+    """ Update imports based on the schema of the input. """
+    schema = get_schema(annotation=input_type, attribute=SchemaAttribute(input_name))
+    return schema.get_import_names(import_names=[])
+
+
+def generate_input_string(signature: str, sequence_length: int = 1):
+    """ Generate input as string. """
+    if sequence_length > 1:
+        instances = [f"\n\t{signature}" for _ in range(sequence_length)]
+        return f"[{','.join(instances)}\n]"
+    return f"{signature}"
+
+
+def is_object_sequence(sequence):
+    """ Checks if a sequence contains serializable objects. """
+    return all(isinstance(element, SerializableObject) for element in sequence)
+
+
+def process_value(value):
+    """ Processes a value based on its content. """
+    if not value:
+        return repr(value)
+
+    sequence_length = len(value)
+
+    if is_object_sequence(value):
+        object_class = value[0].__class__.__name__
+        signature = f"{object_class}('Set your arguments here')"
+    elif is_file_or_file_sequence(value):
+        object_class = value[0].__class__.__name__
+        signature = f"{object_class}.from_file('Set your filepath here')"
+    else:
+        return repr(value)
+
+    return generate_input_string(signature, sequence_length)

@@ -158,11 +158,11 @@ variables = [
     "value_0_10 = None",
     "value_3_1 = ''",
     "value_5_1 = 'filename'",
-    "value_0_ = [\n\tConnectionNode('Set your arguments here'),\n\tConnectionNode('Set your arguments here'),"
+    "value_0 = [\n\tConnectionNode('Set your arguments here'),\n\tConnectionNode('Set your arguments here'),"
     "\n\tConnectionNode('Set your arguments here')\n]",
-    "value_1_ = [\n\tBinaryFile.from_file('Set your filepath here'),\n\tBinaryFile.from_file('Set your filepath "
+    "value_1 = [\n\tBinaryFile.from_file('Set your filepath here'),\n\tBinaryFile.from_file('Set your filepath "
     "here')\n]",
-    "value_2_ = [1, 2, 3, 4]",
+    "value_2 = [1, 2, 3, 4]",
 ]
 
 input_values = [
@@ -176,9 +176,9 @@ input_values = [
     "workflow.input_index(block_0.inputs[10]): value_0_10,",
     "workflow.input_index(block_3.inputs[1]): value_3_1,",
     "workflow.input_index(block_5.inputs[1]): value_5_1,",
-    "workflow.input_index(variable_0): value_0_,",
-    "workflow.input_index(variable_1): value_1_,",
-    "workflow.input_index(variable_2): value_2_,",
+    "workflow.input_index(variable_0): value_0,",
+    "workflow.input_index(variable_1): value_1,",
+    "workflow.input_index(variable_2): value_2,",
 
 ]
 

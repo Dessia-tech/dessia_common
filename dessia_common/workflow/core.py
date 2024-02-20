@@ -34,9 +34,9 @@ from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
-                                         serialize_dict, add_references, deserialize_argument, SerializableObject)
-from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
-
+                                         serialize_dict, add_references, deserialize_argument)
+from dessia_common.workflow.utils import (ToScriptElement, blocks_to_script, nonblock_variables_to_script,
+                                          update_imports, process_value)
 
 
 T = TypeVar("T")
@@ -1943,37 +1943,6 @@ class WorkflowRun(WorkflowState):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    @staticmethod
-    def generate_object_input_string(objects):
-        """ Generate input string for object(s). """
-        signature = "('Set your arguments here')"
-        if len(objects) > 1:
-            instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects]
-            return f"[{','.join(instances)}\n]"
-        return f"{objects[0].__class__.__name__}{signature}"
-
-    @staticmethod
-    def generate_file_input_string(type_files):
-        """ Generate input string for file(s). """
-        signature = ".from_file('Set your filepath here')"
-        if len(type_files) > 1:
-            instances = [f"\n\t{o.__class__.__name__}{signature}" for o in type_files]
-            return f"[{','.join(instances)}\n]"
-        return f"{type_files[0].__class__.__name__}{signature}"
-
-    @staticmethod
-    def is_object_sequence(sequence):
-        """ Checks if a sequence contains serializable objects. """
-        return any(isinstance(element, SerializableObject) for element in sequence)
-
-    def process_sequence(self, sequence):
-        """ Processes a sequence based on its content. """
-        if self.is_object_sequence(sequence):
-            return self.generate_object_input_string(sequence)
-        if is_file_or_file_sequence(sequence):
-            return self.generate_file_input_string(sequence)
-        return repr(sequence)
-
     def _split_input_values(self):
         """ Split the input values for blocks and non-block variables. """
         nbv_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
@@ -1981,13 +1950,6 @@ class WorkflowRun(WorkflowState):
         block_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
                         v not in self.workflow.nonblock_variables]
         return nbv_values, block_values
-
-    @staticmethod
-    def _update_imports(input_type, input_name):
-        """ Update imports based on the schema of the input. """
-        schema = get_schema(annotation=input_type, attribute=SchemaAttribute(input_name))
-        imports = schema.get_import_names(import_names=[])
-        return imports
 
     def _to_script(self, workflow_script):
         """ Computes elements for a to_script interpretation. """
@@ -2006,13 +1968,13 @@ class WorkflowRun(WorkflowState):
                     input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
                     default_value += self._generate_default_value(block_values[index_], j, i)
                     index_ += 1
-                    add_import.extend(self._update_imports(input_.type_, input_.name))
+                    add_import.extend(update_imports(input_.type_, input_.name))
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
-            input_str += f"    workflow.input_index(variable_{k}): value_{k}_,\n"
+            input_str += f"    workflow.input_index(variable_{k}): value_{k},\n"
             default_value += self._generate_default_value(nbv_values[k], k)
-            add_import.extend(self._update_imports(nbv.type_, nbv.name))
+            add_import.extend(update_imports(nbv.type_, nbv.name))
 
         return input_str, default_value, add_import
 
@@ -2027,18 +1989,15 @@ class WorkflowRun(WorkflowState):
 
         return workflow_script
 
-    def _generate_default_value(self, value, block_index: int, input_index: int = None):
+    @staticmethod
+    def _generate_default_value(value, block_index: int, input_index: int = None):
         """ Generate a value for a given input. """
-        if not input_index and input_index != 0:
-            input_index = ''
-        if isinstance(value, SerializableObject):
-            return f"\nvalue_{block_index}_{input_index} = {self.generate_object_input_string([value])}"
-        if is_dessia_file(value):
-            return f"\nvalue_{block_index}_{input_index} =" \
-                   f" {self.generate_file_input_string([value.__class__.__name__])}"
-        if is_sequence(value):
-            return f"\nvalue_{block_index}_{input_index} = {self.process_sequence(value)}"
-        return f"\nvalue_{block_index}_{input_index} = {repr(value)}"
+        if input_index is None:
+            input_index_str = ""
+        else:
+            input_index_str = f"_{input_index}"
+
+        return f"\nvalue_{block_index}{input_index_str} = {process_value(value)}"
 
     def save_script_to_stream(self, stream: io.StringIO):
         """ Save the WorkflowRun to a python script to a stream. """
