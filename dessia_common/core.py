@@ -431,7 +431,7 @@ class DessiaObject(SerializableObject):
         methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
         settings = []
         for method in methods:
-            name = method.__name__
+            name = f"{method.__name__}().babylon_data()" if decorator_name == "cad_view" else method.__name__
             type_ = getattr(method, "type_", False)
             serialize_data = getattr(method, "serialize_data", False)
             load_by_default = getattr(method, "load_by_default", False)
