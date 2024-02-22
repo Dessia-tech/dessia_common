@@ -752,7 +752,6 @@ class PhysicalObject(DessiaObject):
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
         formats = DessiaObject._export_formats(self)
-        # TODO: Deprecated
         formats3d = [ExportFormat(selector="step", extension="step", method_name="to_step_stream", text=True),
                      ExportFormat(selector="stl", extension="stl", method_name="to_stl_stream", text=False),
                      ExportFormat(selector="html", extension="html", method_name="to_html_stream", text=True)]
