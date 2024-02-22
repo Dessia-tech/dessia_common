@@ -708,7 +708,7 @@ class PhysicalObject(DessiaObject):
         if not filepath.endswith('.stl'):
             filepath += '.stl'
 
-        with open(filepath, 'wb', encoding='utf-8') as file:
+        with open(filepath, 'wb') as file:
             self.to_stl_stream(stream=file)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
