@@ -151,7 +151,7 @@ class TypedVariableWithDefaultValue(Variable):
         Variable.__init__(self, type_=type_, default_value=default_value, name=name, position=position)
 
 
-RESULT_VARIABLE_NAME = "_result_name_"
+RESULT_VARIABLE_NAME = "Result Name"
 
 
 NAME_VARIABLE = Variable(type_=str, name=RESULT_VARIABLE_NAME, label="Result Name")
