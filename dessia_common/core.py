@@ -681,6 +681,10 @@ class PhysicalObject(DessiaObject):
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
+        warnings.warn("This method is deprecated and will be removed in a future version. "
+                      "You can continue using this method with the same or a different name, "
+                      "but please ensure it returns 'babylon_data' instead of a list of primitives. ",
+                      DeprecationWarning)
         return []
 
     def volmdlr_volume_model(self, **kwargs):
@@ -694,6 +698,8 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_step` method of VolumeModel instead.", DeprecationWarning)
         if not filepath.endswith('.step'):
             filepath += '.step'
         with open(filepath, 'w', encoding='utf-8') as file:
@@ -705,10 +711,14 @@ class PhysicalObject(DessiaObject):
 
         Works if the class define a custom volmdlr model.
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_step_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
         """ Exports Object CAD to given stream as HTML. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_html_stream` method of VolumeModel instead.", DeprecationWarning)
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -718,6 +728,8 @@ class PhysicalObject(DessiaObject):
 
     def to_stl_stream(self, stream):
         """ Export Object CAD to given stream as STL. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_stl_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath: str):
@@ -726,6 +738,8 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_stl` method of VolumeModel instead.", DeprecationWarning)
         if not filepath.endswith('.stl'):
             filepath += '.stl'
 
@@ -734,6 +748,8 @@ class PhysicalObject(DessiaObject):
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `babylonjs` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
@@ -747,6 +763,8 @@ class PhysicalObject(DessiaObject):
         :param debug: Activates the debug mode. Default value is False
         :type debug: bool, optional
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `save_babylonjs_to_file` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self) -> List[ExportFormat]:
