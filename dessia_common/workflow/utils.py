@@ -77,12 +77,12 @@ def update_imports(input_type, input_name):
     return schema.get_import_names(import_names=[])
 
 
-def generate_input_string(signature: str, sequence_length: int = 1):
+def generate_input_string(signature: str, sequence):
     """ Generate input as string. """
-    if sequence_length > 1:
-        instances = [f"\n\t{signature}" for _ in range(sequence_length)]
+    if len(sequence) > 1:
+        instances = [f"\n\t{o.__class__.__name__}{signature}" for o in sequence]
         return f"[{','.join(instances)}\n]"
-    return f"{signature}"
+    return f"{sequence[0].__class__.__name__}{signature}"
 
 
 def is_object_sequence(sequence):
@@ -95,18 +95,14 @@ def process_value(value):
     if not value:
         return repr(value)
 
-    sequence_length = len(value)
-
     if is_object_sequence(value):
-        object_class = value[0].__class__.__name__
-        signature = f"{object_class}('Set your arguments here')"
+        signature = f"('Set your arguments here')"
     elif is_file_or_file_sequence(value):
-        object_class = value[0].__class__.__name__
-        signature = f"{object_class}.from_file('Set your filepath here')"
+        signature = f".from_file('Set your filepath here')"
     else:
         return repr(value)
 
-    return generate_input_string(signature, sequence_length)
+    return generate_input_string(signature, value)
 
 
 def generate_default_value(value, block_index: int, input_index: int = None):
