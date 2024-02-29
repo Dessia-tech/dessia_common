@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.16.1
 
+### Added
+
+- Export : Define export method with decorator 
+
 ### Performance
 
 - Schema : Add new unittest to test get_import_names methods

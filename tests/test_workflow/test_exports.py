@@ -14,8 +14,8 @@ class TestWorkflowExports(unittest.TestCase):
     @parameterized.expand([
         (0, "json"),
         (1, "xlsx"),
-        (2, "zip"),
-        (3, "docx"),
+        (2, "docx"),
+        (3, "zip"),
         (4, "Export JSON (6)"),
         (5, "Zip (7)"),
         (6, "Export XLSX (8)")
@@ -27,8 +27,8 @@ class TestWorkflowExports(unittest.TestCase):
     @parameterized.expand([
         (0, "json"),
         (1, "xlsx"),
-        (2, "zip"),
-        (3, "docx"),
+        (2, "docx"),
+        (3, "zip"),
         (4, "json"),
         (5, "zip"),
         (6, "xlsx")
@@ -40,8 +40,8 @@ class TestWorkflowExports(unittest.TestCase):
     @parameterized.expand([
         (0, "save_to_stream"),
         (1, "to_xlsx_stream"),
-        (2, "to_zip_stream"),
-        (3, "to_docx_stream"),
+        (2, "to_docx_stream"),
+        (3, "to_zip_stream"),
         (4, "export"),
         (5, "export"),
         (6, "export")
