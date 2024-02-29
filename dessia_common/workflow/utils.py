@@ -96,9 +96,9 @@ def process_value(value):
         return repr(value)
 
     if is_object_sequence(value):
-        signature = f"('Set your arguments here')"
+        signature = "('Set your arguments here')"
     elif is_file_or_file_sequence(value):
-        signature = f".from_file('Set your filepath here')"
+        signature = ".from_file('Set your filepath here')"
     else:
         return repr(value)
 
