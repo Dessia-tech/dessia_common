@@ -107,3 +107,10 @@ def process_value(value):
         return repr(value)
 
     return generate_input_string(signature, sequence_length)
+
+
+def generate_default_value(value, block_index: int, input_index: int = None):
+    """ Generate a value for a given input. """
+    input_index_str = "" if input_index is None else f"_{input_index}"
+
+    return f"\nvalue_{block_index}{input_index_str} = {process_value(value)}"

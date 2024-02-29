@@ -6,7 +6,6 @@ import ast
 import time
 import datetime
 from functools import cached_property
-import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
@@ -36,7 +35,7 @@ import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
                                          serialize_dict, add_references, deserialize_argument)
 from dessia_common.workflow.utils import (ToScriptElement, blocks_to_script, nonblock_variables_to_script,
-                                          update_imports, process_value)
+                                          update_imports, generate_default_value)
 
 
 T = TypeVar("T")
@@ -1271,7 +1270,7 @@ class Workflow(Block):
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
 
-    def save_script_to_stream(self, stream: io.StringIO):
+    def save_script_to_stream(self, stream: StringFile):
         """ Save the workflow to a python script to a stream. """
         string = self.to_script()
         stream.seek(0)
@@ -1966,14 +1965,14 @@ class WorkflowRun(WorkflowState):
                 input_key = f"block_{j}.inputs[{i}]"
                 if input_key not in workflow_script.declaration:
                     input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    default_value += self._generate_default_value(block_values[index_], j, i)
+                    default_value += generate_default_value(block_values[index_], j, i)
                     index_ += 1
                     add_import.extend(update_imports(input_.type_, input_.name))
 
         # NBVs
         for k, nbv in enumerate(self.workflow.nonblock_variables):
             input_str += f"    workflow.input_index(variable_{k}): value_{k},\n"
-            default_value += self._generate_default_value(nbv_values[k], k)
+            default_value += generate_default_value(nbv_values[k], k)
             add_import.extend(update_imports(nbv.type_, nbv.name))
 
         return input_str, default_value, add_import
@@ -1989,17 +1988,7 @@ class WorkflowRun(WorkflowState):
 
         return workflow_script
 
-    @staticmethod
-    def _generate_default_value(value, block_index: int, input_index: int = None):
-        """ Generate a value for a given input. """
-        if input_index is None:
-            input_index_str = ""
-        else:
-            input_index_str = f"_{input_index}"
-
-        return f"\nvalue_{block_index}{input_index_str} = {process_value(value)}"
-
-    def save_script_to_stream(self, stream: io.StringIO):
+    def save_script_to_stream(self, stream: StringFile):
         """ Save the WorkflowRun to a python script to a stream. """
         script = self.to_script()
         stream.seek(0)
