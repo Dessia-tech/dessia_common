@@ -91,8 +91,8 @@ def is_object_or_object_sequence(object_):
         return True
     elif is_sequence(object_):
         return all(isinstance(element, SerializableObject) for element in object_)
-    else:
-        return False
+
+    return False
 
 
 def process_value(value):
