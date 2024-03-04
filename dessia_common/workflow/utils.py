@@ -97,7 +97,6 @@ def is_object_or_object_sequence(object_):
 
 def process_value(value):
     """ Processes a value based on its content. """
-
     if is_object_or_object_sequence(value):
         signature = "('Set your arguments here')"
     elif is_file_or_file_sequence(value):
