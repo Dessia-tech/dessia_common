@@ -89,7 +89,7 @@ def is_object_or_object_sequence(object_):
     """Checks if an object is a serializable object or a sequence of serializable objects."""
     if isinstance(object_, SerializableObject):
         return True
-    elif is_sequence(object_):
+    if is_sequence(object_):
         return all(isinstance(element, SerializableObject) for element in object_)
 
     return False
