@@ -314,6 +314,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reference path is now given all the way down to plot_data
 - DessiaObject kwargs in init are deprecated
 
+### Added
+- Save WorkflowRun to a python script
+
 ### Fixed
 
 - serialization (to_dict) use some uuids instead of paths for references.
