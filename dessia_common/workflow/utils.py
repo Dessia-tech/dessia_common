@@ -6,7 +6,7 @@ from typing import List, Dict
 
 from dessia_common.schemas.core import get_schema, SchemaAttribute
 from dessia_common.serialization import SerializableObject
-from dessia_common.utils.types import is_file_or_file_sequence
+from dessia_common.utils.types import is_file_or_file_sequence, is_sequence
 
 
 class ToScriptElement:
@@ -77,25 +77,28 @@ def update_imports(input_type, input_name):
     return schema.get_import_names(import_names=[])
 
 
-def generate_input_string(signature: str, sequence):
+def generate_input_string(signature: str, objects_):
     """ Generate input as string. """
-    if len(sequence) > 1:
-        instances = [f"\n\t{o.__class__.__name__}{signature}" for o in sequence]
+    if is_sequence(objects_):
+        instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects_]
         return f"[{','.join(instances)}\n]"
-    return f"{sequence[0].__class__.__name__}{signature}"
+    return f"{objects_.__class__.__name__}{signature}"
 
 
-def is_object_sequence(sequence):
-    """ Checks if a sequence contains serializable objects. """
-    return all(isinstance(element, SerializableObject) for element in sequence)
+def is_object_or_object_sequence(object_):
+    """Checks if an object is a serializable object or a sequence of serializable objects."""
+    if isinstance(object_, SerializableObject):
+        return True
+    elif is_sequence(object_):
+        return all(isinstance(element, SerializableObject) for element in object_)
+    else:
+        return False
 
 
 def process_value(value):
     """ Processes a value based on its content. """
-    if not value:
-        return repr(value)
 
-    if is_object_sequence(value):
+    if is_object_or_object_sequence(value):
         signature = "('Set your arguments here')"
     elif is_file_or_file_sequence(value):
         signature = ".from_file('Set your filepath here')"
