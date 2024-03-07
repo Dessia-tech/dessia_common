@@ -584,7 +584,8 @@ class DessiaObject(SerializableObject):
                 method_name = export_format.method_name
                 stream_class = dcf.StringFile if export_format.text else dcf.BinaryFile
                 stream = stream_class(filename=f"export.{export_format.extension}")
-                getattr(self, method_name)(stream)
+                block_index = export_format.args.get('block_index', None)
+                getattr(self, method_name)(stream, block_index) if block_index else getattr(self, method_name)(stream)
                 streams.append(stream)
         return streams
 
