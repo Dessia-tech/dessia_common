@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Export: Add block_index if export blocks
+- WorkflowRun : Compute memory usage, subtract before_memory
 
 
 ## 0.16.1
