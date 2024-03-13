@@ -1339,7 +1339,7 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        for block, mem_start in dict(self.after_block_memory_usage).items():
+        for block, mem_start in dict(self.before_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
