@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
+
 - Schema : Take `None` default value into account
+- WorkflowRun : Compute memory usage, subtract before_memory
 
 
 ## 0.16.1
