@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Module to handle serialization for engineering objects. """
-
+import base64
+import io
 import time
 import warnings
 import operator
@@ -402,22 +403,27 @@ class DessiaObject(SerializableObject):
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
 
-    def mpl_plot(self, **kwargs):
+    def mpl_plot(self, selector: str):
         """ Plot with matplotlib using plot_data function. """
-        axs = []
-        if hasattr(self, 'plot_data'):
-            try:
-                plot_datas = self.plot_data(**kwargs)
-            except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}') from error
-            for data in plot_datas:
-                if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot()
-                    axs.append(ax)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
-        return axs
+        display_setting = self._display_settings_from_selector(selector)
+        if display_setting.type != "plot_data":
+            raise NotImplementedError(f"Selector '{selector}' depicts a display of type '{display_setting.type}'"
+                                      f" which cannot be used to plot with matplotlib."
+                                      f"\nPlease select a 'plot_data' display setting.")
+        display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        if hasattr(display, 'mpl_plot'):
+            return display.mpl_plot()
+        raise NotImplementedError(f"plot_data display of type '{display.__class__.__name__}'"
+                                  f" does not implement a mpl_plot converter."
+                                  f"\nSelector used : '{selector}'.")
+
+    def picture(self, selector: str):
+        """ Take a display selector corresponding to a plot_data method and generate the base64 string. """
+        ax = self.mpl_plot(selector)
+        picture = io.BytesIO()
+        ax.figure.savefig(picture, format="png")
+        picture.seek(0)
+        return base64.b64encode(picture.read()).decode()
 
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
@@ -452,13 +458,12 @@ class DessiaObject(SerializableObject):
         display_setting = self._display_settings_from_selector(selector)
         track = ""
         try:
-            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except Exception:
-            data = None
+            display = None
             track = tb.format_exc()
 
-        if display_setting.serialize_data:
-            data = serialize(data)
+        data = serialize(display) if display_setting.serialize_data else display
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
