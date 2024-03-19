@@ -51,6 +51,9 @@ def is_sequence(obj) -> bool:
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if isinstance(obj, (str, bytes)):
+        return False
+
     if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
         # Performance improvements for trivial checks
         return False
