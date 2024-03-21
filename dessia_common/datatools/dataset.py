@@ -1,11 +1,11 @@
 """ Library for building Dataset. """
-from typing import List, Dict, Any
-from copy import copy
 import itertools
+from copy import copy
+from typing import Any, Dict, List
 
+import numpy as npy
 from dessia_common.decorators import plot_data_view
 from scipy.spatial.distance import pdist, squareform
-import numpy as npy
 from sklearn import preprocessing
 
 try:
@@ -14,10 +14,11 @@ try:
     from plot_data.colors import BLUE, GREY, Color
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
-from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
-from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+from dessia_common.core import DessiaFilter, DessiaObject, FiltersList
+from dessia_common.datatools.metrics import (covariance_matrix, mean, std,
+                                             variance)
+from dessia_common.exports import MarkdownWriter
 
 
 class Dataset(DessiaObject):
