@@ -4,7 +4,6 @@ from copy import copy
 from typing import Any, Dict, List
 
 import numpy as npy
-from dessia_common.decorators import plot_data_view
 from scipy.spatial.distance import pdist, squareform
 from sklearn import preprocessing
 
@@ -18,6 +17,7 @@ from dessia_common import templates
 from dessia_common.core import DessiaFilter, DessiaObject, FiltersList
 from dessia_common.datatools.metrics import (covariance_matrix, mean, std,
                                              variance)
+from dessia_common.decorators import plot_data_view
 from dessia_common.exports import MarkdownWriter
 
 
@@ -640,7 +640,7 @@ class Dataset(DessiaObject):
         if len(self.common_attributes) > 1:
             parallel_plot = self._parallel_plot(data_list)
             return parallel_plot
-        elif len(self.common_attributes) == 1:
+        if len(self.common_attributes) == 1:
             return self.plot_histogram(reference_path=reference_path)
         raise ValueError("No common attributes found for plotting a parallel plot.")
 
