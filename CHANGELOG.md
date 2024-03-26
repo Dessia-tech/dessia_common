@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - PhysicalObject : Remove to_stl encoding element
+- Schema : Take `None` default value into account
 - WorkflowRun : Compute memory usage, subtract before_memory
 
 
