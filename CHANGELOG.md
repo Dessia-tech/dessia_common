@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
+- PhysicalObject : Remove to_stl encoding element
 - WorkflowRun : Compute memory usage, subtract before_memory
+
 
 ### Build
 
 - Numpy : Restrict version to lower 2.0.0
+
 
 
 ## 0.16.1
