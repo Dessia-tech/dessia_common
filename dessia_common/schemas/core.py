@@ -1679,7 +1679,7 @@ def object_default(default_value: CoreDessiaObject = UNDEFINED, class_schema: Cl
 
     Return serialized user default if definition, else None.
     """
-    if default_value is not UNDEFINED:
+    if default_value is not UNDEFINED and default_value is not None:
         return default_value.to_dict(use_pointers=False)
     if class_schema is not None:
         # TODO Should we implement this ? Right now, tests state that the result is None

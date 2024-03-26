@@ -1,4 +1,6 @@
-from dessia_common.schemas.core import ClassProperty, MethodTypeProperty, AttributeTypeProperty, SchemaAttribute
+from dessia_common.core import DessiaObject
+from dessia_common.schemas.core import ClassProperty, MethodTypeProperty, AttributeTypeProperty, SchemaAttribute, \
+    CustomClass
 from dessia_common.forms import StandaloneObject
 from dessia_common.typings import MethodType, ClassMethodType, AttributeType, ClassAttributeType
 from typing import Type
@@ -8,6 +10,7 @@ from parameterized import parameterized
 
 
 CUSTOM_CLASS = SchemaAttribute(name="custom_class")
+CUSTOM_CLASS_DEFAULT = SchemaAttribute(name="custom_class", editable=True, title="CustomClass", default_value=None)
 ATTRIBUTE = SchemaAttribute(name="attribute")
 METHOD = SchemaAttribute(name="method")
 
@@ -57,6 +60,19 @@ class TestStructures(unittest.TestCase):
         self.assertEqual(computed_schema["python_typing"], expected_typing)
         self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
         self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
+
+    @parameterized.expand([
+        (CustomClass(annotation=DessiaObject, attribute=CUSTOM_CLASS_DEFAULT),
+         "object", "dessia_common.core.DessiaObject"),
+        (CustomClass(annotation=DessiaObject, attribute=CUSTOM_CLASS),
+         "object", "dessia_common.core.DessiaObject")
+    ])
+    def test_custom_classes(self, schema, expected_type, expected_python_typing):
+        computed_schema = schema.to_dict()
+        self.assertEqual(computed_schema["type"], expected_type)
+        self.assertEqual(computed_schema["python_typing"], expected_python_typing)
+        self.assertEqual(computed_schema["title"], schema.attribute.title)
+        self.assertEqual(computed_schema["editable"], schema.attribute.editable)
 
 
 if __name__ == '__main__':
