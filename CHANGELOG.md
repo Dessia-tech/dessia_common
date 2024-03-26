@@ -12,17 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Workflow : Display by default is now tasks only
 
 
-## 0.16.1
-
-### Added
-
-- Export : Define export method with decorator 
-
-### Performance
-
-- Schema : Add new unittest to test get_import_names methods
-
-
 ## 0.16.3
 
 ### Fix
@@ -45,14 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Numpy : Restrict version to lower 2.0.0
 
 
-
 ## 0.16.1
+
+### Added
+
+- Export : Define export method with decorator
 
 ### Fix
 
 - ModelMethod : Call the right dict_to_object of MethodType
 - MultiPlot : Add selector_name MultiPlot script
 - WorkflowRun : Add markdown to display_settings
+
+### Tests
+
+- Schema : Add new unittest to test get_import_names methods
 
 
 ## 0.16.0
