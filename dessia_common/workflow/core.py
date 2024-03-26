@@ -1968,14 +1968,13 @@ class WorkflowRun(WorkflowState):
     def zip_settings(self):
         """ Returns a list of streams that contain different exports of the objects. """
         streams = []
-        for export_format in self._export_formats():
+        for export_format in self.workflow.blocks_export_formats:
             if export_format.extension != "zip":
                 method_name = export_format.method_name
                 stream_class = StringFile if export_format.text else BinaryFile
-                stream = stream_class(filename=f"export.{export_format.extension}")
-                block_index = export_format.args.get('block_index', None)
-                _ = getattr(self, method_name)(stream, block_index) if block_index\
-                    else getattr(self, method_name)(stream)
+                stream = stream_class(filename=export_format.export_name)
+                block_index = export_format.args.get('block_index')
+                getattr(self, method_name)(stream, block_index)
                 streams.append(stream)
         return streams
 
