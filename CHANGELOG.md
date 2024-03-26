@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
-- PhysicalObject : to_stl
+- PhysicalObject : Remove to_stl encoding element
+- WorkflowRun : Compute memory usage, subtract before_memory
 
 ## 0.16.1
 
