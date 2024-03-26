@@ -145,7 +145,7 @@ setup(
         "humanize",
         "matplotlib",
         "networkx",
-        "numpy",
+        "numpy<2.0.0",
         "openpyxl",
         "orjson>=3.8.0",
         "pandas",
