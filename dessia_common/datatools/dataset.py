@@ -686,7 +686,7 @@ class Dataset(DessiaObject):
                 for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
-        return [PointFamily(Color.dict_to_object('rgb(182, 225, 251)'), list(range(len(self))))]
+        return [PointFamily(Color(182/255, 225/255, 251/255), list(range(len(self))))]
 
     def _parallel_plot(self, data_list: List[Dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
