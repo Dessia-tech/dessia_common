@@ -11,7 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Export: Add block_index if export blocks
+- PhysicalObject : Remove to_stl encoding element
+- Schema : Take `None` default value into account
 - WorkflowRun : Compute memory usage, subtract before_memory
+
+
+### Build
+
+- Numpy : Restrict version to lower 2.0.0
+
 
 
 ## 0.16.1
