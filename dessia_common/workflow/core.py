@@ -562,9 +562,9 @@ class Workflow(Block):
     @staticmethod
     def display_settings(**kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
-                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
-                DisplaySetting(selector="Tasks", type_="tasks", method="")]
+        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict"),
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown"),
+                DisplaySetting(selector="Tasks", type_="tasks", method="", load_by_default=True)]
 
     @property
     def export_blocks(self):
@@ -1340,7 +1340,7 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        for block, mem_start in dict(self.after_block_memory_usage).items():
+        for block, mem_start in dict(self.before_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
@@ -1901,20 +1901,22 @@ class WorkflowRun(WorkflowState):
 
         Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
-        workflow_settings = self.workflow.display_settings()
+        workflow_settings = [display_setting for display_setting in self.workflow.display_settings()
+                             if display_setting.selector != "Documentation"]
         block_settings = self.workflow.blocks_display_settings
-        displays_by_default = [s.load_by_default for s in block_settings]
 
-        workflow_settings_to_keep = []
+        displays_by_default = [s.load_by_default for s in block_settings]
+        documentation = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
+                                       load_by_default=True)
+        documentation.load_by_default = not any(displays_by_default)
+
+        workflow_settings_to_keep = [documentation]
         for settings in workflow_settings:
             # Update workflow settings
             settings.compose("workflow")
 
             if settings.selector == "Workflow":
                 settings.load_by_default = False
-
-            if settings.selector == "Documentation":
-                settings.load_by_default = not any(displays_by_default)
 
             if settings.selector != "Tasks":
                 workflow_settings_to_keep.append(settings)
@@ -2032,6 +2034,19 @@ class WorkflowRun(WorkflowState):
         script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
         export_formats.append(script_export)
         return export_formats
+
+    def zip_settings(self):
+        """ Returns a list of streams that contain different exports of the objects. """
+        streams = []
+        for export_format in self.workflow.blocks_export_formats:
+            if export_format.extension != "zip":
+                method_name = export_format.method_name
+                stream_class = StringFile if export_format.text else BinaryFile
+                stream = stream_class(filename=export_format.export_name)
+                block_index = export_format.args.get('block_index')
+                getattr(self, method_name)(stream, block_index)
+                streams.append(stream)
+        return streams
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:

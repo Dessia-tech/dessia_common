@@ -1,22 +1,24 @@
 """ Library for building Dataset. """
-from typing import List, Dict, Any
-from copy import copy
 import itertools
+from copy import copy
+from typing import Any, Dict, List
 
-from scipy.spatial.distance import pdist, squareform
 import numpy as npy
+from scipy.spatial.distance import pdist, squareform
 from sklearn import preprocessing
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
         PointStyle, Sample
-    from plot_data.colors import BLUE, GREY
+    from plot_data.colors import BLUE, GREY, Color
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
-from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
-from dessia_common.datatools.metrics import mean, std, variance, covariance_matrix
+from dessia_common.core import DessiaFilter, DessiaObject, FiltersList
+from dessia_common.datatools.metrics import (covariance_matrix, mean, std,
+                                             variance)
+from dessia_common.decorators import plot_data_view
+from dessia_common.exports import MarkdownWriter
 
 
 class Dataset(DessiaObject):
@@ -622,25 +624,32 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
+    @plot_data_view(selector='DataSet scatter matrix')
+    def plot_scatter_matrix(self, reference_path: str = "#", **kwargs):
+        """ Plot a scatter matrix for attributes in common_attributes. """
         data_list = self._to_samples(reference_path=reference_path)
         if len(self.common_attributes) > 1:
-            # Plot a correlation matrix : To develop
-            # correlation_matrix = []
-            # Dimensionality plot
-            dimensionality_plot = self._plot_dimensionality()
-            # Scatter Matrix
-            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(),
-                                                   axis=dimensionality_plot.axis,
-                                                   point_style=dimensionality_plot.point_style)
-            # Parallel plot
-            parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix]  # , dimensionality_plot]
+            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes())
+            return scatter_matrix
+        raise ValueError("Scatter matrix can only be plotted with more than one common attribute.")
 
+    @plot_data_view(selector='DataSet parallel plot')
+    def plot_parallel_plot(self, reference_path: str = "#", **kwargs):
+        """ Plot a parallel plot for attributes in common_attributes. """
+        data_list = self._to_samples(reference_path=reference_path)
+        if len(self.common_attributes) > 1:
+            parallel_plot = self._parallel_plot(data_list)
+            return parallel_plot
+        if len(self.common_attributes) == 1:
+            return self.plot_histogram(reference_path=reference_path)
+        raise ValueError("No common attributes found for plotting a parallel plot.")
+
+    def plot_histogram(self, reference_path: str = "#", **kwargs):
+        """ Plot a histogram when there's only one common attribute. """
+        data_list = self._to_samples(reference_path=reference_path)
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
-        return [plot_mono_attr]
+        return plot_mono_attr
 
     def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
         subplots = []
@@ -677,7 +686,7 @@ class Dataset(DessiaObject):
                 for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
-        return [PointFamily(GREY, list(range(len(self))))]
+        return [PointFamily(Color(182/255, 225/255, 251/255), list(range(len(self))))]
 
     def _parallel_plot(self, data_list: List[Dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')

@@ -256,7 +256,7 @@ class ModelMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelMethod':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
-        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        method_type = MethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
@@ -901,7 +901,7 @@ class MultiPlot(Display):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        script = f"MultiPlot(selector_name='{self.selector.name}', attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
