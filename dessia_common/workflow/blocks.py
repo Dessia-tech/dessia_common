@@ -25,10 +25,9 @@ T = TypeVar("T")
 Position = Tuple[float, float]
 
 
-def set_inputs_from_function(method, inputs=None):
+def set_inputs_from_function(method):
     """ Inspect given method argspecs and sets block inputs from it. """
-    if inputs is None:
-        inputs = []
+    inputs = []
     args_specs = inspect.getfullargspec(method)
     nargs, ndefault_args = split_argspecs(args_specs)
 
@@ -36,10 +35,10 @@ def set_inputs_from_function(method, inputs=None):
         if argument not in ["self", "cls", "progress_callback"]:
             try:
                 annotations = get_type_hints(method)
-                type_ = type_from_annotation(annotations[argument], module=method.__module__)
+                type_ = type_from_annotation(type_=annotations[argument], module=method.__module__)
             except KeyError as error:
-                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
-                    from error
+                message = f"Argument {argument} of method/function {method.__name__} has no typing"
+                raise UntypedArgumentError(message) from error
             if iarg > nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg - 1]
                 inputs.append(Variable(type_=type_, default_value=default, name=argument))
@@ -87,8 +86,7 @@ class InstantiateModel(Block):
 
     def __init__(self, model_class: Type, name: str = "Instantiate Model", position:  Position = (0, 0)):
         self.model_class = model_class
-        inputs = []
-        inputs = set_inputs_from_function(self.model_class.__init__, inputs)
+        inputs = set_inputs_from_function(self.model_class.__init__)
         outputs = [Variable(type_=self.model_class, name="Model")]
         super().__init__(inputs, outputs, name=name, position=position)
 
@@ -125,9 +123,8 @@ class InstantiateModel(Block):
         annotations = get_type_hints(self.model_class.__init__)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -150,10 +147,8 @@ class ClassMethod(Block):
 
     def __init__(self, method_type: ClassMethodType[Type], name: str = "Class Method", position:  Position = (0, 0)):
         self.method_type = method_type
-        inputs = []
-
         self.method = method_type.get_method()
-        inputs = set_inputs_from_function(self.method, inputs)
+        inputs = set_inputs_from_function(self.method)
 
         self.argument_names = [i.name for i in inputs]
 
@@ -225,12 +220,13 @@ class ModelMethod(Block):
 
     def __init__(self, method_type: MethodType[Type], name: str = "Model Method", position:  Position = (0, 0)):
         self.method_type = method_type
-        inputs = [Variable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
-        inputs = set_inputs_from_function(self.method, inputs)
+        inputs = [Variable(type_=method_type.class_, name="Model")]
+        self.method_inputs = set_inputs_from_function(self.method)
+        inputs.extend(self.method_inputs)
 
         # Storing argument names
-        self.argument_names = [i.name for i in inputs[1:]]
+        self.argument_names = [i.name for i in self.method_inputs]
 
         return_output = output_from_function(function=self.method, name="Return")
         model_output = Variable(type_=method_type.class_, name="Model")
@@ -238,7 +234,7 @@ class ModelMethod(Block):
 
         if name == "":
             name = f"Model method: {method_type.name}"
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -263,14 +259,13 @@ class ModelMethod(Block):
 
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
-        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
+        arguments = {n: values[v] for n, v in zip(self.argument_names, self.method_inputs) if v in values}
         method = getattr(values[self.inputs[0]], self.method_type.name)
         try:
             # Trying to inject progress callback to method
             result = method(progress_callback=progress_callback, **arguments)
         except TypeError:
             result = method(**arguments)
-
         return [result, values[self.inputs[0]]]
 
     def package_mix(self):
@@ -283,9 +278,8 @@ class ModelMethod(Block):
         annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -1195,7 +1189,7 @@ class SetModelAttribute(Block):
         type_ = get_attribute_type(self.attribute_type.name, parameters)
         inputs.append(Variable(type_=type_, name="Value"))
         outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1274,8 +1268,8 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = "Substraction", position:  Position = (0, 0)):
-        super().__init__([Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
-                       position=position)
+        super().__init__(inputs=[Variable(name="+"), Variable(name="-")], outputs=[Variable(name="Substraction")],
+                         name=name, position=position)
 
     def evaluate(self, values, **kwargs):
         """ Subtract input values. """
