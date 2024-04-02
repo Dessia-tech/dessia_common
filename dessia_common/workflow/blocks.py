@@ -25,7 +25,7 @@ T = TypeVar("T")
 Position = Tuple[float, float]
 
 
-def set_inputs_from_function(method):
+def _method_inputs(method):
     """ Inspect given method argspecs and sets block inputs from it. """
     inputs = []
     args_specs = inspect.getfullargspec(method)
@@ -86,7 +86,7 @@ class InstantiateModel(Block):
 
     def __init__(self, model_class: Type, name: str = "Instantiate Model", position:  Position = (0, 0)):
         self.model_class = model_class
-        inputs = set_inputs_from_function(self.model_class.__init__)
+        inputs = _method_inputs(self.model_class.__init__)
         outputs = [Variable(type_=self.model_class, name="Model")]
         super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
@@ -111,7 +111,7 @@ class InstantiateModel(Block):
     def dict_to_inputs(self, dict_: JsonSerializable):
         """ Deserialize variable and reset their types from class definition. """
         super().dict_to_inputs(dict_)
-        class_inputs = set_inputs_from_function(self.model_class.__init__)
+        class_inputs = _method_inputs(self.model_class.__init__)
         for block_input, class_input in zip(self.inputs, class_inputs):
             block_input.type_ = class_input.type_
 
@@ -155,7 +155,7 @@ class ClassMethod(Block):
     def __init__(self, method_type: ClassMethodType[Type], name: str = "Class Method", position:  Position = (0, 0)):
         self.method_type = method_type
         self.method = method_type.get_method()
-        inputs = set_inputs_from_function(self.method)
+        inputs = _method_inputs(self.method)
 
         self.argument_names = [i.name for i in inputs]
 
@@ -190,7 +190,7 @@ class ClassMethod(Block):
     def dict_to_inputs(self, dict_: JsonSerializable):
         """ Deserialize variable and reset their types from class definition. """
         super().dict_to_inputs(dict_)
-        method_inputs = set_inputs_from_function(self.method)
+        method_inputs = _method_inputs(self.method)
         for block_input, method_input in zip(self.inputs, method_inputs):
             block_input.type_ = method_input.type_
 
@@ -235,7 +235,7 @@ class ModelMethod(Block):
         self.method_type = method_type
         self.method = method_type.get_method()
         inputs = [Variable(type_=method_type.class_, name="Model")]
-        self.method_inputs = set_inputs_from_function(self.method)
+        self.method_inputs = _method_inputs(self.method)
         inputs.extend(self.method_inputs)
 
         # Storing argument names
@@ -273,7 +273,7 @@ class ModelMethod(Block):
     def dict_to_inputs(self, dict_: JsonSerializable):
         """ Deserialize variable and reset their types from class definition. """
         super().dict_to_inputs(dict_)
-        method_inputs = set_inputs_from_function(self.method)
+        method_inputs = _method_inputs(self.method)
         for block_input, method_input in zip(self.method_inputs, method_inputs):
             block_input.type_ = method_input.type_
 
