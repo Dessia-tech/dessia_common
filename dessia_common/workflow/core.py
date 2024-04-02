@@ -215,7 +215,7 @@ class Block(DessiaObject):
         """ Always return True for now. """
         return True
 
-    def dict_to_inputs(self, dict_: JsonSerializable):
+    def deserialize_variables(self, dict_: JsonSerializable):
         """
         Enable inputs and outputs overwriting in order to allow input renaming as well as default value persistence.
 
