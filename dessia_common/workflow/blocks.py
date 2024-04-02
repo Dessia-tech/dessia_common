@@ -109,7 +109,7 @@ class InstantiateModel(Block):
         return block
     
     def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variable and reset their types from class definition. """
+        """ Deserialize variables and reset their types from class definition. """
         super().deserialize_variables(dict_)
         class_inputs = _method_inputs(self.model_class.__init__)
         for block_input, class_input in zip(self.inputs, class_inputs):
@@ -1183,6 +1183,7 @@ class GetModelAttribute(Block):
         return block
 
     def deserialize_variables(self, dict_: JsonSerializable):
+        """ Deserialize variables and reset their types from class definition. """
         super().deserialize_variables(dict_)
         self.outputs[0].type_ = self.variable_type
 
@@ -1239,6 +1240,7 @@ class SetModelAttribute(Block):
         return block
 
     def deserialize_variables(self, dict_: JsonSerializable):
+        """ Deserialize variables and reset their types from class definition. """
         super().deserialize_variables(dict_)
         self.inputs[1].type_ = self.variable_type
 
