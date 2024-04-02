@@ -88,7 +88,7 @@ class InstantiateModel(Block):
         self.model_class = model_class
         inputs = set_inputs_from_function(self.model_class.__init__)
         outputs = [Variable(type_=self.model_class, name="Model")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -107,6 +107,13 @@ class InstantiateModel(Block):
         block = cls(model_class=model_class, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
+    
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        """ Deserialize variable and reset their types from class definition. """
+        super().dict_to_inputs(dict_)
+        class_inputs = set_inputs_from_function(self.model_class.__init__)
+        for block_input, class_input in zip(self.inputs, class_inputs):
+            block_input.type_ = class_input.type_
 
     def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """
@@ -153,7 +160,7 @@ class ClassMethod(Block):
         self.argument_names = [i.name for i in inputs]
 
         output = output_from_function(function=self.method, name="Return")
-        super().__init__(inputs, [output], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -180,6 +187,13 @@ class ClassMethod(Block):
         block.dict_to_inputs(dict_)
         return block
 
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        """ Deserialize variable and reset their types from class definition. """
+        super().dict_to_inputs(dict_)
+        method_inputs = set_inputs_from_function(self.method)
+        for block_input, method_input in zip(self.inputs, method_inputs):
+            block_input.type_ = method_input.type_
+
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
         arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
@@ -191,9 +205,8 @@ class ClassMethod(Block):
         annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -257,6 +270,13 @@ class ModelMethod(Block):
         block.dict_to_inputs(dict_)
         return block
 
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        """ Deserialize variable and reset their types from class definition. """
+        super().dict_to_inputs(dict_)
+        method_inputs = set_inputs_from_function(self.method)
+        for block_input, method_input in zip(self.method_inputs, method_inputs):
+            block_input.type_ = method_input.type_
+
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
         arguments = {n: values[v] for n, v in zip(self.argument_names, self.method_inputs) if v in values}
@@ -306,7 +326,7 @@ class Sequence(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -346,7 +366,7 @@ class Concatenate(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -398,7 +418,7 @@ class WorkflowBlock(Block):
             inputs.append(input_)
 
         outputs = [self.workflow.output.copy()]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -479,7 +499,7 @@ class ForEach(Block):
         output_variable = Variable(name="Foreach output")
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
-        super().__init__(inputs, [output_variable], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -852,9 +872,10 @@ class MultiPlot(Display):
     def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
                  name: str = "Multiplot", position:  Position = (0, 0)):
         self.attributes = attributes
-        Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
-        self.inputs[0].name = "Sequence"
+        input_ = Variable(type_=List[DessiaObject], name="Sequence")
+        selector = PlotDataType(class_=DessiaObject, name=selector_name)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, position=position)
 
     def __deepcopy__(self, memo=None):
         return MultiPlot(selector_name=self.selector.name, attributes=self.attributes,
@@ -1131,11 +1152,14 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Get Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        parameters = inspect.signature(self.attribute_type.class_).parameters
         inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        type_ = get_attribute_type(self.attribute_type.name, parameters)
-        outputs = [Variable(type_=type_, name="Attribute")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        outputs = [Variable(type_=self.variable_type, name="Attribute")]
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
+
+    @property
+    def variable_type(self):
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        return get_attribute_type(self.attribute_type.name, parameters)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1157,6 +1181,10 @@ class GetModelAttribute(Block):
         block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
+
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        super().dict_to_inputs(dict_)
+        self.outputs[0].type_ = self.variable_type
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
@@ -1184,12 +1212,15 @@ class SetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Set Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        type_ = get_attribute_type(self.attribute_type.name, parameters)
-        inputs.append(Variable(type_=type_, name="Value"))
+        inputs = [Variable(type_=self.attribute_type.class_, name="Model"),
+                  Variable(type_=self.variable_type, name="Value")]
         outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
         super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
+
+    @property
+    def variable_type(self):
+        parameters = inspect.signature(self.attribute_type.class_).parameters
+        return get_attribute_type(self.attribute_type.name, parameters)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1206,6 +1237,10 @@ class SetModelAttribute(Block):
         block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
+
+    def dict_to_inputs(self, dict_: JsonSerializable):
+        super().dict_to_inputs(dict_)
+        self.inputs[1].type_ = self.variable_type
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
