@@ -69,8 +69,8 @@ class AttributeType(Generic[T]):
     @property
     def type_(self):
         """ Get the user-defined type of the attribute."""
-        class_parameters = inspect.signature(self.class_).parameters
-        attribute = class_parameters.get(self.name)
+        parameters = inspect.signature(self.class_).parameters
+        attribute = parameters.get(self.name)
         if not attribute:
             return None
         if not hasattr(attribute, "annotation"):
