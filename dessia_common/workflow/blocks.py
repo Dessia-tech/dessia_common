@@ -1152,14 +1152,9 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Get Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        outputs = [Variable(type_=self.variable_type, name="Attribute")]
+        inputs = [Variable(type_=attribute_type.class_, name="Model")]
+        outputs = [Variable(type_=attribute_type.type_, name="Attribute")]
         super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
-
-    @property
-    def variable_type(self):
-        parameters = inspect.signature(self.attribute_type.class_).parameters
-        return get_attribute_type(self.attribute_type.name, parameters)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1185,7 +1180,7 @@ class GetModelAttribute(Block):
     def deserialize_variables(self, dict_: JsonSerializable):
         """ Deserialize variables and reset their types from class definition. """
         super().deserialize_variables(dict_)
-        self.outputs[0].type_ = self.variable_type
+        self.outputs[0].type_ = self.attribute_type.type_
 
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
@@ -1213,15 +1208,10 @@ class SetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Set Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        inputs = [Variable(type_=self.attribute_type.class_, name="Model"),
-                  Variable(type_=self.variable_type, name="Value")]
-        outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
+        inputs = [Variable(type_=attribute_type.class_, name="Model"),
+                  Variable(type_=attribute_type.type_, name="Value")]
+        outputs = [Variable(type_=attribute_type.class_, name="Model")]
         super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
-
-    @property
-    def variable_type(self):
-        parameters = inspect.signature(self.attribute_type.class_).parameters
-        return get_attribute_type(self.attribute_type.name, parameters)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1242,7 +1232,7 @@ class SetModelAttribute(Block):
     def deserialize_variables(self, dict_: JsonSerializable):
         """ Deserialize variables and reset their types from class definition. """
         super().deserialize_variables(dict_)
-        self.inputs[1].type_ = self.variable_type
+        self.inputs[1].type_ = self.attribute_type.type_
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
@@ -1498,15 +1488,3 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
-
-def get_attribute_type(attribute_name: str, parameters):
-    """ Get type of attribute name of class."""
-    parameter = parameters.get(attribute_name)
-    if not parameter:
-        return None
-    if not hasattr(parameter, "annotation"):
-        return parameter
-    if parameter.annotation == inspect.Parameter.empty:
-        return None 
-    return parameter.annotation
