@@ -256,7 +256,7 @@ class ModelMethod(Block):
     @classmethod
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelMethod':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
-        method_type = ClassMethodType.dict_to_object(dict_["method_type"])
+        method_type = MethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
         block.dict_to_inputs(dict_)
         return block
@@ -749,10 +749,37 @@ class Display(Block):
             # Cover cases where kwargs do not correspond to method signature (missing reference_path, for ex)
             return [attrmethod_getter(object_, method)()]
 
+    @property
+    def display_class_name(self):
+        """ Get the class name of the current instance. """
+        return self.__class__.__name__
+
+    @property
+    def selector_class_name(self):
+        """ Get the class name of the Selector. """
+        return self.selector.__class__.__name__
+
+    def to_script_selector(self) -> ToScriptElement:
+        """ Write Block's Selector config into a chunk of script. """
+        script = f"{self.selector_class_name}(name='{self.name}')"
+        selector_class_ = full_classname(self.selector.class_, compute_for="class")
+        selector_class_name = f"{self.selector.__module__}.{self.selector_class_name}"
+        return ToScriptElement(declaration=script, imports=[selector_class_, selector_class_name])
+
+    def base_script(self) -> str:
+        """ Generate a chunk of script that denotes the arguments of a base block. """
+        return f"name=\"{self.name}\", load_by_default={self.load_by_default}, position={self.position}"
+
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"{self.__class__.__name__}(name='{self.name}')"
-        return ToScriptElement(declaration=script, imports=[self.full_classname])
+        imports = [self.full_classname]
+        script_selector = self.to_script_selector()
+        script = f"{self.display_class_name}(selector={self.selector_class_name}(" \
+                 f"class_={self.selector.class_.__name__}, name='{self.selector.name}')" \
+                 f", {self.base_script()})"
+
+        imports.extend(script_selector.imports)
+        return ToScriptElement(declaration=script, imports=imports)
 
 
 class DeprecatedMultiPlot(Display):
@@ -874,7 +901,7 @@ class MultiPlot(Display):
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
-        script = f"MultiPlot(attributes={self.attributes}, {self.base_script()})"
+        script = f"MultiPlot(selector_name='{self.selector.name}', attributes={self.attributes}, {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',

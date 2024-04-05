@@ -6,7 +6,6 @@ import ast
 import time
 import datetime
 from functools import cached_property
-import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
@@ -17,6 +16,7 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
+
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
                                         serialize_annotation, deserialize_annotation, pretty_annotation,
                                         UNDEFINED, Schema, SchemaAttribute)
@@ -34,7 +34,8 @@ from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
                                          serialize_dict, add_references, deserialize_argument)
-from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
+from dessia_common.workflow.utils import (ToScriptElement, blocks_to_script, nonblock_variables_to_script,
+                                          update_imports, generate_default_value)
 
 
 T = TypeVar("T")
@@ -106,6 +107,20 @@ class Variable(DessiaObject):
         else:
             copied_default_value = UNDEFINED
         return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
+
+    def _to_script(self) -> ToScriptElement:
+        script = self._get_to_script_elements()
+        script.declaration = f"{self.__class__.__name__}({script.declaration})"
+
+        script.imports.append(self.full_classname)
+        return script
+
+    def _get_to_script_elements(self):
+        schema = get_schema(annotation=self.type_, attribute=SchemaAttribute(self.name))
+        imports = schema.get_import_names(import_names=[])
+        declaration = f"name='{self.name}', label='{self.label}', position={self.position}," \
+                      f" type_={schema.pretty_annotation}"
+        return ToScriptElement(declaration=declaration, imports=imports, imports_as_is=[])
 
 
 class TypedVariable(Variable):
@@ -547,9 +562,9 @@ class Workflow(Block):
     @staticmethod
     def display_settings(**kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
-                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
-                DisplaySetting(selector="Tasks", type_="tasks", method="")]
+        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict"),
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown"),
+                DisplaySetting(selector="Tasks", type_="tasks", method="", load_by_default=True)]
 
     @property
     def export_blocks(self):
@@ -1205,6 +1220,8 @@ class Workflow(Block):
                       f" name=\"{self.name}\")\n"
 
         self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
+        imports.append(self.full_classname)
+        full_script = f'documentation = """{self.documentation}"""\n\n' + full_script
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
@@ -1214,12 +1231,10 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
         self_script = self._to_script()
-        self_script.imports.append(self.full_classname)
 
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
-               f'documentation = """{self.documentation}"""\n\n' \
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):
@@ -1255,7 +1270,7 @@ class Workflow(Block):
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
 
-    def save_script_to_stream(self, stream: io.StringIO):
+    def save_script_to_stream(self, stream: StringFile):
         """ Save the workflow to a python script to a stream. """
         string = self.to_script()
         stream.seek(0)
@@ -1325,7 +1340,7 @@ class ExecutionInfo(DessiaObject):
     def to_markdown(self, **kwargs):
         """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
         table_content = []
-        for block, mem_start in dict(self.after_block_memory_usage).items():
+        for block, mem_start in dict(self.before_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
             mem_diff = mem_end - mem_start
             table_content.append((block.name, f"{humanize.naturalsize(mem_start)}", f"{humanize.naturalsize(mem_end)}",
@@ -1886,20 +1901,22 @@ class WorkflowRun(WorkflowState):
 
         Concatenate WorkflowState display_settings and inserting Workflow ones.
         """
-        workflow_settings = self.workflow.display_settings()
+        workflow_settings = [display_setting for display_setting in self.workflow.display_settings()
+                             if display_setting.selector != "Documentation"]
         block_settings = self.workflow.blocks_display_settings
-        displays_by_default = [s.load_by_default for s in block_settings]
 
-        workflow_settings_to_keep = []
+        displays_by_default = [s.load_by_default for s in block_settings]
+        documentation = DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown",
+                                       load_by_default=True)
+        documentation.load_by_default = not any(displays_by_default)
+
+        workflow_settings_to_keep = [documentation]
         for settings in workflow_settings:
             # Update workflow settings
             settings.compose("workflow")
 
             if settings.selector == "Workflow":
                 settings.load_by_default = False
-
-            if settings.selector == "Documentation":
-                settings.load_by_default = not any(displays_by_default)
 
             if settings.selector != "Tasks":
                 workflow_settings_to_keep.append(settings)
@@ -1927,6 +1944,68 @@ class WorkflowRun(WorkflowState):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
+    def _split_input_values(self):
+        """ Split the input values for blocks and non-block variables. """
+        nbv_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
+                      v in self.workflow.nonblock_variables]
+        block_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
+                        v not in self.workflow.nonblock_variables]
+        return nbv_values, block_values
+
+    def _to_script(self, workflow_script):
+        """ Computes elements for a to_script interpretation. """
+        input_str = ""
+        default_value = ""
+        add_import = []
+
+        nbv_values, block_values = self._split_input_values()
+
+        # Blocks
+        index_ = 0
+        for j, block in enumerate(self.workflow.blocks):
+            for i, input_ in enumerate(block.inputs):
+                input_key = f"block_{j}.inputs[{i}]"
+                if input_key not in workflow_script.declaration:
+                    input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
+                    default_value += generate_default_value(block_values[index_], j, i)
+                    index_ += 1
+                    add_import.extend(update_imports(input_.type_, input_.name))
+
+        # NBVs
+        for k, nbv in enumerate(self.workflow.nonblock_variables):
+            input_str += f"    workflow.input_index(variable_{k}): value_{k},\n"
+            default_value += generate_default_value(nbv_values[k], k)
+            add_import.extend(update_imports(nbv.type_, nbv.name))
+
+        return input_str, default_value, add_import
+
+    def to_script(self):
+        """ Computes a script representing the WorkflowRun. """
+        workflow_script = self.workflow._to_script()
+        input_str, default_value, add_import = self._to_script(workflow_script)
+
+        workflow_script.declaration = f"{workflow_script.declaration}\n{default_value}\n\ninput_values =" \
+                                      f" {{\n{input_str}}}\nworkflow_run = workflow.run(input_values=input_values)\n"
+        workflow_script.imports.extend(add_import)
+
+        return workflow_script
+
+    def save_script_to_stream(self, stream: StringFile):
+        """ Save the WorkflowRun to a python script to a stream. """
+        script = self.to_script()
+        stream.seek(0)
+        script_imports = script.imports_to_str()
+        stream.write(script_imports + "\n")
+        stream.write(script.declaration + "\n")
+
+    def save_script_to_file(self, filename: str):
+        """ Save the WorkflowRun to a python script to a file on the disk. """
+        if not filename.endswith('.py'):
+            filename += '.py'
+            print(f'Changing filename to {filename}')
+        with open(filename, 'w', encoding='utf-8') as file:
+            self.save_script_to_stream(file)
+
     @property
     def method_schemas(self):
         """ Copy old method_jsonschema behavior. Probably to be refactored. """
@@ -1948,6 +2027,26 @@ class WorkflowRun(WorkflowState):
         execution_info = self.execution_info.to_markdown(blocks=self.workflow.blocks)
         return template.substitute(name=self.name, workflow_name=self.workflow.name,
                                    output_table=output_table, execution_info=execution_info)
+
+    def _export_formats(self):
+        """ Returns a list of export formats. """
+        export_formats = super()._export_formats()
+        script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
+        export_formats.append(script_export)
+        return export_formats
+
+    def zip_settings(self):
+        """ Returns a list of streams that contain different exports of the objects. """
+        streams = []
+        for export_format in self.workflow.blocks_export_formats:
+            if export_format.extension != "zip":
+                method_name = export_format.method_name
+                stream_class = StringFile if export_format.text else BinaryFile
+                stream = stream_class(filename=export_format.export_name)
+                block_index = export_format.args.get('block_index')
+                getattr(self, method_name)(stream, block_index)
+                streams.append(stream)
+        return streams
 
 
 def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:

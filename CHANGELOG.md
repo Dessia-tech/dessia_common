@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.17.0
+
+### Feature
+
+- Workflow : Display by default is now tasks only
+
+
+## 0.16.3
+
+### Fix
+
+- Dataset : Update plot to new decorator paradigm
+
+
+## 0.16.2
+
+### Fix
+
+- Export: Add block_index if export blocks
+- PhysicalObject : Remove to_stl encoding element
+- Schema : Take `None` default value into account
+- WorkflowRun : Compute memory usage, subtract before_memory
+
+
+### Build
+
+- Numpy : Restrict version to lower 2.0.0
+
+
+## 0.16.1
+
+### Added
+
+- Export : Define export method with decorator
+
+### Fix
+
+- ModelMethod : Call the right dict_to_object of MethodType
+- MultiPlot : Add selector_name MultiPlot script
+- WorkflowRun : Add markdown to display_settings
+
+### Tests
+
+- Schema : Add new unittest to test get_import_names methods
+
 
 ## 0.16.0
 
@@ -19,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Serialization : Fix wrong path in serialization that result in pointers cycles in some cases
+- Workflow : Fix export workflow in .py script
 
 ### Refactor
 
@@ -301,6 +347,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reference path is now given all the way down to plot_data
 - DessiaObject kwargs in init are deprecated
+
+### Added
+- Save WorkflowRun to a python script
 
 ### Fixed
 

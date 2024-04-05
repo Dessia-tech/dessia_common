@@ -500,6 +500,11 @@ class Property:
         """
         return CheckList([])
 
+    def get_import_names(self, import_names):
+        """ Process Property and get/update the import names list."""
+        import_names.append(self.serialized)
+        return import_names
+
 
 class TypingProperty(Property):
     """ Schema class for typing based annotations. """
@@ -597,6 +602,20 @@ class TypingProperty(Property):
             return WrongNumberOfArguments(msg)
         return PassedCheck(f"{self.check_prefix}has exactly one argument in its definition.")
 
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.annotation.__class__.__module__}.{self.annotation._name}"
+
+    def get_import_names(self, import_names):
+        """ Process TypingProperty and get/update the import names list."""
+        import_name = self.get_import_name
+        import_names.append(import_name)
+
+        for args_schema in self.args_schemas:
+            import_names = args_schema.get_import_names(import_names=import_names)
+        return import_names
+
 
 class ProxyProperty(TypingProperty):
     """
@@ -650,6 +669,11 @@ class OptionalProperty(ProxyProperty):
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
         """ Deserialize Optional annotation. """
         raise NotImplementedError("Optional property deserialization not implemented yet. ")
+
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return self.schema.get_import_names([])[0]
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -723,6 +747,10 @@ class BuiltinProperty(Property):
             return self.attribute.default_value
         return None
 
+    def get_import_names(self, import_names):
+        """ Process BuiltinProperty and get/update the import names list."""
+        return import_names
+
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
@@ -763,6 +791,11 @@ class MeasureProperty(BuiltinProperty):
                                  f"must be of type 'float' or 'Measure'. Got '{type(self.attribute.default_value)}'")
             return default_measure.to_dict()
         return {"object_class": f"{Measure.__module__}.{Measure.__class__.__name__}", "value": None}
+
+    def get_import_names(self, import_names):
+        """ Process MeasureProperty and get/update the import names list."""
+        import_names = Property.get_import_names(self, import_names=import_names)
+        return import_names
 
 
 File = Union[StringFile, BinaryFile]
@@ -939,6 +972,11 @@ class UnionProperty(TypingProperty):
         msg = f"{self.check_prefix}'standalone_in_db' values for arguments of Union type '{self.annotation}'" \
               f"are not consistent. They should be all standalone in db or none of them should."
         return WrongType(msg)
+
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.origin.__module__}.{self.origin._name}"
 
 
 class HeterogeneousSequence(TypingProperty):
@@ -1225,6 +1263,11 @@ class InstanceOfProperty(TypingProperty):
         issues += CheckList([self.has_one_arg()])
         return issues
 
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return f"{self.origin.__module__}.{self.origin.__name__}"
+
 
 class SubclassProperty(TypingProperty):
     """
@@ -1309,12 +1352,12 @@ class AttributeTypeProperty(TypingProperty):
             }
         })
         return chunk
-    
+
     def default_value(self) -> Dict[str, Any]:
         """ Sets AttributeType object_class and argument class_ if it is different from Type. """
         if self.has_default_value:
             return self.attribute.default_value.to_dict()
-        
+
         if self.class_ is not Type and issubclass(self.class_, CoreDessiaObject):
             classname = full_classname(object_=self.class_, compute_for="class")
         else:
@@ -1636,7 +1679,7 @@ def object_default(default_value: CoreDessiaObject = UNDEFINED, class_schema: Cl
 
     Return serialized user default if definition, else None.
     """
-    if default_value is not UNDEFINED:
+    if default_value is not UNDEFINED and default_value is not None:
         return default_value.to_dict(use_pointers=False)
     if class_schema is not None:
         # TODO Should we implement this ? Right now, tests state that the result is None
