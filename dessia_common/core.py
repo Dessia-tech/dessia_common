@@ -33,7 +33,7 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS
 from dessia_common.excel_reader import ExcelReader
 
 
@@ -603,33 +603,12 @@ class DessiaObject(SerializableObject):
         with open(filepath, 'wb') as file:
             file.write(archive.getbuffer())
 
-    @classmethod
-    def _export_formats_from_decorator_name(cls, decorator_name: str):
-        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
-        settings = []
-        for method in methods:
-            extension = getattr(method, "extension")
-            method_name = getattr(method, "method_name")
-            text = getattr(method, "text")
-            selector = getattr(method, "selector", None)
-            if not selector:
-                selector = extension
-            settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
-        return settings
-
-    @classmethod
-    def _export_formats_from_decorators(cls):
-        """ Return a list, computed from decorated functions, of objects describing how to call exports. """
-        return [s for d in EXPORT_DECORATORS for s in cls._export_formats_from_decorator_name(d)]
-
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
+                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
                    ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
-
-        formats.extend(self._export_formats_from_decorators())
-        formats.append(ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False))
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -676,10 +655,6 @@ class PhysicalObject(DessiaObject):
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
-        warnings.warn("This method is deprecated and will be removed in a future version. "
-                      "You can continue using this method with the same or a different name, "
-                      "but please ensure it returns 'babylon_data' instead of a list of primitives. ",
-                      DeprecationWarning)
         return []
 
     def volmdlr_volume_model(self, **kwargs):
@@ -693,8 +668,6 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `to_step` method of VolumeModel instead.", DeprecationWarning)
         if not filepath.endswith('.step'):
             filepath += '.step'
         with open(filepath, 'w', encoding='utf-8') as file:
@@ -706,14 +679,10 @@ class PhysicalObject(DessiaObject):
 
         Works if the class define a custom volmdlr model.
         """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `to_step_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
         """ Exports Object CAD to given stream as HTML. """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `to_html_stream` method of VolumeModel instead.", DeprecationWarning)
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -723,8 +692,6 @@ class PhysicalObject(DessiaObject):
 
     def to_stl_stream(self, stream):
         """ Export Object CAD to given stream as STL. """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `to_stl_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
     def to_stl(self, filepath: str):
@@ -733,8 +700,6 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `to_stl` method of VolumeModel instead.", DeprecationWarning)
         if not filepath.endswith('.stl'):
             filepath += '.stl'
 
@@ -743,8 +708,6 @@ class PhysicalObject(DessiaObject):
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `babylonjs` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
@@ -758,8 +721,6 @@ class PhysicalObject(DessiaObject):
         :param debug: Activates the debug mode. Default value is False
         :type debug: bool, optional
         """
-        warnings.warn("This method is deprecated and will be removed in a future version."
-                      " Please use the `save_babylonjs_to_file` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
 
     def _export_formats(self) -> List[ExportFormat]:
