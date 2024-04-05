@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Dataset : Update plot to new decorator paradigm
 - Workflow : Reset variables types for block defined from user code (should not trust frontend json on variable types)
+- Workflow : If type is provided, Variables do not reset their type based on their default value anymore
 
 ### Refactor
 

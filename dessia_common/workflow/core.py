@@ -50,10 +50,9 @@ class Variable(DessiaObject):
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
                  name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
-        if self.has_default_value and type_ is None:
-            self.type_ = type(default_value)
-        else:
-            self.type_ = type_
+        if type_ is None and self.has_default_value:
+            type_ = type(default_value)
+        self.type_ = type_
         self.label = label
         self.position = position
         super().__init__(name)
