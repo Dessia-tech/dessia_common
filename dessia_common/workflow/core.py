@@ -168,6 +168,11 @@ class Block(DessiaObject):
         self.position = position
         DessiaObject.__init__(self, name=name)
 
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
+        """ Overwrite default method to force use_pointers to true. """
+        return super().to_dict(use_pointers=False, memo=memo, path=path, id_method=id_method, id_memo=id_memo, **kwargs)
+
     def equivalent_hash(self):
         """
         Custom hash of block that doesn't overwrite __hash__ as we do not want to lose python default equality behavior.
@@ -186,8 +191,7 @@ class Block(DessiaObject):
 
     def _docstring(self):
         """ Base function for sub model docstring computing. """
-        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def parse_input_doc(self, input_: Variable):
         """ Parse block docstring to get input documentation. """
