@@ -67,17 +67,11 @@ class Variable(DessiaObject):
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
-        """ Customize serialization method in order to handle undefined default value. """
-        global_dict = dict_.get("global_dict", {})
-        pointers_memo = dict_.get("pointers_memo", {})
-        type_ = dict_.get("type_", None)
+    def update_from_config(self, dict_):
+        """ Set user config (label and default value) from workflow builder without serialization/deserialization. """
         default_value = dict_.get("default_value", UNDEFINED)
-        default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
-        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
-        return Variable(type_=deserialize_annotation(type_), default_value=default_value,
-                        name=dict_["name"], label=label, position=tuple(dict_["position"]))
+        self.default_value = deserialize(default_value)
+        self.label = dict_.get("label", "")
 
     @property
     def has_default_value(self):
@@ -225,9 +219,11 @@ class Block(DessiaObject):
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """
         if "inputs" in dict_:
-            self.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
+            for variable, dict_ in zip(self.inputs, dict_["inputs"]):
+                variable.update_from_config(dict_)
         if "outputs" in dict_:
-            self.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+            for variable, dict_ in zip(self.outputs, dict_["outputs"]):
+                variable.update_from_config(dict_)
 
 
 class Pipe(DessiaObject):
