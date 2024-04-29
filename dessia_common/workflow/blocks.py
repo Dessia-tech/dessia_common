@@ -235,11 +235,11 @@ class ModelMethod(Block):
         self.method_type = method_type
         self.method = method_type.get_method()
         inputs = [Variable(type_=method_type.class_, name="Model")]
-        self.method_inputs = _method_inputs(self.method)
-        inputs.extend(self.method_inputs)
+        method_inputs = _method_inputs(self.method)
+        inputs.extend(method_inputs)
 
         # Storing argument names
-        self.argument_names = [i.name for i in self.method_inputs]
+        self.argument_names = [i.name for i in method_inputs]
 
         return_output = output_from_function(function=self.method, name="Return")
         model_output = Variable(type_=method_type.class_, name="Model")
@@ -274,12 +274,12 @@ class ModelMethod(Block):
         """ Deserialize variable and reset their types from class definition. """
         super().deserialize_variables(dict_)
         method_inputs = _method_inputs(self.method)
-        for block_input, method_input in zip(self.method_inputs, method_inputs):
+        for block_input, method_input in zip(self.inputs[1:], method_inputs):
             block_input.type_ = method_input.type_
 
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
-        arguments = {n: values[v] for n, v in zip(self.argument_names, self.method_inputs) if v in values}
+        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
         method = getattr(values[self.inputs[0]], self.method_type.name)
         try:
             # Trying to inject progress callback to method

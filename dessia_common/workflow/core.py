@@ -656,13 +656,13 @@ class Workflow(Block):
 
         imposed_variable_values = {}
         for variable, value in self.imposed_variable_values.items():
-            var_index = self.variable_indices(variable)
+            index = self.variable_indices(variable)
             if use_pointers:
-                ser_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                          path=f"{path}/imposed_variable_values/{var_index}")
+                serialized_value, memo = serialize_with_pointers(value=value, memo=memo,
+                                                                 path=f"{path}/imposed_variable_values/{index}")
             else:
-                ser_value = serialize(value)
-            imposed_variable_values[str(var_index)] = ser_value
+                serialized_value = serialize(value)
+            imposed_variable_values[str(index)] = serialized_value
 
         dict_.update({"description": self.description, "documentation": self.documentation,
                       "imposed_variable_values": imposed_variable_values})
