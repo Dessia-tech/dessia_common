@@ -218,11 +218,11 @@ class Block(DessiaObject):
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """
         if "inputs" in dict_:
-            for variable, dict_ in zip(self.inputs, dict_["inputs"]):
-                variable.update_from_config(dict_)
+            for variable, config in zip(self.inputs, dict_["inputs"]):
+                variable.update_from_config(config)
         if "outputs" in dict_:
-            for variable, dict_ in zip(self.outputs, dict_["outputs"]):
-                variable.update_from_config(dict_)
+            for variable, config in zip(self.outputs, dict_["outputs"]):
+                variable.update_from_config(config)
 
 
 class Pipe(DessiaObject):
