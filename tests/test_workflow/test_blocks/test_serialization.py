@@ -1,5 +1,5 @@
 import unittest
-from parameterized import parameterized_class
+from parameterized import parameterized
 from dessia_common.workflow import Workflow
 from dessia_common.workflow.blocks import (InstantiateModel, ClassMethod, ModelMethod, Sequence, Concatenate,
                                            Unpacker, Flatten, Product, Filter, CadView, Markdown, PlotData,
@@ -9,7 +9,8 @@ from dessia_common.forms import StandaloneObject, Generator
 from dessia_common.typings import (MethodType, ClassMethodType, AttributeType, CadViewType, MarkdownType, PlotDataType)
 
 
-@parameterized_class(("block",), [
+class TestBlocks(unittest.TestCase):
+    @parameterized.expand([
         (InstantiateModel(StandaloneObject),),
         (ClassMethod(ClassMethodType(class_=StandaloneObject, name="generate")),),
         (ModelMethod(ClassMethodType(class_=Generator, name="generate")),),
@@ -37,9 +38,7 @@ from dessia_common.typings import (MethodType, ClassMethodType, AttributeType, C
         (Export(method_type=MethodType(class_=StandaloneObject, name="save_to_stream"), text=True, extension="json"),),
         (Export(method_type=MethodType(class_=StandaloneObject, name="to_xlsx_stream"), text=False, extension="xlsx"),),
         (Archive(),)
-     ])
-class TestBlocks(unittest.TestCase):
-
+    ])
     def test_display_blocks(self, block):
         raise NotImplementedError()
         dict_ = Workflow(blocks=[block], pipes=[], output=block.outputs[0], name=f"Workflow - {block.name}").to_dict()
