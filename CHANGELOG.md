@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fix
 
+- Workflow : Stop deserializing and setting block Variable. Instead, reconfigure them based on incoming dict
+
+
+## 0.16.4
+
+### Fix
+
 - Workflow : Blocks are not generating their to_dict with pointers anymore
 
 

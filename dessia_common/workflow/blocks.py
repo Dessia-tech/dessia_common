@@ -107,13 +107,6 @@ class InstantiateModel(Block):
         block = cls(model_class=model_class, name=dict_["name"], position=dict_["position"])
         block.deserialize_variables(dict_)
         return block
-    
-    def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variables and reset their types from class definition. """
-        super().deserialize_variables(dict_)
-        class_inputs = _method_inputs(self.model_class.__init__)
-        for block_input, class_input in zip(self.inputs, class_inputs):
-            block_input.type_ = class_input.type_
 
     def evaluate(self, values, **kwargs):
         """ Instantiate a model of given class with arguments that are in values. """
@@ -157,8 +150,6 @@ class ClassMethod(Block):
         self.method = method_type.get_method()
         inputs = _method_inputs(self.method)
 
-        self.argument_names = [i.name for i in inputs]
-
         output = output_from_function(function=self.method, name="Return")
         super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
@@ -187,16 +178,9 @@ class ClassMethod(Block):
         block.deserialize_variables(dict_)
         return block
 
-    def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variable and reset their types from class definition. """
-        super().deserialize_variables(dict_)
-        method_inputs = _method_inputs(self.method)
-        for block_input, method_input in zip(self.inputs, method_inputs):
-            block_input.type_ = method_input.type_
-
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
-        arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
+        arguments = {i.name: values[i] for i in self.inputs if i in values}
         return [self.method(**arguments)]
 
     def _docstring(self):
@@ -234,12 +218,8 @@ class ModelMethod(Block):
     def __init__(self, method_type: MethodType[Type], name: str = "Model Method", position:  Position = (0, 0)):
         self.method_type = method_type
         self.method = method_type.get_method()
-        inputs = [Variable(type_=method_type.class_, name="Model")]
-        self.method_inputs = _method_inputs(self.method)
-        inputs.extend(self.method_inputs)
-
-        # Storing argument names
-        self.argument_names = [i.name for i in self.method_inputs]
+        method_inputs = _method_inputs(self.method)
+        inputs = [Variable(type_=method_type.class_, name="Model")] + method_inputs
 
         return_output = output_from_function(function=self.method, name="Return")
         model_output = Variable(type_=method_type.class_, name="Model")
@@ -270,16 +250,9 @@ class ModelMethod(Block):
         block.deserialize_variables(dict_)
         return block
 
-    def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variable and reset their types from class definition. """
-        super().deserialize_variables(dict_)
-        method_inputs = _method_inputs(self.method)
-        for block_input, method_input in zip(self.method_inputs, method_inputs):
-            block_input.type_ = method_input.type_
-
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
-        arguments = {n: values[v] for n, v in zip(self.argument_names, self.method_inputs) if v in values}
+        arguments = {i.name: values[i] for i in self.inputs[1:] if i in values}
         method = getattr(values[self.inputs[0]], self.method_type.name)
         try:
             # Trying to inject progress callback to method
@@ -1177,11 +1150,6 @@ class GetModelAttribute(Block):
         block.deserialize_variables(dict_)
         return block
 
-    def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variables and reset their types from class definition. """
-        super().deserialize_variables(dict_)
-        self.outputs[0].type_ = self.attribute_type.type_
-
     def evaluate(self, values, **kwargs):
         """ Get input object's deep attribute. """
         return [get_in_object_from_path(values[self.inputs[0]], f"#/{self.attribute_type.name}")]
@@ -1228,11 +1196,6 @@ class SetModelAttribute(Block):
         block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
         block.deserialize_variables(dict_)
         return block
-
-    def deserialize_variables(self, dict_: JsonSerializable):
-        """ Deserialize variables and reset their types from class definition. """
-        super().deserialize_variables(dict_)
-        self.inputs[1].type_ = self.attribute_type.type_
 
     def evaluate(self, values, **kwargs):
         """ Set input object's deep attribute with input value. """
