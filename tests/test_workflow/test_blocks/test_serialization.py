@@ -40,7 +40,6 @@ class TestBlocks(unittest.TestCase):
         (Archive(),)
     ])
     def test_display_blocks(self, block):
-        raise NotImplementedError()
         dict_ = Workflow(blocks=[block], pipes=[], output=block.outputs[0], name=f"Workflow - {block.name}").to_dict()
         workflow = Workflow.dict_to_object(dict_)
         for workflow_input, block_input in zip(workflow.inputs, workflow.blocks[0].inputs):
