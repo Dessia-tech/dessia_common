@@ -315,14 +315,6 @@ class Workflow(Block):
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
 
-        for upstream_var in self.nonblock_variables:
-            pass
-            # downstream_var = self.
-        # if connected_nbvs.get(variable1, False):
-        #     # TODO This is an horrible hotfix to prevent NBVs type to be wrongly deserialized as strings.
-        #     # We MUST refactor non_block_variables to allow them to be detached and remove detached variables concept.
-        #     variable1.type_ = variable2.type_
-
     @classmethod
     def generate_empty(cls):
         """ Generate an empty workflow (mostly used by frontend to compute an init dict). """
