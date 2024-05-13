@@ -50,8 +50,7 @@ def get_method_from_selector_name(class_, selector_name: str = ''):
                 return [method]
         warnings.warn(f"The given selector name '{selector_name}' is not used in any method of your class.")
         return methods
-    else:
-        return methods
+    return methods
 
 
 def plot_data_view(selector: str = None, load_by_default: bool = False):
