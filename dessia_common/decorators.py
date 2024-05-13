@@ -1,5 +1,5 @@
 """ Provides decorators that work as 'flags' for display settings. """
-
+import warnings
 from typing import Type, List, TypeVar
 import inspect
 import ast
@@ -38,6 +38,20 @@ def get_decorated_methods(class_: Type, decorator_name: str):
         if decorator_name in decorator_names:
             method_names.append(method.name)
     return [getattr(class_, n) for n in method_names]
+
+
+def get_method_from_selector_name(class_, selector_name: str = ''):
+    """ Get decorated methods with a specific selector name from a class. """
+    methods = get_decorated_methods(class_=class_, decorator_name='plot_data_view')
+    if selector_name:
+        for method in methods:
+            selector = getattr(method, "selector", None)
+            if selector == selector_name:
+                return [method]
+        warnings.warn(f"The given selector name '{selector_name}' is not used in any method of your class.")
+        return methods
+    else:
+        return methods
 
 
 def plot_data_view(selector: str = None, load_by_default: bool = False):
