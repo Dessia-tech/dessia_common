@@ -38,7 +38,7 @@ except ImportError as err:
     print("Couldn't import plot_data or volmdlr due to the following exception : ", err)
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf
+from dessia_common.typings import InstanceOf, KeyOf
 from dessia_common.measures import Distance
 from dessia_common.exports import MarkdownWriter
 
@@ -850,6 +850,19 @@ class BeamStructure(DessiaObject):
         labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
         primtives = [horizontal_contour] + vertical_contours + labels
         return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
+
+
+COLOR = {
+    "red": 0,
+    "green": 0,
+    "blue": 0
+}
+
+
+class MyObject(DessiaObject):
+    def __init__(self, input_: KeyOf[COLOR], name: str = ""):
+        self.input_ = input_
+        super().__init__(name=name)
 
 
 horizontal = HorizontalBeam(10, "H")

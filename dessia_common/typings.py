@@ -1,10 +1,19 @@
 """ Typing for dessia_common. """
-from typing import TypeVar, Generic, Dict, Any, Tuple, get_type_hints
+from types import GenericAlias
+from typing import TypeVar, Generic, Dict, Any, Tuple, Literal, get_type_hints
 
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
 
-T = TypeVar('T')
+T = TypeVar("T")
+D = TypeVar("D")
+
+
+class KeyOf:
+    """ Enum from dict keys"""
+
+    def __class_getitem__(cls, item: Dict[str, Any]):
+        return Literal[tuple(item.keys())]
 
 
 class Subclass(Generic[T]):
