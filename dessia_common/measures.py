@@ -28,9 +28,6 @@ class Measure(float):
     def __str__(self):
         return f"{self.__class__.__name__} {round(self, 6)} {self.si_unit}"
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.real})"
-
 
 class Distance(Measure):
     """ Represent a distance in meters. """

@@ -1,12 +1,11 @@
 """ Typing for dessia_common. """
-from types import GenericAlias
+import inspect
 from typing import TypeVar, Generic, Dict, Any, Tuple, Literal, get_type_hints
 
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 
 
 T = TypeVar("T")
-D = TypeVar("D")
 
 
 class KeyOf:
@@ -73,6 +72,19 @@ class AttributeType(Generic[T]):
 
     def __deepcopy__(self, memo=None):
         return AttributeType(self.class_, self.name)
+
+    @property
+    def type_(self):
+        """ Get the user-defined type of the attribute."""
+        parameters = inspect.signature(self.class_).parameters
+        attribute = parameters.get(self.name, None)
+        if not attribute:
+            return None
+        if not hasattr(attribute, "annotation"):
+            return attribute
+        if attribute.annotation == inspect.Parameter.empty:
+            return None
+        return attribute.annotation
 
     def to_dict(self):
         """ Write Attribute Type as a dictionary. """

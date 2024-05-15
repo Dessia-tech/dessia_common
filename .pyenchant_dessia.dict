@@ -28,6 +28,7 @@ dectree
 dendrogram
 deserialization
 deserialize
+deserialized
 dessia
 DessiaObject
 dict
@@ -43,6 +44,7 @@ floatarg
 Frobenius
 frontend
 hlist
+hotfix
 ge
 getsizeof
 gt

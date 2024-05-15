@@ -57,9 +57,8 @@ class TestWorkflowDisplays(unittest.TestCase):
         (False,)
     ])
     def test_default_displays(self, block_by_default: bool):
-        self.assertFalse(workflow._display_settings_from_selector("Documentation").load_by_default)
-        self.assertFalse(workflow._display_settings_from_selector("Workflow").load_by_default)
-        self.assertTrue(workflow._display_settings_from_selector("Tasks").load_by_default)
+        self.assertTrue(workflow._display_settings_from_selector("Documentation").load_by_default)
+        self.assertTrue(workflow._display_settings_from_selector("Workflow").load_by_default)
 
         workflow.blocks[1].load_by_default = block_by_default
         settings = self.workflow_run._display_settings_from_selector("Documentation")

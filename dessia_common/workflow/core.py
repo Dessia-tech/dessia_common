@@ -6,6 +6,7 @@ import ast
 import time
 import datetime
 from functools import cached_property
+import io
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
 import warnings
 
@@ -16,10 +17,8 @@ import networkx as nx
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
-
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
-                                        serialize_annotation, deserialize_annotation, pretty_annotation,
-                                        UNDEFINED, Schema, SchemaAttribute)
+                                        serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
 from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
@@ -34,8 +33,7 @@ from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
                                          serialize_dict, add_references, deserialize_argument)
-from dessia_common.workflow.utils import (ToScriptElement, blocks_to_script, nonblock_variables_to_script,
-                                          update_imports, generate_default_value)
+from dessia_common.workflow.utils import ToScriptElement, blocks_to_script, nonblock_variables_to_script
 
 
 T = TypeVar("T")
@@ -51,10 +49,9 @@ class Variable(DessiaObject):
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
                  name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
-        if self.has_default_value and type_ is None:
-            self.type_ = type(default_value)
-        else:
-            self.type_ = type_
+        if type_ is None and self.has_default_value:
+            type_ = type(default_value)
+        self.type_ = type_
         self.label = label
         self.position = position
         super().__init__(name)
@@ -69,17 +66,11 @@ class Variable(DessiaObject):
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
-        """ Customize serialization method in order to handle undefined default value. """
-        global_dict = dict_.get("global_dict", {})
-        pointers_memo = dict_.get("pointers_memo", {})
-        type_ = dict_.get("type_", None)
+    def update_from_config(self, dict_):
+        """ Set user config (label and default value) from workflow builder without serialization/deserialization. """
         default_value = dict_.get("default_value", UNDEFINED)
-        default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
-        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
-        return Variable(type_=deserialize_annotation(type_), default_value=default_value,
-                        name=dict_["name"], label=label, position=tuple(dict_["position"]))
+        self.default_value = deserialize(default_value)
+        self.label = dict_.get("label", "")
 
     @property
     def has_default_value(self):
@@ -170,6 +161,11 @@ class Block(DessiaObject):
         self.position = position
         DessiaObject.__init__(self, name=name)
 
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
+        """ Overwrite default method to force use_pointers to true. """
+        return super().to_dict(use_pointers=False, memo=memo, path=path, id_method=id_method, id_memo=id_memo, **kwargs)
+
     def equivalent_hash(self):
         """
         Custom hash of block that doesn't overwrite __hash__ as we do not want to lose python default equality behavior.
@@ -188,8 +184,7 @@ class Block(DessiaObject):
 
     def _docstring(self):
         """ Base function for sub model docstring computing. """
-        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def parse_input_doc(self, input_: Variable):
         """ Parse block docstring to get input documentation. """
@@ -216,16 +211,18 @@ class Block(DessiaObject):
         """ Always return True for now. """
         return True
 
-    def dict_to_inputs(self, dict_: JsonSerializable):
+    def deserialize_variables(self, dict_: JsonSerializable):
         """
         Enable inputs and outputs overwriting in order to allow input renaming as well as default value persistence.
 
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """
         if "inputs" in dict_:
-            self.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
+            for variable, config in zip(self.inputs, dict_["inputs"]):
+                variable.update_from_config(config)
         if "outputs" in dict_:
-            self.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+            for variable, config in zip(self.outputs, dict_["outputs"]):
+                variable.update_from_config(config)
 
 
 class Pipe(DessiaObject):
@@ -562,9 +559,9 @@ class Workflow(Block):
     @staticmethod
     def display_settings(**kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
-        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict"),
-                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown"),
-                DisplaySetting(selector="Tasks", type_="tasks", method="", load_by_default=True)]
+        return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict", load_by_default=True),
+                DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown", load_by_default=True),
+                DisplaySetting(selector="Tasks", type_="tasks", method="")]
 
     @property
     def export_blocks(self):
@@ -1220,8 +1217,6 @@ class Workflow(Block):
                       f" name=\"{self.name}\")\n"
 
         self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
-        imports.append(self.full_classname)
-        full_script = f'documentation = """{self.documentation}"""\n\n' + full_script
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
 
     def to_script(self) -> str:
@@ -1231,10 +1226,12 @@ class Workflow(Block):
             raise ValueError("A workflow output must be set")
 
         self_script = self._to_script()
+        self_script.imports.append(self.full_classname)
 
         script_imports = self_script.imports_to_str()
 
         return f"{script_imports}\n" \
+               f'documentation = """{self.documentation}"""\n\n' \
                f"{self_script.declaration}"
 
     def pipes_to_script(self, prefix, imports):
@@ -1270,7 +1267,7 @@ class Workflow(Block):
                 variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
             full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
 
-    def save_script_to_stream(self, stream: StringFile):
+    def save_script_to_stream(self, stream: io.StringIO):
         """ Save the workflow to a python script to a stream. """
         string = self.to_script()
         stream.seek(0)
@@ -1944,68 +1941,6 @@ class WorkflowRun(WorkflowState):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    def _split_input_values(self):
-        """ Split the input values for blocks and non-block variables. """
-        nbv_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
-                      v in self.workflow.nonblock_variables]
-        block_values = [self.input_values[i] for i, v in enumerate(self.workflow.inputs) if
-                        v not in self.workflow.nonblock_variables]
-        return nbv_values, block_values
-
-    def _to_script(self, workflow_script):
-        """ Computes elements for a to_script interpretation. """
-        input_str = ""
-        default_value = ""
-        add_import = []
-
-        nbv_values, block_values = self._split_input_values()
-
-        # Blocks
-        index_ = 0
-        for j, block in enumerate(self.workflow.blocks):
-            for i, input_ in enumerate(block.inputs):
-                input_key = f"block_{j}.inputs[{i}]"
-                if input_key not in workflow_script.declaration:
-                    input_str += f"    workflow.input_index({input_key}): value_{j}_{i},\n"
-                    default_value += generate_default_value(block_values[index_], j, i)
-                    index_ += 1
-                    add_import.extend(update_imports(input_.type_, input_.name))
-
-        # NBVs
-        for k, nbv in enumerate(self.workflow.nonblock_variables):
-            input_str += f"    workflow.input_index(variable_{k}): value_{k},\n"
-            default_value += generate_default_value(nbv_values[k], k)
-            add_import.extend(update_imports(nbv.type_, nbv.name))
-
-        return input_str, default_value, add_import
-
-    def to_script(self):
-        """ Computes a script representing the WorkflowRun. """
-        workflow_script = self.workflow._to_script()
-        input_str, default_value, add_import = self._to_script(workflow_script)
-
-        workflow_script.declaration = f"{workflow_script.declaration}\n{default_value}\n\ninput_values =" \
-                                      f" {{\n{input_str}}}\nworkflow_run = workflow.run(input_values=input_values)\n"
-        workflow_script.imports.extend(add_import)
-
-        return workflow_script
-
-    def save_script_to_stream(self, stream: StringFile):
-        """ Save the WorkflowRun to a python script to a stream. """
-        script = self.to_script()
-        stream.seek(0)
-        script_imports = script.imports_to_str()
-        stream.write(script_imports + "\n")
-        stream.write(script.declaration + "\n")
-
-    def save_script_to_file(self, filename: str):
-        """ Save the WorkflowRun to a python script to a file on the disk. """
-        if not filename.endswith('.py'):
-            filename += '.py'
-            print(f'Changing filename to {filename}')
-        with open(filename, 'w', encoding='utf-8') as file:
-            self.save_script_to_stream(file)
-
     @property
     def method_schemas(self):
         """ Copy old method_jsonschema behavior. Probably to be refactored. """
@@ -2027,13 +1962,6 @@ class WorkflowRun(WorkflowState):
         execution_info = self.execution_info.to_markdown(blocks=self.workflow.blocks)
         return template.substitute(name=self.name, workflow_name=self.workflow.name,
                                    output_table=output_table, execution_info=execution_info)
-
-    def _export_formats(self):
-        """ Returns a list of export formats. """
-        export_formats = super()._export_formats()
-        script_export = ExportFormat(selector="py", extension="py", method_name="save_script_to_stream", text=True)
-        export_formats.append(script_export)
-        return export_formats
 
     def zip_settings(self):
         """ Returns a list of streams that contain different exports of the objects. """
@@ -2089,6 +2017,16 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
             ib2, _, ip2 = target
             variable2 = blocks[ib2].inputs[ip2]
 
+        if connected_nbvs.get(variable1, False):
+            # TODO This is an horrible hotfix to prevent NBVs type to be wrongly deserialized as strings.
+            # We MUST refactor non_block_variables to allow them to be detached and remove detached variables concept.
+            # The detached variable concept is completely flawed. NBVs MUST be able to exist without downstream blocks
+            # This is plainly wrong because a NBV could be linked to several input ports with concurrent types
+            # (by inheritance for example). Here we are resetting the NBV type to whatever we find last.
+            # All in all, as block reset their input every time (trust user code instead of frontend json),
+            # this is a way to reset NBVs type to user-code value and avoiding deserialization as string,
+            # which are two completely different issues.
+            variable1.type_ = variable2.type_
         pipes.append(Pipe(variable1, variable2))
     return pipes
 

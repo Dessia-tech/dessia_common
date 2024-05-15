@@ -7,7 +7,6 @@ import textwrap
 
 
 DISPLAY_DECORATORS = ["plot_data_view", "markdown_view", "cad_view"]
-EXPORT_DECORATORS = ["export_decorator", "export_step", "export_stl", "export_html", "export_docx", "export_xlsx"]
 
 
 def get_all_decorated_methods(class_: Type) -> List[ast.FunctionDef]:
@@ -91,68 +90,6 @@ def cad_view(selector: str, load_by_default: bool = False):
     return decorator
 
 
-def export_decorator(selector: str, extension: str, is_text: bool):
-    """
-    Decorator factory for export methods.
-
-    :param str selector: Unique name that identifies the export method.
-    :param str extension: File extension for the exported data.
-    :param bool is_text: Indicates whether the data is text or binary.
-    """
-    def decorator(function):
-        """ Decorator for export methods. """
-        set_decorated_function_metadata_export(function=function, text=is_text, selector=selector,
-                                               extension=extension, method_name=function.__name__)
-        return function
-
-    return decorator
-
-
-def export_step(selector: str):
-    """
-    Decorator for exporting STEP files.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-    return export_decorator(selector, 'step', is_text=True)
-
-
-def export_stl(selector: str):
-    """
-    Decorator for exporting STL files.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-    return export_decorator(selector, 'stl', is_text=False)
-
-
-def export_html(selector: str):
-    """
-    Decorator for exporting HTML files.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-    return export_decorator(selector, 'html', is_text=True)
-
-
-def export_docx(selector: str):
-    """
-    Decorator for exporting DOCX files.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-    return export_decorator(selector, 'docx', is_text=True)
-
-
-def export_xlsx(selector: str):
-    """
-    Decorator for exporting XLSX files.
-
-    :param str selector: Unique name that identifies the export method.
-    """
-    return export_decorator(selector, 'xlsx', is_text=False)
-
-
 def set_decorated_function_metadata(function, type_: str, selector: str = None,
                                     serialize_data: bool = False, load_by_default: bool = False):
     """ Attach metadata to function object. Is there any better way to do this ? It seems a bit dirty. """
@@ -160,15 +97,6 @@ def set_decorated_function_metadata(function, type_: str, selector: str = None,
     setattr(function, "selector", selector)
     setattr(function, "serialize_data", serialize_data)
     setattr(function, "load_by_default", load_by_default)
-
-
-def set_decorated_function_metadata_export(function, text: bool, selector: str = None,
-                                           extension: str = None, method_name: str = None):
-    """Attach metadata to function object using a dictionary."""
-    setattr(function, "text", text)
-    setattr(function, "selector", selector)
-    setattr(function, "extension", extension)
-    setattr(function, "method_name", method_name)
 
 
 T = TypeVar("T")
