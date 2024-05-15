@@ -24,7 +24,7 @@ coding/naming style & convention.
 """
 
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Union, Any, Literal
 import time
 from numpy import linspace
 
@@ -852,17 +852,25 @@ class BeamStructure(DessiaObject):
         return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
 
 
-COLOR = {
-    "red": 0,
-    "green": 0,
-    "blue": 0
-}
+DIRECTIONS = {"both": [-1, 1], "clockwise": [1], "counterclockwise": [-1]}
 
 
-class MyObject(DessiaObject):
-    def __init__(self, input_: KeyOf[COLOR], name: str = ""):
-        self.input_ = input_
+class Literals(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, direction: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red",
+                 name: str = ""):
+        self.direction = DIRECTIONS[direction]
+        self.color = color
         super().__init__(name=name)
+
+
+class Wrapper(DessiaObject):
+    _standalone_in_db = True
+
+    def __init__(self, object_: Literals):
+        self.object_ = object_
+        super().__init__("")
 
 
 horizontal = HorizontalBeam(10, "H")

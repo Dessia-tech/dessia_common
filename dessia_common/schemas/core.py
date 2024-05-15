@@ -1529,7 +1529,8 @@ class EnumProperty(TypingProperty):
 
     @cached_property
     def serialized(self) -> str:
-        return f"Literal[{', '.join(self.args)}]"
+        args = "', '".join(self.args)
+        return f"Literal['{args}']"
 
     @property
     def args_schemas(self) -> List[Property]:
@@ -1542,7 +1543,7 @@ class EnumProperty(TypingProperty):
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
         args = cls._raw_args_from_serialized(serialized)
-        return Literal[tuple(args.split(","))]
+        return Literal[tuple(args.replace("'", "").split(","))]
 
     @property
     def get_import_name(self):
