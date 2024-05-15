@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Feature
 
+- Schemas : Add a new type to compute string literals
 - Workflow : Display by default is now tasks only
 
 

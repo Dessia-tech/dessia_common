@@ -1536,7 +1536,7 @@ class EnumProperty(TypingProperty):
     def args_schemas(self) -> List[Property]:
         return [get_schema(annotation=str, attribute=self.attribute)]
 
-    @property
+    @cached_property
     def pretty_annotation(self) -> str:
         return self.serialized
 
