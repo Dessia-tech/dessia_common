@@ -14,7 +14,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.displays import DisplayObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
-                                   CadViewType, PlotDataType, MarkdownType, ViewType, KeyOf)
+                                   CadViewType, PlotDataType, MarkdownType, ViewType)
 from dessia_common.measures import Measure
 from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
