@@ -1529,19 +1529,23 @@ class EnumProperty(TypingProperty):
 
     @cached_property
     def serialized(self) -> str:
+        """ Specifically join args with single quotes. """
         args = "', '".join(self.args)
         return f"Literal['{args}']"
 
     @property
     def args_schemas(self) -> List[Property]:
+        """ Specifically children schemas as str. """
         return [get_schema(annotation=str, attribute=self.attribute)]
 
     @cached_property
     def pretty_annotation(self) -> str:
+        """ Specifically return serialized. """
         return self.serialized
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
+        """ Specifically reset args as a tuple while removing one layer of single quotes. """
         args = cls._raw_args_from_serialized(serialized)
         return Literal[tuple(args.replace("'", "").split(","))]
 

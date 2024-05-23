@@ -856,6 +856,8 @@ DIRECTIONS = {"both": [-1, 1], "clockwise": [1], "counterclockwise": [-1]}
 
 
 class Literals(DessiaObject):
+    """ A dummy class to test Definition 1 (Literal from Dict). """
+
     _standalone_in_db = True
 
     def __init__(self, direction: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red", name: str = ""):
@@ -871,6 +873,8 @@ DIRECTIONS_FROM_KEYS = dict(zip(get_args(DIRECTION_KEYS), DIRECTION_VALUES))
 
 
 class LiteralsFromType(DessiaObject):
+    """ A dummy class to test Definition 2 (Dict from Literal). """
+
     _standalone_in_db = True
 
     def __init__(self, direction: DIRECTION_KEYS, color: Literal["red", "green", "blue"] = "red", name: str = ""):
@@ -880,6 +884,8 @@ class LiteralsFromType(DessiaObject):
 
 
 class Wrapper(DessiaObject):
+    """ A dummy class to test frontend component for Enums from a Spreadsheet. """
+
     _standalone_in_db = True
 
     def __init__(self, object_: Literals):

@@ -9,7 +9,7 @@ T = TypeVar("T")
 
 
 class KeyOf:
-    """ Enum from dict keys"""
+    """ Enum from dict keys. """
 
     def __class_getitem__(cls, item: Dict[str, Any]):
         return Literal[tuple(item.keys())]
