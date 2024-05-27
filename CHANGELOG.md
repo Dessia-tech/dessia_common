@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.17.0
 
+### Added
+
+- Schemas : Add a new type to compute string literals
+- Workflow : Display by default is now tasks only
+
+
+## 0.16.5
+
+### HOTFIX
+
+- Workflow : Reset NBVs type to last downstream one found while regenerating workflow pipes from deserialization 
+
+
+## 0.16.4
+
+### Fix
+
+- Workflow : Stop deserializing and setting block Variable. Instead, reconfigure them based on incoming dict
+- Workflow : Blocks are not generating their to_dict with pointers anymore
+
+
 ### Feature
 
 - Workflow : Display by default is now tasks only
@@ -17,6 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fix
 
 - Dataset : Update plot to new decorator paradigm
+- Workflow : Reset variables types for block defined from user code (should not trust frontend json on variable types)
+- Workflow : If type is provided, Variables do not reset their type based on their default value anymore
+
+### Refactor
+
+- Workflow : Use AttributeType to compute variable type for ModelAttribute Blocks
 
 
 ## 0.16.2

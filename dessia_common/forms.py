@@ -22,9 +22,8 @@ Some general rules :
 In addition to types & generics (brought by DessiaObject), this module can also be seen as a template for Dessia
 coding/naming style & convention.
 """
-
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Union, Any, Literal, get_args
 import time
 from numpy import linspace
 
@@ -38,7 +37,7 @@ except ImportError as err:
     print("Couldn't import plot_data or volmdlr due to the following exception : ", err)
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf
+from dessia_common.typings import InstanceOf, KeyOf
 from dessia_common.measures import Distance
 from dessia_common.exports import MarkdownWriter
 
@@ -850,6 +849,48 @@ class BeamStructure(DessiaObject):
         labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
         primtives = [horizontal_contour] + vertical_contours + labels
         return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
+
+
+# Definition 1
+DIRECTIONS = {"both": [-1, 1], "clockwise": [1], "counterclockwise": [-1]}
+
+
+class Literals(DessiaObject):
+    """ A dummy class to test Definition 1 (Literal from Dict). """
+
+    _standalone_in_db = True
+
+    def __init__(self, direction: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red", name: str = ""):
+        self.direction = DIRECTIONS[direction]
+        self.color = color
+        super().__init__(name=name)
+
+
+# Definition 2
+DIRECTION_KEYS = Literal["both", "clockwise", "counterclockwise"]
+DIRECTION_VALUES = [[-1, 1], [1], [-1]]
+DIRECTIONS_FROM_KEYS = dict(zip(get_args(DIRECTION_KEYS), DIRECTION_VALUES))
+
+
+class LiteralsFromType(DessiaObject):
+    """ A dummy class to test Definition 2 (Dict from Literal). """
+
+    _standalone_in_db = True
+
+    def __init__(self, direction: DIRECTION_KEYS, color: Literal["red", "green", "blue"] = "red", name: str = ""):
+        self.direction = DIRECTIONS_FROM_KEYS[direction]
+        self.color = color
+        super().__init__(name=name)
+
+
+class Wrapper(DessiaObject):
+    """ A dummy class to test frontend component for Enums from a Spreadsheet. """
+
+    _standalone_in_db = True
+
+    def __init__(self, object_: Literals):
+        self.object_ = object_
+        super().__init__("")
 
 
 horizontal = HorizontalBeam(10, "H")
