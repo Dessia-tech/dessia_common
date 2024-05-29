@@ -424,6 +424,7 @@ class DessiaObject(SerializableObject):
         """ Return a list of objects describing how to call object displays. """
         settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
         settings.extend(cls._display_settings_from_decorators())
+        settings.append(DisplaySetting(selector="Structure Tree", type_="tree", method=""))
         return settings
 
     @classmethod
