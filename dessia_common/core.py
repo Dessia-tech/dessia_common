@@ -394,7 +394,7 @@ class DessiaObject(SerializableObject):
         """ Generic plot getting plot_data function to plot. """
         methods = get_method_from_selector_name(class_=self.__class__, selector_name=selector_name)
         if not methods:
-            warnings.warn("There are no methods in this class that contain a 'plot_date_view' decorator.")
+            warnings.warn("There are no methods in this class that contain a 'plot_data_view' decorator.")
         for method in methods:
             method(self).plot()
 
@@ -403,7 +403,7 @@ class DessiaObject(SerializableObject):
         axs = []
         methods = get_method_from_selector_name(class_=self.__class__, selector_name=selector_name)
         if not methods:
-            warnings.warn("There are no methods in this class that contain a 'plot_date_view' decorator.")
+            warnings.warn("There are no methods in this class that contain a 'plot_data_view' decorator.")
         for method in methods:
             data = method(self)
             if hasattr(data, 'mpl_plot'):
