@@ -28,6 +28,7 @@ dectree
 dendrogram
 deserialization
 deserialize
+deserialized
 dessia
 DessiaObject
 dict
@@ -36,6 +37,8 @@ distarg
 docstring
 Dessia's
 DessiaFilter
+enum
+Enum
 eps
 eq
 filepath
@@ -43,6 +46,7 @@ floatarg
 Frobenius
 frontend
 hlist
+hotfix
 ge
 getsizeof
 gt
