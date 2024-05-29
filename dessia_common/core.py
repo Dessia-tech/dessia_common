@@ -33,7 +33,8 @@ from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS,\
+    get_method_from_selector_name
 from dessia_common.excel_reader import ExcelReader
 
 
@@ -389,34 +390,25 @@ class DessiaObject(SerializableObject):
                       "anymore. Please use Display Decorators, instead", DeprecationWarning)
         return []
 
-    def plot(self, reference_path: str = "#", **kwargs):
+    def plot(self, selector_name: str = ''):
         """ Generic plot getting plot_data function to plot. """
-        if hasattr(self, 'plot_data'):
-            import plot_data
-            for data in self.plot_data(reference_path, **kwargs):
-                plot_data.plot_canvas(plot_data_object=data,
-                                      canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
+        methods = get_method_from_selector_name(class_=self.__class__, selector_name=selector_name)
+        if not methods:
+            warnings.warn("There are no methods in this class that contain a 'plot_data_view' decorator.")
+        for method in methods:
+            method(self).plot()
 
-    def mpl_plot(self, **kwargs):
+    def mpl_plot(self, selector_name: str = ''):
         """ Plot with matplotlib using plot_data function. """
         axs = []
-        if hasattr(self, 'plot_data'):
-            try:
-                plot_datas = self.plot_data(**kwargs)
-            except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}') from error
-            for data in plot_datas:
-                if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot()
-                    axs.append(ax)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
+        methods = get_method_from_selector_name(class_=self.__class__, selector_name=selector_name)
+        if not methods:
+            warnings.warn("There are no methods in this class that contain a 'plot_data_view' decorator.")
+        for method in methods:
+            data = method(self)
+            if hasattr(data, 'mpl_plot'):
+                ax = data.mpl_plot()
+                axs.append(ax)
         return axs
 
     @classmethod
