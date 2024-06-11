@@ -155,7 +155,7 @@ setup(
         "pyDOE2",
         "python-docx",
         "scikit-learn>=1.2.0",
-        "scipy",
+        "scipy<1.14.0",
         "typeguard",
     ],
     python_requires=">=3.9",

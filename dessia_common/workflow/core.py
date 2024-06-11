@@ -18,8 +18,7 @@ from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
-                                        serialize_annotation, deserialize_annotation, pretty_annotation,
-                                        UNDEFINED, Schema, SchemaAttribute)
+                                        serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
 from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
@@ -51,10 +50,9 @@ class Variable(DessiaObject):
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
                  name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
-        if self.has_default_value and type_ is None:
-            self.type_ = type(default_value)
-        else:
-            self.type_ = type_
+        if type_ is None and self.has_default_value:
+            type_ = type(default_value)
+        self.type_ = type_
         self.label = label
         self.position = position
         super().__init__(name)
@@ -69,17 +67,11 @@ class Variable(DessiaObject):
             dict_["default_value"] = serialize(self.default_value)
         return dict_
 
-    @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Variable':
-        """ Customize serialization method in order to handle undefined default value. """
-        global_dict = dict_.get("global_dict", {})
-        pointers_memo = dict_.get("pointers_memo", {})
-        type_ = dict_.get("type_", None)
+    def update_from_config(self, dict_):
+        """ Set user config (label and default value) from workflow builder without serialization/deserialization. """
         default_value = dict_.get("default_value", UNDEFINED)
-        default_value = deserialize(default_value, global_dict=global_dict, pointers_memo=pointers_memo)
-        label = dict_.get("label", "")  # Backward compatibility < 0.15.0
-        return Variable(type_=deserialize_annotation(type_), default_value=default_value,
-                        name=dict_["name"], label=label, position=tuple(dict_["position"]))
+        self.default_value = deserialize(default_value)
+        self.label = dict_.get("label", "")
 
     @property
     def has_default_value(self):
@@ -170,6 +162,11 @@ class Block(DessiaObject):
         self.position = position
         DessiaObject.__init__(self, name=name)
 
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
+        """ Overwrite default method to force use_pointers to true. """
+        return super().to_dict(use_pointers=False, memo=memo, path=path, id_method=id_method, id_memo=id_memo, **kwargs)
+
     def equivalent_hash(self):
         """
         Custom hash of block that doesn't overwrite __hash__ as we do not want to lose python default equality behavior.
@@ -188,8 +185,7 @@ class Block(DessiaObject):
 
     def _docstring(self):
         """ Base function for sub model docstring computing. """
-        block_docstring = {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def parse_input_doc(self, input_: Variable):
         """ Parse block docstring to get input documentation. """
@@ -216,16 +212,18 @@ class Block(DessiaObject):
         """ Always return True for now. """
         return True
 
-    def dict_to_inputs(self, dict_: JsonSerializable):
+    def deserialize_variables(self, dict_: JsonSerializable):
         """
         Enable inputs and outputs overwriting in order to allow input renaming as well as default value persistence.
 
         If no entry is given in dict, then we have default behavior with blocks generating their own inputs.
         """
         if "inputs" in dict_:
-            self.inputs = [Variable.dict_to_object(i) for i in dict_["inputs"]]
+            for variable, config in zip(self.inputs, dict_["inputs"]):
+                variable.update_from_config(config)
         if "outputs" in dict_:
-            self.outputs = [Variable.dict_to_object(i) for i in dict_["outputs"]]
+            for variable, config in zip(self.outputs, dict_["outputs"]):
+                variable.update_from_config(config)
 
 
 class Pipe(DessiaObject):
@@ -2089,6 +2087,16 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
             ib2, _, ip2 = target
             variable2 = blocks[ib2].inputs[ip2]
 
+        if connected_nbvs.get(variable1, False):
+            # TODO This is an horrible hotfix to prevent NBVs type to be wrongly deserialized as strings.
+            # We MUST refactor non_block_variables to allow them to be detached and remove detached variables concept.
+            # The detached variable concept is completely flawed. NBVs MUST be able to exist without downstream blocks
+            # This is plainly wrong because a NBV could be linked to several input ports with concurrent types
+            # (by inheritance for example). Here we are resetting the NBV type to whatever we find last.
+            # All in all, as block reset their input every time (trust user code instead of frontend json),
+            # this is a way to reset NBVs type to user-code value and avoiding deserialization as string,
+            # which are two completely different issues.
+            variable1.type_ = variable2.type_
         pipes.append(Pipe(variable1, variable2))
     return pipes
 
