@@ -17,7 +17,7 @@ class TestMovingObject(unittest.TestCase):
     @parameterized.expand([
         (0, "markdown"),
         (1, "tree"),
-        (1, "babylon_data"),
+        (2, "babylon_data"),
     ])
     def test_decorators(self, index, expected_type):
         self.assertEqual(self.displays[index]["type_"], expected_type)
