@@ -12,10 +12,11 @@ class TestMovingObject(unittest.TestCase):
         self.mso._check_platform()
 
     def test_length(self):
-        self.assertEqual(len(self.displays), 2)
+        self.assertEqual(len(self.displays), 3)
 
     @parameterized.expand([
         (0, "markdown"),
+        (1, "tree"),
         (1, "babylon_data"),
     ])
     def test_decorators(self, index, expected_type):
