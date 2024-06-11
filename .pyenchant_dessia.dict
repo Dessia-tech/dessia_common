@@ -37,6 +37,8 @@ distarg
 docstring
 Dessia's
 DessiaFilter
+enum
+Enum
 eps
 eq
 filepath
