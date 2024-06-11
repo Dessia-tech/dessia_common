@@ -804,6 +804,14 @@ class HorizontalBeam(Beam):
         fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
 
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
+
 
 class VerticalBeam(Beam):
     """ A dummy class to test 2D/3D form interactions. """
@@ -820,12 +828,20 @@ class VerticalBeam(Beam):
         return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
 
     @plot_data_view("2D View")
-    def plot2d(self, origin: float, reference_path: str = "#"):
+    def plot2d(self, origin: float = 0, reference_path: str = "#"):
         """ A dummy 2D method to test form interactions. """
         contour = self.contour(origin=origin, reference_path=reference_path)
         edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
         fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
         return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+    @cad_view("CAD View")
+    def plot3d(self, origin: float = 0, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
 
 
 class BeamStructure(DessiaObject):
@@ -847,8 +863,18 @@ class BeamStructure(DessiaObject):
                                       reference_path=f"{reference_path}/vertical_beams/{i}")
                              for i, b in enumerate(self.vertical_beams)]
         labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
-        primtives = [horizontal_contour] + vertical_contours + labels
-        return plot_data.PrimitiveGroup(primitives=primtives, name="Contour")
+        primitives = [horizontal_contour] + vertical_contours + labels
+        return plot_data.PrimitiveGroup(primitives=primitives, name="Contour")
+
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        horizontal_primitive = self.horizontal_beam.plot3d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_primitives = [b.plot3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                        reference_path=f"{reference_path}/vertical_beams/{i}")
+                               for i, b in enumerate(self.vertical_beams)]
+        primitives = [horizontal_primitive] + vertical_primitives
+        return vm.core.VolumeModel(primitives).babylon_data()
 
 
 # Definition 1
