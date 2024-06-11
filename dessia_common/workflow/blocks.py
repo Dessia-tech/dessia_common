@@ -25,10 +25,9 @@ T = TypeVar("T")
 Position = Tuple[float, float]
 
 
-def set_inputs_from_function(method, inputs=None):
+def _method_inputs(method):
     """ Inspect given method argspecs and sets block inputs from it. """
-    if inputs is None:
-        inputs = []
+    inputs = []
     args_specs = inspect.getfullargspec(method)
     nargs, ndefault_args = split_argspecs(args_specs)
 
@@ -36,10 +35,10 @@ def set_inputs_from_function(method, inputs=None):
         if argument not in ["self", "cls", "progress_callback"]:
             try:
                 annotations = get_type_hints(method)
-                type_ = type_from_annotation(annotations[argument], module=method.__module__)
+                type_ = type_from_annotation(type_=annotations[argument], module=method.__module__)
             except KeyError as error:
-                raise UntypedArgumentError(f"Argument {argument} of method/function {method.__name__} has no typing")\
-                    from error
+                message = f"Argument {argument} of method/function {method.__name__} has no typing"
+                raise UntypedArgumentError(message) from error
             if iarg > nargs - ndefault_args:
                 default = args_specs.defaults[ndefault_args - nargs + iarg - 1]
                 inputs.append(Variable(type_=type_, default_value=default, name=argument))
@@ -87,10 +86,9 @@ class InstantiateModel(Block):
 
     def __init__(self, model_class: Type, name: str = "Instantiate Model", position:  Position = (0, 0)):
         self.model_class = model_class
-        inputs = []
-        inputs = set_inputs_from_function(self.model_class.__init__, inputs)
+        inputs = _method_inputs(self.model_class.__init__)
         outputs = [Variable(type_=self.model_class, name="Model")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -107,7 +105,7 @@ class InstantiateModel(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         model_class = get_python_class_from_class_name(dict_["model_class"])
         block = cls(model_class=model_class, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -125,9 +123,8 @@ class InstantiateModel(Block):
         annotations = get_type_hints(self.model_class.__init__)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -150,15 +147,11 @@ class ClassMethod(Block):
 
     def __init__(self, method_type: ClassMethodType[Type], name: str = "Class Method", position:  Position = (0, 0)):
         self.method_type = method_type
-        inputs = []
-
         self.method = method_type.get_method()
-        inputs = set_inputs_from_function(self.method, inputs)
-
-        self.argument_names = [i.name for i in inputs]
+        inputs = _method_inputs(self.method)
 
         output = output_from_function(function=self.method, name="Return")
-        super().__init__(inputs, [output], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -182,12 +175,12 @@ class ClassMethod(Block):
 
         method_type = ClassMethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
         """ Run given classmethod with arguments that are in values. """
-        arguments = {arg_name: values[var] for arg_name, var in zip(self.argument_names, self.inputs) if var in values}
+        arguments = {i.name: values[i] for i in self.inputs if i in values}
         return [self.method(**arguments)]
 
     def _docstring(self):
@@ -196,9 +189,8 @@ class ClassMethod(Block):
         annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -225,12 +217,9 @@ class ModelMethod(Block):
 
     def __init__(self, method_type: MethodType[Type], name: str = "Model Method", position:  Position = (0, 0)):
         self.method_type = method_type
-        inputs = [Variable(type_=method_type.class_, name="Model")]
         self.method = method_type.get_method()
-        inputs = set_inputs_from_function(self.method, inputs)
-
-        # Storing argument names
-        self.argument_names = [i.name for i in inputs[1:]]
+        method_inputs = _method_inputs(self.method)
+        inputs = [Variable(type_=method_type.class_, name="Model")] + method_inputs
 
         return_output = output_from_function(function=self.method, name="Return")
         model_output = Variable(type_=method_type.class_, name="Model")
@@ -238,7 +227,7 @@ class ModelMethod(Block):
 
         if name == "":
             name = f"Model method: {method_type.name}"
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -258,19 +247,18 @@ class ModelMethod(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         method_type = MethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, progress_callback=lambda x: None, **kwargs):
         """ Run given method with arguments that are in values. """
-        arguments = {n: values[v] for n, v in zip(self.argument_names, self.inputs[1:]) if v in values}
+        arguments = {i.name: values[i] for i in self.inputs[1:] if i in values}
         method = getattr(values[self.inputs[0]], self.method_type.name)
         try:
             # Trying to inject progress callback to method
             result = method(progress_callback=progress_callback, **arguments)
         except TypeError:
             result = method(**arguments)
-
         return [result, values[self.inputs[0]]]
 
     def package_mix(self):
@@ -283,9 +271,8 @@ class ModelMethod(Block):
         annotations = get_type_hints(self.method)
         parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
         parsed_attributes = parsed_docstring["attributes"]
-        block_docstring = {i: parsed_attributes[i.name] if i.name in parsed_attributes
-                           else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
-        return block_docstring
+        return {i: parsed_attributes[i.name] if i.name in parsed_attributes
+                else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
@@ -312,7 +299,7 @@ class Sequence(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -326,7 +313,7 @@ class Sequence(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sequence':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(number_arguments=dict_["number_arguments"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -352,7 +339,7 @@ class Concatenate(Block):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
         outputs = [Variable(type_=List[T], name="Sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -366,7 +353,7 @@ class Concatenate(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Concatenate':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(number_arguments=dict_["number_arguments"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values: Dict[Variable, Any], **kwargs):
@@ -404,7 +391,7 @@ class WorkflowBlock(Block):
             inputs.append(input_)
 
         outputs = [self.workflow.output.copy()]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -421,7 +408,7 @@ class WorkflowBlock(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         workflow = Workflow.dict_to_object(dict_["workflow"])
         block = cls(workflow=workflow, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -485,7 +472,7 @@ class ForEach(Block):
         output_variable = Variable(name="Foreach output")
         self.output_connections = None  # TODO: configuring port internal connections
         self.input_connections = None
-        super().__init__(inputs, [output_variable], name=name, position=position)
+        super().__init__(inputs=inputs, outputs=[output_variable], name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -504,7 +491,7 @@ class ForEach(Block):
         workflow_block = WorkflowBlock.dict_to_object(dict_["workflow_block"])
         block = cls(workflow_block=workflow_block, iter_input_index=dict_["iter_input_index"],
                     name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -559,7 +546,7 @@ class Unpacker(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Unpacker':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(indices=dict_["indices"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def equivalent_hash(self):
@@ -587,7 +574,7 @@ class Flatten(Block):
     def __init__(self, name: str = "Flatten", position:  Position = (0, 0)):
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Flattened sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -597,7 +584,7 @@ class Flatten(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Flatten':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -619,8 +606,8 @@ class Product(Block):
     def __init__(self, number_list: int, name: str = "Product", position:  Position = (0, 0)):
         self.number_list = number_list
         inputs = [Variable(name=f"Sequence {i}") for i in range(self.number_list)]
-        output_variable = Variable(name="Product")
-        super().__init__(inputs, [output_variable], name=name, position=position)
+        outputs = [Variable(name="Product")]
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -634,7 +621,7 @@ class Product(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Product':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(number_list=dict_["number_list"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -664,7 +651,7 @@ class Filter(Block):
         self.logical_operator = logical_operator
         inputs = [Variable(name="Sequence")]
         outputs = [Variable(name="Filtered sequence")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent(self, other):
         """ Return whether the block is equivalent to the other given or not. """
@@ -676,7 +663,7 @@ class Filter(Block):
         filters = [DessiaFilter.dict_to_object(f) for f in dict_["filters"]]
         block = cls(filters=filters, logical_operator=dict_["logical_operator"],
                     name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def equivalent_hash(self):
@@ -858,9 +845,10 @@ class MultiPlot(Display):
     def __init__(self, selector_name: str, attributes: List[str], load_by_default: bool = True,
                  name: str = "Multiplot", position:  Position = (0, 0)):
         self.attributes = attributes
-        Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
-                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
-        self.inputs[0].name = "Sequence"
+        input_ = Variable(type_=List[DessiaObject], name="Sequence")
+        selector = PlotDataType(class_=DessiaObject, name=selector_name)
+        Display.__init__(self, inputs=[input_], load_by_default=load_by_default, name=name,
+                         selector=selector, position=position)
 
     def __deepcopy__(self, memo=None):
         return MultiPlot(selector_name=self.selector.name, attributes=self.attributes,
@@ -930,7 +918,7 @@ class MultiPlot(Display):
                 selector_name = selector["name"]
         block = MultiPlot(selector_name=selector_name, attributes=dict_["attributes"], name=dict_["name"],
                           load_by_default=dict_["load_by_default"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
 
@@ -980,7 +968,7 @@ class CadView(Display):
         selector = CadViewType.dict_to_object(selector)
         block = CadView(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                         position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
 
@@ -1030,7 +1018,7 @@ class Markdown(Display):
         selector = MarkdownType.dict_to_object(selector)
         block = Markdown(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                          position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
 
@@ -1082,7 +1070,7 @@ class PlotData(Display):
         selector = PlotDataType.dict_to_object(selector)
         block = PlotData(selector=selector, name=dict_["name"], load_by_default=dict_["load_by_default"],
                          position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
 
@@ -1099,7 +1087,7 @@ class ModelAttribute(Block):
         self.attribute_name = attribute_name
         inputs = [Variable(name="Model")]
         outputs = [Variable(name="Attribute value")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1113,7 +1101,7 @@ class ModelAttribute(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'ModelAttribute':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(attribute_name=dict_["attribute_name"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1137,11 +1125,9 @@ class GetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Get Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        type_ = get_attribute_type(self.attribute_type.name, parameters)
-        outputs = [Variable(type_=type_, name="Attribute")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        inputs = [Variable(type_=attribute_type.class_, name="Model")]
+        outputs = [Variable(type_=attribute_type.type_, name="Attribute")]
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1161,7 +1147,7 @@ class GetModelAttribute(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         attribute_type = AttributeType.dict_to_object(dict_["attribute_type"])
         block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1190,12 +1176,10 @@ class SetModelAttribute(Block):
 
     def __init__(self, attribute_type: AttributeType[Type], name: str = "Set Attribute", position:  Position = (0, 0)):
         self.attribute_type = attribute_type
-        parameters = inspect.signature(self.attribute_type.class_).parameters
-        inputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        type_ = get_attribute_type(self.attribute_type.name, parameters)
-        inputs.append(Variable(type_=type_, name="Value"))
-        outputs = [Variable(type_=self.attribute_type.class_, name="Model")]
-        super().__init__(inputs, outputs, name=name, position=position)
+        inputs = [Variable(type_=attribute_type.class_, name="Model"),
+                  Variable(type_=attribute_type.type_, name="Value")]
+        outputs = [Variable(type_=attribute_type.class_, name="Model")]
+        super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
         """ Custom hash function. Related to 'equivalent' method. """
@@ -1210,7 +1194,7 @@ class SetModelAttribute(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         attribute_type = AttributeType.dict_to_object(dict_["attribute_type"])
         block = cls(attribute_type=attribute_type, name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1253,7 +1237,7 @@ class Sum(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Sum':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(number_elements=dict_["number_elements"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1274,8 +1258,8 @@ class Substraction(Block):
     """ Block that subtract input values. First is +, second is -. """
 
     def __init__(self, name: str = "Substraction", position:  Position = (0, 0)):
-        super().__init__([Variable(name="+"), Variable(name="-")], [Variable(name="Substraction")], name=name,
-                       position=position)
+        super().__init__(inputs=[Variable(name="+"), Variable(name="-")], outputs=[Variable(name="Substraction")],
+                         name=name, position=position)
 
     def evaluate(self, values, **kwargs):
         """ Subtract input values. """
@@ -1290,7 +1274,7 @@ class Substraction(Block):
     def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'Substraction':
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
 
@@ -1327,7 +1311,7 @@ class ConcatenateStrings(Block):
         """ Override base dict_to_object in order to force custom inputs from workflow builder. """
         block = cls(number_elements=dict_["number_elements"], separator=dict_["separator"],
                     name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1379,7 +1363,7 @@ class Export(Block):
         method_type = ClassMethodType.dict_to_object(dict_["method_type"])
         block = cls(method_type=method_type, text=dict_["text"], extension=dict_["extension"],
                     filename=dict_["filename"], name=dict_["name"], position=dict_["position"])
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1443,7 +1427,7 @@ class Archive(Block):
         """ Custom dict_to_object method. """
         block = cls(number_exports=dict_["number_exports"], filename=dict_["filename"],
                     name=dict_["name"], position=dict_.get("position"))
-        block.dict_to_inputs(dict_)
+        block.deserialize_variables(dict_)
         return block
 
     def evaluate(self, values, **kwargs):
@@ -1467,15 +1451,3 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
-
-
-def get_attribute_type(attribute_name: str, parameters):
-    """ Get type of attribute name of class."""
-    parameter = parameters.get(attribute_name)
-    if not parameter:
-        return None
-    if not hasattr(parameter, "annotation"):
-        return parameter
-    if parameter.annotation == inspect.Parameter.empty:
-        return None 
-    return parameter.annotation
