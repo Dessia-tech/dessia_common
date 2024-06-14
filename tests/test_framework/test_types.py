@@ -1,4 +1,5 @@
-from dessia_common.utils.types import is_sequence, is_list, is_tuple, isinstance_base_types, is_simple
+from dessia_common.utils.helpers import is_sequence, is_list, is_tuple
+from dessia_common.utils.types import isinstance_base_types, is_simple
 import unittest
 from parameterized import parameterized
 

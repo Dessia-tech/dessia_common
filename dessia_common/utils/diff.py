@@ -6,7 +6,8 @@ import math
 from typing import List
 
 from dessia_common import FLOAT_TOLERANCE
-from dessia_common.utils.types import isinstance_base_types, is_sequence
+from dessia_common.utils.types import isinstance_base_types
+from dessia_common.utils.helpers import is_sequence
 
 
 class DifferentValues:
