@@ -5,12 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.18.0
+
+### Added
+
+- Displays : Tree is now a display
+
+
 ## 0.17.0
 
 ### Added
 
 - Schemas : Add a new type to compute string literals
 - Workflow : Display by default is now tasks only
+
+### Misc
+
+- Coverage : Remove warnings from tracked modules
 
 
 ## 0.16.5

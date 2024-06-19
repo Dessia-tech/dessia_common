@@ -41,3 +41,7 @@ class CopyError(Exception):
 
 class UntypedArgumentError(Exception):
     """ Error of code annotation. """
+
+
+class ExtractionError(Exception):
+    """ Custom Exception for deep attributes Extraction process. """

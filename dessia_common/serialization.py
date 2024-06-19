@@ -15,12 +15,12 @@ from dessia_common import REF_MARKER, OLD_REF_MARKER
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
-from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
+from dessia_common.utils.helpers import (full_classname, get_python_class_from_class_name, is_sequence,
+                                         get_in_object_from_path, set_in_object_from_path)
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
-from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
 
 fullargsspec_cache = {}
@@ -103,7 +103,7 @@ def serialize(value):
             serialized_value = value.to_dict()
     elif isinstance(value, dict):
         serialized_value = serialize_dict(value)
-    elif dcty.is_sequence(value):
+    elif is_sequence(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized_value = value
@@ -171,7 +171,7 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
                                                         id_memo=id_memo)
-    elif dcty.is_sequence(value):
+    elif is_sequence(value):
         serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path, id_method=id_method,
                                                             id_memo=id_memo)
 
@@ -209,7 +209,7 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
     for key, value in dict_.items():
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
-        elif dcty.is_sequence(value):
+        elif is_sequence(value):
             seq_attrs_keys.append(key)
         else:
             other_keys.append(key)
@@ -265,7 +265,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
 
     if isinstance(serialized_element, dict):
         return dict_to_object(serialized_element, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
-    if dcty.is_sequence(serialized_element):
+    if is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
     if isinstance(serialized_element, str):
@@ -481,7 +481,7 @@ def find_references(value, path='#'):
         return find_references_dict(value, path)
     if dcty.isinstance_base_types(value):
         return []
-    if dcty.is_sequence(value):
+    if is_sequence(value):
         return find_references_sequence(value, path)
     if isinstance(value, (BinaryFile, StringFile)):
         return []
@@ -673,7 +673,7 @@ def pointer_graph_elements(value, path='#'):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
         return [], []
-    if dcty.is_sequence(value):
+    if is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
 
     raise ValueError(value)
@@ -790,7 +790,7 @@ def is_serializable(obj):
             if not is_serializable(key) or not is_serializable(value):
                 return False
         return True
-    if dcty.is_sequence(obj):
+    if is_sequence(obj):
         for element in obj:
             if not is_serializable(element):
                 return False

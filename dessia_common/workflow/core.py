@@ -19,15 +19,14 @@ from dessia_common.core import DessiaObject
 
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
                                         serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
-from dessia_common.utils.types import recursive_type, typematch, is_sequence, is_file_or_file_sequence
+from dessia_common.utils.types import recursive_type, typematch, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
-from dessia_common.utils.helpers import prettyname
+from dessia_common.utils.helpers import prettyname, is_sequence
 from dessia_common.typings import JsonSerializable, ViewType
 from dessia_common.files import StringFile, BinaryFile
 from dessia_common.displays import DisplaySetting
-from dessia_common.breakdown import ExtractionError
-from dessia_common.errors import SerializationError
+from dessia_common.errors import SerializationError, ExtractionError
 from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
