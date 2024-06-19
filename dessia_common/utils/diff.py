@@ -5,12 +5,8 @@
 import math
 from typing import List
 
-import numpy as npy
 from dessia_common import FLOAT_TOLERANCE
-import dessia_common.core as dc
 from dessia_common.utils.types import isinstance_base_types, is_sequence
-from dessia_common.utils.helpers import full_classname
-from dessia_common.files import BinaryFile, StringFile
 
 
 class DifferentValues:
@@ -173,78 +169,6 @@ def sequence_diff(seq1, seq2, path='#'):
             diff_value = diff(v1, v2, path=path_value)
             seq_diff += diff_value
     return seq_diff
-
-
-def data_eq(value1, value2):
-    """ Returns if two values are equal on data equality. """
-    if is_sequence(value1) and is_sequence(value2):
-        return sequence_data_eq(value1, value2)
-
-    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
-        return value1 == value2
-
-    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
-        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
-
-    if not isinstance(value2, type(value1))\
-            and not isinstance(value1, type(value2)):
-        return False
-
-    if isinstance_base_types(value1):
-        if isinstance(value1, float):
-            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
-
-        return value1 == value2
-
-    if isinstance(value1, dict):
-        return dict_data_eq(value1, value2)
-
-    if isinstance(value1, (BinaryFile, StringFile)):
-        return value1 == value2
-
-    if isinstance(value1, type):
-        return full_classname(value1) == full_classname(value2)
-
-    # Else: its an object
-    if full_classname(value1) != full_classname(value2):
-        return False
-
-    # Test if _data_eq is customized
-    if hasattr(value1, '_data_eq'):
-        custom_method = value1._data_eq.__code__ is not dc.DessiaObject._data_eq.__code__
-        if custom_method:
-            return value1._data_eq(value2)
-
-    # Not custom, use generic implementation
-    eq_dict = value1._data_eq_dict()
-    if 'name' in eq_dict:
-        del eq_dict['name']
-
-    other_eq_dict = value2._data_eq_dict()
-
-    return dict_data_eq(eq_dict, other_eq_dict)
-
-
-def dict_data_eq(dict1, dict2):
-    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
-    for key, value in dict1.items():
-        if key not in dict2:
-            return False
-        if not data_eq(value, dict2[key]):
-            return False
-    return True
-
-
-def sequence_data_eq(seq1, seq2):
-    """ Returns if two sequences are equal on data equality. """
-    if len(seq1) != len(seq2):
-        return False
-
-    for v1, v2 in zip(seq1, seq2):
-        if not data_eq(v1, v2):
-            return False
-
-    return True
 
 
 def choose_hash(object_):
