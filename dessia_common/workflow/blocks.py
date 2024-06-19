@@ -14,8 +14,9 @@ from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
                                    PlotDataType, MarkdownType)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
-from dessia_common.utils.helpers import concatenate, full_classname, get_python_class_from_class_name
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.utils.helpers import (concatenate, full_classname, get_python_class_from_class_name,
+                                         get_in_object_from_path)
+from dessia_common.breakdown import attrmethod_getter
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, Workflow
 from dessia_common.workflow.utils import ToScriptElement

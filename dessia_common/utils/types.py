@@ -3,14 +3,14 @@
 """ Types tools. """
 
 import warnings
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from typing import Any, Dict, List, Tuple, Type, Union, get_origin, get_args
 import orjson
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, union_is_default_value, is_typing, serialize_annotation
-from dessia_common.utils.helpers import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name, is_sequence
 
 SIMPLE_TYPES = [int, str]
 
@@ -42,33 +42,6 @@ def is_jsonable(obj):
         return True
     except Exception:
         return False
-
-
-def is_sequence(obj) -> bool:
-    """
-    Return True if object is sequence (but not string), else False.
-
-    :param obj: Object to check
-    :return: bool. True if object is a sequence but not a string. False otherwise
-    """
-    if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
-        # Performance improvements for trivial checks
-        return False
-
-    if is_list(obj) or is_tuple(obj):
-        # Performance improvements for trivial checks
-        return True
-    return isinstance(obj, Sequence) and not isinstance(obj, str)
-
-
-def is_list(obj) -> bool:
-    """ Check if given obj is exactly of type list (not instance of). Used mainly for performance. """
-    return obj.__class__ == list
-
-
-def is_tuple(obj) -> bool:
-    """ Check if given obj is exactly of type tuple (not instance of). Used mainly for performance. """
-    return obj.__class__ == tuple
 
 
 def is_builtin(type_):
