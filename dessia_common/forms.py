@@ -44,7 +44,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_view, markdown_view, cad_view
+from dessia_common.decorators import plot_data_view, markdown_view, cad_view, picture_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -858,6 +858,7 @@ class BeamStructure(DessiaObject):
         super().__init__(name=name)
 
     @plot_data_view("2D View")
+    @picture_view("2D View")
     def plot2d(self, reference_path: str = "#"):
         """ A dummy 2D method to test form interactions. """
         horizontal_contour = self.horizontal_beam.plot2d(reference_path=f"{reference_path}/horizontal_beam")

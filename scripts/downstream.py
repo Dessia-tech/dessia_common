@@ -10,7 +10,8 @@ class BackendBreakingChangeTest(unittest.TestCase):
             from dessia_common.errors import DeepAttributeError
             from dessia_common.files import BinaryFile, StringFile
             from dessia_common.serialization import serialize, serialize_with_pointers
-            from dessia_common.utils.types import is_bson_valid, is_jsonable, is_sequence
+            from dessia_common.utils.helpers import is_sequence
+            from dessia_common.utils.types import is_bson_valid, is_jsonable
             from dessia_common.workflow.core import WorkflowRun, WorkflowState
             from dessia_common.workflow.utils import ToScriptElement
             from dessia_common.schemas.core import (
