@@ -6,7 +6,8 @@ from typing import List, Dict
 
 from dessia_common.schemas.core import get_schema, SchemaAttribute
 from dessia_common.serialization import SerializableObject
-from dessia_common.utils.types import is_file_or_file_sequence, is_sequence
+from dessia_common.utils.types import is_file_or_file_sequence
+from dessia_common.utils.helpers import is_sequence
 
 
 class ToScriptElement:

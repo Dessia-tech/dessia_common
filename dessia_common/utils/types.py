@@ -10,7 +10,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, union_is_default_value, is_typing, serialize_annotation
-from dessia_common.utils.helpers import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name, is_sequence
 
 SIMPLE_TYPES = [int, str]
 

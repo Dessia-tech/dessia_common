@@ -10,7 +10,6 @@ import math
 import random
 import itertools
 import zipfile
-import numpy as npy
 
 from copy import deepcopy, copy
 import inspect
@@ -20,11 +19,12 @@ from typing import List, Tuple
 import traceback as tb
 
 from importlib import import_module
+import numpy as npy
 
 from dessia_common import FLOAT_TOLERANCE
 from dessia_common.utils.diff import diff, choose_hash
-from dessia_common.utils.helpers import full_classname
-from dessia_common.utils.types import is_bson_valid, isinstance_base_types, is_sequence
+from dessia_common.utils.helpers import full_classname, is_sequence
+from dessia_common.utils.types import is_bson_valid, isinstance_base_types
 from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -33,7 +33,7 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.breakdown import attrmethod_getter
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
@@ -154,7 +154,7 @@ class DessiaObject(SerializableObject):
 
     def _get_from_path(self, path: str):
         """ Get object's deep attribute from given path. """
-        return get_in_object_from_path(self, path)
+        return dch.get_in_object_from_path(self, path)
 
     @classmethod
     def raw_schema(cls):
@@ -400,8 +400,7 @@ class DessiaObject(SerializableObject):
             for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
+                                      width=1400, height=900)
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
@@ -660,7 +659,7 @@ class DessiaObject(SerializableObject):
         """ Compute vector from object. """
         vectored_objects = []
         for feature in self.vector_features():
-            vectored_objects.append(get_in_object_from_path(self, feature.lower()))
+            vectored_objects.append(dch.get_in_object_from_path(self, feature.lower()))
         return vectored_objects
 
     @classmethod
@@ -915,7 +914,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+        return lambda x: (self._comparison_operator()(dch.get_in_object_from_path(value, f'#/{self.attribute}'),
                                                       self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
