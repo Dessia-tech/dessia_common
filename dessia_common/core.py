@@ -37,7 +37,7 @@ from dessia_common.breakdown import attrmethod_getter
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
-from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS, picture_view
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS
 from dessia_common.excel_reader import ExcelReader
 
 
@@ -419,10 +419,9 @@ class DessiaObject(SerializableObject):
                                   f" does not implement a mpl_plot converter."
                                   f"\nSelector used : '{selector}'.")
 
-    @picture_view("2D View")
-    def picture(self, stream):
+    def picture(self, stream, selector: str):
         """ Take a stream to generate picture. """
-        ax = self.mpl_plot("2D View")
+        ax = self.mpl_plot(selector)
         ax.figure.savefig(stream, format="png")
         stream.seek(0)
 
