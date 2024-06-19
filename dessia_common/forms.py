@@ -853,6 +853,7 @@ class BeamStructure(DessiaObject):
     def __init__(self, horizontal_beam: HorizontalBeam, vertical_beams: List[VerticalBeam], name: str = ""):
         self.horizontal_beam = horizontal_beam
         self.vertical_beams = vertical_beams
+        self.n_beams = len(vertical_beams)
 
         super().__init__(name=name)
 
@@ -884,7 +885,7 @@ class BeamStructureGenerator(DessiaObject):
     _standalone_in_db = True
 
     def __init__(self, n_solutions: int = 5, max_beams: int = 5,
-                 max_length: int = 10, min_length: int = 1, name: str = "Beams"):
+                 max_length: int = 100, min_length: int = 10, name: str = "Beams"):
         self.n_solutions = n_solutions
         self.max_beams = max_beams
         self.max_length = max_length
