@@ -422,6 +422,7 @@ class DessiaObject(SerializableObject):
     def picture(self, stream, selector: str):
         """ Take a stream to generate picture. """
         ax = self.mpl_plot(selector)
+        ax.set_axis_off()
         ax.figure.savefig(stream, format="png")
         stream.seek(0)
 
