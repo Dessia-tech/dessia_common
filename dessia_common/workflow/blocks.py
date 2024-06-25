@@ -12,7 +12,7 @@ from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PA
 from dessia_common.displays import DisplaySetting, DisplayObject
 from dessia_common.errors import UntypedArgumentError
 from dessia_common.typings import (JsonSerializable, MethodType, ClassMethodType, AttributeType, ViewType, CadViewType,
-                                   PlotDataType, MarkdownType)
+                                   PlotDataType, MarkdownType, InstanceOf)
 from dessia_common.files import StringFile, BinaryFile, generate_archive
 from dessia_common.utils.helpers import (concatenate, full_classname, get_python_class_from_class_name,
                                          get_in_object_from_path)
@@ -20,6 +20,7 @@ from dessia_common.breakdown import attrmethod_getter
 from dessia_common.exports import ExportFormat
 from dessia_common.workflow.core import Block, Variable, Workflow
 from dessia_common.workflow.utils import ToScriptElement
+import plot_data as pd
 
 T = TypeVar("T")
 
@@ -802,25 +803,25 @@ class DeprecatedMultiPlot(Display):
     def evaluate(self, values, **kwargs):
         """ Create MultiPlot from block configuration. Handle reference path. """
         reference_path = kwargs.get("reference_path", "#")
-        import plot_data
+        # import plot_data
         objects = values[self.inputs[self._displayable_input]]
-        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
-                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+        samples = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                             reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                    for i, o in enumerate(objects)]
-        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
-                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+        samples2d = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                               reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                      for i, o in enumerate(objects)]
-        tooltip = plot_data.Tooltip(name="Tooltip", attributes=self.attributes)
+        tooltip = pd.Tooltip(name="Tooltip", attributes=self.attributes)
 
-        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=samples2d, name="Scatter Plot")
+        scatterplot = pd.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                 elements=samples2d, name="Scatter Plot")
 
-        parallelplot = plot_data.ParallelPlot(disposition="horizontal", axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
+        parallelplot = pd.ParallelPlot(disposition="horizontal", axes=self.attributes,
+                                       rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
-        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name="Results plot")
+        sizes = [pd.Window(width=560, height=300), pd.Window(width=560, height=300)]
+        multiplot = pd.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
+                                     coords=[(0, 0), (0, 300)], name="Results plot")
         return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -867,25 +868,25 @@ class MultiPlot(Display):
     def evaluate(self, values, **kwargs):
         """ Create MultiPlot from block configuration. Handle reference path. """
         reference_path = kwargs.get("reference_path", "#")
-        import plot_data
+        # import plot_data
         objects = values[self.inputs[self._displayable_input]]
-        samples = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
-                                    reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+        samples = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                             reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                    for i, o in enumerate(objects)]
-        samples2d = [plot_data.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
-                                      reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+        samples2d = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes[:2]},
+                               reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
                      for i, o in enumerate(objects)]
-        tooltip = plot_data.Tooltip(name="Tooltip", attributes=self.attributes)
+        tooltip = pd.Tooltip(name="Tooltip", attributes=self.attributes)
 
-        scatterplot = plot_data.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                                        elements=samples2d, name="Scatter Plot")
+        scatterplot = pd.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                                 elements=samples2d, name="Scatter Plot")
 
-        parallelplot = plot_data.ParallelPlot(disposition="horizontal", axes=self.attributes,
-                                              rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
+        parallelplot = pd.ParallelPlot(disposition="horizontal", axes=self.attributes,
+                                       rgbs=[(192, 11, 11), (14, 192, 11), (11, 11, 192)], elements=samples)
         plots = [scatterplot, parallelplot]
-        sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
-                                            coords=[(0, 0), (0, 300)], name="Results plot")
+        sizes = [pd.Window(width=560, height=300), pd.Window(width=560, height=300)]
+        multiplot = pd.MultiplePlots(elements=samples, plots=plots, sizes=sizes,
+                                     coords=[(0, 0), (0, 300)], name="Results plot")
         return [multiplot.to_dict()]
 
     def _to_script(self, _) -> ToScriptElement:
@@ -919,6 +920,83 @@ class MultiPlot(Display):
                 selector_name = selector["name"]
         block = MultiPlot(selector_name=selector_name, attributes=dict_["attributes"], name=dict_["name"],
                           load_by_default=dict_["load_by_default"], position=dict_["position"])
+        block.deserialize_variables(dict_)
+        return block
+
+
+class MultiObject(Display):
+    """
+    Generate a MultiObject view which axes will be the given attributes.
+
+    It Will show a Scatter and a Parallel Plot.
+
+    :param selector_name: Name of the selector to be displayed in object page.
+        Must be unique throughout workflow.
+    :param attributes: A List of all attributes that will be shown on axes in the ParallelPlot window.
+        Can be deep attributes with the '/' separator.
+    :param name: Name of the block.
+    :param position: Position of the block in canvas.
+    """
+
+    _type = "plot_data"
+    serialize = True
+
+    def __init__(self, selector_name: str, configurations: List[InstanceOf['PlotDataView']],
+                 load_by_default: bool = True, name: str = "Multi Object View", position:  Position = (0, 0)):
+        self.configurations = configurations
+        Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
+                         name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
+        self.inputs[0].name = "Sequence"
+
+    def __deepcopy__(self, memo=None):
+        return MultiObject(selector_name=self.selector.name, configurations=self.configurations,
+                           load_by_default=self.load_by_default, name=self.name, position=self.position)
+
+    def equivalent(self, other: 'MultiObject'):
+        """ Return whether if the block is equivalent to the other given. """
+        same_attributes = self.configurations == other.configurations
+        return super().equivalent(other) and same_attributes
+
+    def equivalent_hash(self):
+        """ Custom hash function. Related to 'equivalent' method. """
+        return sum(hash(a) for a in self.configurations)
+
+    def evaluate(self, values, **kwargs):
+        """ Create MultiPlot from block configuration. Handle reference path. """
+        reference_path = kwargs.get("reference_path", "#")
+        objects = values[self.inputs[self._displayable_input]]
+        plots = [c.plot_data_object(objects=objects, reference_path=reference_path) for c in self.configurations]
+
+        # TODO Mutualizing samples from multiplot and subplots should probably be done by plot_data
+        attributes = list(set([a for c in self.configurations for a in c.attributes]))
+        samples = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in attributes},
+                             reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                   for i, o in enumerate(objects)]
+        multiplot = pd.MultiplePlots(elements=samples, plots=plots, name="Results plot")
+        return [multiplot.to_dict()]
+
+    # def _to_script(self, _) -> ToScriptElement:
+    #     """ Write block config into a chunk of script. """
+    #     script = (f"MultiObject("
+    #               f"selector_name='{self.selector.name}',"
+    #               f" attributes={self.attributes},"
+    #               f" {self.base_script()})")
+    #     return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+    def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
+        """ Overwrite to_dict method in order to handle difference of behaviors about selector. """
+        dict_ = super().to_dict(use_pointers=use_pointers, memo=memo, path=path, id_method=id_method, id_memo=id_memo)
+        dict_.update({"selector_name": self.selector.name, "configurations": [c.to_dict() for c in self.configurations],
+                      "name": self.name, "load_by_default": self.load_by_default, "position": self.position})
+        return dict_
+
+    @classmethod
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'MultiObject':
+        """ Backward compatibility for old versions of Display blocks. """
+        configurations = [PlotDataView.dict_to_object(c) for c in dict_["configurations"]]
+        block = MultiObject(selector_name=dict_["selector_name"], configurations=configurations, name=dict_["name"],
+                            load_by_default=dict_["load_by_default"], position=dict_["position"])
         block.deserialize_variables(dict_)
         return block
 
@@ -1452,3 +1530,40 @@ class Archive(Block):
         """ Write block config into a chunk of script. """
         script = f"Archive(number_exports={self.number_exports}, filename='{self.filename}', {self.base_script()})"
         return ToScriptElement(declaration=script, imports=[self.full_classname])
+
+
+class PlotDataView(DessiaObject):
+    """ Plot Data View framework base class. """
+
+    def __init__(self, attributes: List[str], name: str = ""):
+        self.attributes = attributes
+
+        super().__init__(name)
+
+    def samples(self, objects, reference_path: str = "#"):
+        return [pd.Sample(values={a: get_in_object_from_path(o, a) for a in self.attributes},
+                          reference_path=f"{reference_path}/{i}", name=f"Sample {i}") for i, o in enumerate(objects)]
+
+
+class ScatterView(PlotDataView):
+    """ Scatter View Framework. """
+
+    def __init__(self, attributes: Tuple[str, str], name: str = ""):
+        super().__init__(attributes=list(attributes), name=name)
+
+    def plot_data_object(self, objects, reference_path: str = "#") -> pd.Scatter:
+        tooltip = pd.Tooltip(name="Tooltip", attributes=list(self.attributes))
+        samples = self.samples(objects=objects, reference_path=reference_path)
+        return pd.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
+                          elements=samples, name=self.name)
+
+
+class ParallelView(PlotDataView):
+    """ Scatter View Framework. """
+
+    def __init__(self, attributes: List[str], name: str = ""):
+        super().__init__(attributes=attributes, name=name)
+
+    def plot_data_object(self, objects, reference_path: str = "#") -> pd.ParallelPlot:
+        samples = self.samples(objects=objects, reference_path=reference_path)
+        return pd.ParallelPlot(elements=samples, disposition="horizontal", axes=self.attributes)

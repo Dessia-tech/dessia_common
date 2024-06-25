@@ -40,6 +40,23 @@ def get_decorated_methods(class_: Type, decorator_name: str):
     return [getattr(class_, n) for n in method_names]
 
 
+def picture_view(selector: str = None, load_by_default: bool = False):
+    """
+    Decorator to plot data pictures.
+
+    :param str selector: A custom and unique name that identifies the display.
+        It is what is displayed on platform to select your view.
+
+    :param bool load_by_default: Whether the view should be displayed on platform by default or not.
+    """
+    def decorator(function):
+        """ Decorator to plot data."""
+        set_decorated_function_metadata(function=function, type_="picture", selector=selector,
+                                        serialize_data=True, load_by_default=load_by_default)
+        return function
+    return decorator
+
+
 def plot_data_view(selector: str = None, load_by_default: bool = False):
     """
     Decorator to plot data.
