@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Displays : Tree is now a display
+- Files : Method from_file now sets Binary and StringFile filename attribute
 
 
 ## 0.17.0
