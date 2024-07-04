@@ -134,11 +134,6 @@ class PlotDataType(ViewType[T]):
 
     decorator = "plot_data_view"
 
-class PictureType(ViewType[T]):
-    """ Typing that denotes plot picture """
-
-    decorator = "picture_view"
-
 
 # Types Aliases
 JsonSerializable = Dict[str, Any]
