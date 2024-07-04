@@ -26,6 +26,7 @@ from math import floor, ceil, cos
 from typing import Dict, List, Tuple, Union, Any, Literal, get_args
 import time
 from numpy import linspace
+from random import randrange
 
 try:
     import volmdlr as vm
@@ -43,7 +44,7 @@ from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
 
-from dessia_common.decorators import plot_data_view, markdown_view, cad_view
+from dessia_common.decorators import plot_data_view, markdown_view, cad_view, picture_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -852,10 +853,12 @@ class BeamStructure(DessiaObject):
     def __init__(self, horizontal_beam: HorizontalBeam, vertical_beams: List[VerticalBeam], name: str = ""):
         self.horizontal_beam = horizontal_beam
         self.vertical_beams = vertical_beams
+        self.n_beams = len(vertical_beams)
 
         super().__init__(name=name)
 
     @plot_data_view("2D View")
+    @picture_view("2D View")
     def plot2d(self, reference_path: str = "#"):
         """ A dummy 2D method to test form interactions. """
         horizontal_contour = self.horizontal_beam.plot2d(reference_path=f"{reference_path}/horizontal_beam")
@@ -875,6 +878,35 @@ class BeamStructure(DessiaObject):
                                for i, b in enumerate(self.vertical_beams)]
         primitives = [horizontal_primitive] + vertical_primitives
         return vm.core.VolumeModel(primitives).babylon_data()
+
+
+class BeamStructureGenerator(DessiaObject):
+    """ A dummy class to generate a lot of BeamStructures. """
+
+    _standalone_in_db = True
+
+    def __init__(self, n_solutions: int = 5, max_beams: int = 5,
+                 max_length: int = 100, min_length: int = 10, name: str = "Beams"):
+        self.n_solutions = n_solutions
+        self.max_beams = max_beams
+        self.max_length = max_length
+        self.min_length = min_length
+
+        super().__init__(name)
+
+    def generate(self) -> List[BeamStructure]:
+        """ A dummy method to generate a certain number of BeamStructures. """
+        beam_structures = []
+        for i in range(self.n_solutions):
+            n_beams = randrange(1, self.max_beams + 1)
+            horizontal_beam = HorizontalBeam(length=(n_beams - 1) * 10, name="H")
+            vertical_beams = []
+            for j in range(n_beams):
+                length = randrange(self.min_length * 10, self.max_length * 10) / 10
+                vertical_beams.append(VerticalBeam(length=length, name=f"V{j + 1}"))
+            beam_structures.append(BeamStructure(horizontal_beam=horizontal_beam, vertical_beams=vertical_beams,
+                                                 name=f"{self.name} {i + 1}"))
+        return beam_structures
 
 
 # Definition 1
