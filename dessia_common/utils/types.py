@@ -289,6 +289,8 @@ def typematch(type_: Type, match_against: Type) -> bool:
     """
     # TODO Implement a more intelligent check for Unions : Union[T, U] should match against Union[T, U, V]
     # TODO Implement a check for Dict
+    if not isinstance(match_against, type) and not is_typing(match_against):
+        match_against = type(match_against)
     if type_ == match_against or match_against is Any or particular_typematches(type_, match_against):
         # Trivial cases. If types are strictly equal, then it should pass straight away
         return True
