@@ -5,7 +5,6 @@ class BackendBreakingChangeTest(unittest.TestCase):
     def test_import_is_working(self):
         """Basic unittest to make sure backend import of DC is working"""
         try:
-            from dessia_common import pqojefhrs
             from dessia_common import __version__
             from dessia_common.core import DessiaObject, stringify_dict_keys
             from dessia_common.decorators import get_decorated_methods
