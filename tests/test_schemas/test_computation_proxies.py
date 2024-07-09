@@ -10,7 +10,7 @@ ATTRIBUTE = SchemaAttribute(name="optional_list", default_value=None)
 
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (OptionalProperty(annotation=Optional[List[int]], attribute=ATTRIBUTE))
+        (OptionalProperty(annotation=Optional[List[int]], attribute=ATTRIBUTE),)
     ])
     def test_schema_check(self, schema):
         self.assertEqual(schema.args, (int,))
