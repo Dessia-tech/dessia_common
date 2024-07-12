@@ -970,7 +970,7 @@ class MultiObject(Display):
         # TODO Mutualizing samples from multiplot and subplots should probably be done by plot_data
         attributes = list(set([a for c in self.configurations for a in c.attributes]))
         samples = [pd.Sample(values={a: get_in_object_from_path(o, a) for a in attributes},
-                             reference_path=f"{reference_path}/{i}", name=f"Sample {i}")
+                             reference_path=f"{reference_path}/{i}", name=o.name if o.name else f"Sample {i}")
                    for i, o in enumerate(objects)]
         multiplot = pd.MultiplePlots(elements=samples, plots=plots, name="Results plot")
         return [multiplot.to_dict()]
