@@ -5,12 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.18.0
+
+### Added
+
+- Displays : Tree is now a display
+- Files : Method from_file now sets Binary and StringFile filename attribute
+
+### Changed
+
+- MultiObject : Now compute object names for sample names
+
+
+## 0.17.0
+
+### Added
+
+- Schemas : Add a new type to compute string literals
+- Workflow : Display by default is now tasks only
+
+### Misc
+
+- Coverage : Remove warnings from tracked modules
+
+
+## 0.16.5
+
+### HOTFIX
+
+- Workflow : Reset NBVs type to last downstream one found while regenerating workflow pipes from deserialization 
+
+
+## 0.16.4
+
+### Fix
+
+- Workflow : Stop deserializing and setting block Variable. Instead, reconfigure them based on incoming dict
+- Workflow : Blocks are not generating their to_dict with pointers anymore
+
+
+### Feature
+
+- Workflow : Display by default is now tasks only
+
 
 ## 0.16.3
 
 ### Fix
 
 - Dataset : Update plot to new decorator paradigm
+- Workflow : Reset variables types for block defined from user code (should not trust frontend json on variable types)
+- Workflow : If type is provided, Variables do not reset their type based on their default value anymore
+
+### Refactor
+
+- Workflow : Use AttributeType to compute variable type for ModelAttribute Blocks
 
 
 ## 0.16.2
@@ -28,14 +77,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Numpy : Restrict version to lower 2.0.0
 
 
-
 ## 0.16.1
+
+### Added
+
+- Export : Define export method with decorator
 
 ### Fix
 
 - ModelMethod : Call the right dict_to_object of MethodType
 - MultiPlot : Add selector_name MultiPlot script
 - WorkflowRun : Add markdown to display_settings
+
+### Tests
+
+- Schema : Add new unittest to test get_import_names methods
 
 
 ## 0.16.0
@@ -334,6 +390,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reference path is now given all the way down to plot_data
 - DessiaObject kwargs in init are deprecated
+
+### Added
+- Save WorkflowRun to a python script
 
 ### Fixed
 

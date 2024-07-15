@@ -4,6 +4,11 @@
 
 from typing import List, Dict
 
+from dessia_common.schemas.core import get_schema, SchemaAttribute
+from dessia_common.serialization import SerializableObject
+from dessia_common.utils.types import is_file_or_file_sequence
+from dessia_common.utils.helpers import is_sequence
+
 
 class ToScriptElement:
     """ Class meant to improve to_script readability. """
@@ -44,7 +49,7 @@ class ToScriptElement:
 
 
 def blocks_to_script(blocks, prefix: str, imports):
-    """ Set B locks to script. """
+    """ Set Blocks to script. """
     blocks_str = ""
     for iblock, block in enumerate(blocks):
         block_script = block._to_script(prefix)
@@ -65,3 +70,46 @@ def nonblock_variables_to_script(nonblock_variables, prefix, imports, imports_as
         imports_as_is.extend(nbv_script.imports_as_is)
         nbvs_str += f"{prefix}variable_{nbv_index} = {nbv_script.declaration}\n"
     return nbvs_str
+
+
+def update_imports(input_type, input_name):
+    """ Update imports based on the schema of the input. """
+    schema = get_schema(annotation=input_type, attribute=SchemaAttribute(input_name))
+    return schema.get_import_names(import_names=[])
+
+
+def generate_input_string(signature: str, objects_):
+    """ Generate input as string. """
+    if is_sequence(objects_):
+        instances = [f"\n\t{o.__class__.__name__}{signature}" for o in objects_]
+        return f"[{','.join(instances)}\n]"
+    return f"{objects_.__class__.__name__}{signature}"
+
+
+def is_object_or_object_sequence(object_):
+    """Checks if an object is a serializable object or a sequence of serializable objects."""
+    if isinstance(object_, SerializableObject):
+        return True
+    if is_sequence(object_):
+        return all(isinstance(element, SerializableObject) for element in object_)
+
+    return False
+
+
+def process_value(value):
+    """ Processes a value based on its content. """
+    if is_object_or_object_sequence(value):
+        signature = "('Set your arguments here')"
+    elif is_file_or_file_sequence(value):
+        signature = ".from_file('Set your filepath here')"
+    else:
+        return repr(value)
+
+    return generate_input_string(signature, value)
+
+
+def generate_default_value(value, block_index: int, input_index: int = None):
+    """ Generate a value for a given input. """
+    input_index_str = "" if input_index is None else f"_{input_index}"
+
+    return f"\nvalue_{block_index}{input_index_str} = {process_value(value)}"

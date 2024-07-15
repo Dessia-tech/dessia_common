@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import collections.abc
 from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints, Callable, Union, \
-    TypeVar, TypedDict, Optional, Any
+    TypeVar, TypedDict, Optional, Any, Literal
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
@@ -609,8 +609,7 @@ class TypingProperty(Property):
 
     def get_import_names(self, import_names):
         """ Process TypingProperty and get/update the import names list."""
-        import_name = self.get_import_name
-        import_names.append(import_name)
+        import_names.append(self.get_import_name)
 
         for args_schema in self.args_schemas:
             import_names = args_schema.get_import_names(import_names=import_names)
@@ -669,6 +668,11 @@ class OptionalProperty(ProxyProperty):
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
         """ Deserialize Optional annotation. """
         raise NotImplementedError("Optional property deserialization not implemented yet. ")
+
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return self.schema.get_import_names([])[0]
 
 
 class AnnotatedProperty(ProxyProperty):
@@ -732,8 +736,6 @@ class BuiltinProperty(Property):
         """ Write Builtin as a Dict. """
         chunk = super().to_dict()
         chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
-        if self.has_default_value:
-            chunk["default_value"] = self.default_value()
         return chunk
 
     def default_value(self):
@@ -1519,6 +1521,46 @@ class AnyProperty(Property):
         return chunk
 
 
+class EnumProperty(TypingProperty):
+    """ Generate an enum of a dict keys. """
+
+    def __init__(self, annotation: Type[Literal[""]], attribute: SchemaAttribute):
+        super().__init__(annotation=annotation, attribute=attribute)
+
+    @cached_property
+    def serialized(self) -> str:
+        """ Specifically join args with single quotes. """
+        args = "', '".join(self.args)
+        return f"Literal['{args}']"
+
+    @property
+    def args_schemas(self) -> List[Property]:
+        """ Specifically children schemas as str. """
+        return [get_schema(annotation=str, attribute=self.attribute)]
+
+    @cached_property
+    def pretty_annotation(self) -> str:
+        """ Specifically return serialized. """
+        return self.serialized
+
+    @classmethod
+    def annotation_from_serialized(cls, serialized: str) -> Type[T]:
+        """ Specifically reset args as a tuple while removing one layer of single quotes. """
+        args = cls._raw_args_from_serialized(serialized)
+        return Literal[tuple(args.replace("'", "").split(","))]
+
+    @property
+    def get_import_name(self):
+        """ Get class module and name as string."""
+        return "typing.Literal"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """ Write chunk of Any property. Useful for low-code features. """
+        chunk = super().to_dict()
+        chunk.update({"allowed_values": self.args, "type": "string"})
+        return chunk
+
+
 def inspect_arguments(method: Callable, merge: bool = False) -> Tuple[List[str], Dict[str, Any]]:
     """ Wrapper around 'split_default_argument' method in order to call it from a method object. """
     method_full_name = f"{method.__module__}.{method.__qualname__}"
@@ -1592,7 +1634,8 @@ ORIGIN_TO_SCHEMA_CLASS = {
     type: ClassProperty,
     MethodType: MethodTypeProperty, ClassMethodType: MethodTypeProperty,
     AttributeType: AttributeTypeProperty, ClassAttributeType: AttributeTypeProperty,
-    CadViewType: SelectorProperty, PlotDataType: SelectorProperty, MarkdownType: SelectorProperty
+    CadViewType: SelectorProperty, PlotDataType: SelectorProperty, MarkdownType: SelectorProperty,
+    Literal: EnumProperty
 }
 
 SERIALIZED_TO_SCHEMA_CLASS = {
@@ -1600,7 +1643,7 @@ SERIALIZED_TO_SCHEMA_CLASS = {
     "Tuple": HeterogeneousSequence, "List": HomogeneousSequence, "Iterator": HomogeneousSequence,
     "Union": UnionProperty, "Dict": DynamicDict, "InstanceOf": InstanceOfProperty, "Subclass": SubclassProperty,
     "MethodType": MethodTypeProperty, "ClassMethodType": MethodTypeProperty, "Type": ClassProperty,
-    "AttributeType": AttributeTypeProperty, "ClassAttributeType": AttributeTypeProperty
+    "AttributeType": AttributeTypeProperty, "ClassAttributeType": AttributeTypeProperty, "Literal": EnumProperty
 }
 
 

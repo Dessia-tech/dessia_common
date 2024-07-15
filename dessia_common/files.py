@@ -31,7 +31,7 @@ class BinaryFile(io.BytesIO):
     def from_file(cls, filepath: str):
         """ Get a file from a binary file. """
         with open(filepath, 'rb') as file:
-            stream = cls()
+            stream = cls(filepath)
             stream.write(file.read())
             stream.seek(0)
             return stream
@@ -91,7 +91,7 @@ class StringFile(io.StringIO):
     def from_file(cls, filepath: str):
         """ Get a file from a file. """
         with open(filepath, 'r', encoding='utf-8') as file:
-            stream = cls()
+            stream = cls(filepath)
             stream.write(file.read())
             stream.seek(0)
             return stream
