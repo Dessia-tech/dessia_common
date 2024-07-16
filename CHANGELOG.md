@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - MultiObject : Now compute object names for sample names
+- Workflow : Remove workflow display from WorkflowRun
 
 
 ## 0.17.0

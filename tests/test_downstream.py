@@ -7,7 +7,6 @@ class BackendBreakingChangeTest(unittest.TestCase):
         try:
             from dessia_common import __version__
             from dessia_common.core import DessiaObject, stringify_dict_keys
-            from dessia_common.decorators import get_decorated_methods
             from dessia_common.errors import DeepAttributeError
             from dessia_common.files import BinaryFile, StringFile
             from dessia_common.serialization import serialize, serialize_with_pointers
