@@ -429,8 +429,13 @@ class DessiaObject(SerializableObject):
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
-        settings.extend(cls._display_settings_from_decorators())
+        decorators_settings = cls._display_settings_from_decorators()
+        has_markdown = any([s.type == "markdown" for s in decorators_settings])
+        settings = decorators_settings
+        if not has_markdown:
+            default_md = DisplaySetting(selector="Markdown", type_="markdown", method="to_markdown",
+                                        load_by_default=True)
+            settings.insert(0, default_md)
         settings.append(DisplaySetting(selector="Structure Tree", type_="tree", method=""))
         return settings
 
@@ -672,14 +677,6 @@ class DessiaObject(SerializableObject):
 
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
-
-    @classmethod
-    def display_settings(cls, **kwargs):
-        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = super().display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
-        return display_settings
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
