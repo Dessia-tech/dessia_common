@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Displays : Tree is now a display
 - Files : Method from_file now sets Binary and StringFile filename attribute
+- Schemas : Order entry based on signature order
 
 ### Changed
 
 - MultiObject : Now compute object names for sample names
 - Workflow : Remove workflow display from WorkflowRun
+- Displays : CAD/ volmdlr_primitives backward compatibility has been  
 
 
 ## 0.17.0
