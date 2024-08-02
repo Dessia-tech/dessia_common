@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Module to handle serialization for engineering objects. """
-
+import base64
+import io
 import time
 import warnings
 import operator
@@ -18,9 +19,12 @@ from typing import List, Tuple
 import traceback as tb
 
 from importlib import import_module
+import numpy as npy
 
-from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_bson_valid
+from dessia_common import FLOAT_TOLERANCE
+from dessia_common.utils.diff import diff, choose_hash
+from dessia_common.utils.helpers import full_classname, is_sequence
+from dessia_common.utils.types import is_bson_valid, isinstance_base_types
 from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -29,7 +33,7 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.breakdown import attrmethod_getter
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
@@ -150,7 +154,7 @@ class DessiaObject(SerializableObject):
 
     def _get_from_path(self, path: str):
         """ Get object's deep attribute from given path. """
-        return get_in_object_from_path(self, path)
+        return dch.get_in_object_from_path(self, path)
 
     @classmethod
     def raw_schema(cls):
@@ -396,34 +400,43 @@ class DessiaObject(SerializableObject):
             for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
+                                      width=1400, height=900)
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
 
-    def mpl_plot(self, **kwargs):
+    def mpl_plot(self, selector: str):
         """ Plot with matplotlib using plot_data function. """
-        axs = []
-        if hasattr(self, 'plot_data'):
-            try:
-                plot_datas = self.plot_data(**kwargs)
-            except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}') from error
-            for data in plot_datas:
-                if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot()
-                    axs.append(ax)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
-        return axs
+        display_setting = self._display_settings_from_selector(selector)
+        if display_setting.type != "plot_data":
+            raise NotImplementedError(f"Selector '{selector}' depicts a display of type '{display_setting.type}'"
+                                      f" which cannot be used to plot with matplotlib."
+                                      f"\nPlease select a 'plot_data' display setting.")
+        display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        if hasattr(display, 'mpl_plot'):
+            return display.mpl_plot()
+        raise NotImplementedError(f"plot_data display of type '{display.__class__.__name__}'"
+                                  f" does not implement a mpl_plot converter."
+                                  f"\nSelector used : '{selector}'.")
+
+    def picture(self, stream, selector: str):
+        """ Take a stream to generate picture. """
+        ax = self.mpl_plot(selector)
+        ax.set_axis_off()
+        ax.figure.savefig(stream, format="png")
+        stream.seek(0)
 
     @classmethod
     def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        settings = [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True)]
-        settings.extend(cls._display_settings_from_decorators())
+        decorators_settings = cls._display_settings_from_decorators()
+        has_markdown = any([s.type == "markdown" for s in decorators_settings])
+        settings = decorators_settings
+        if not has_markdown:
+            default_md = DisplaySetting(selector="Markdown", type_="markdown", method="to_markdown",
+                                        load_by_default=True)
+            settings.insert(0, default_md)
+        settings.append(DisplaySetting(selector="Structure Tree", type_="tree", method=""))
         return settings
 
     @classmethod
@@ -452,13 +465,12 @@ class DessiaObject(SerializableObject):
         display_setting = self._display_settings_from_selector(selector)
         track = ""
         try:
-            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+            display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
         except Exception:
-            data = None
+            display = None
             track = tb.format_exc()
 
-        if display_setting.serialize_data:
-            data = serialize(data)
+        data = serialize(display) if display_setting.serialize_data else display
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
@@ -652,7 +664,7 @@ class DessiaObject(SerializableObject):
         """ Compute vector from object. """
         vectored_objects = []
         for feature in self.vector_features():
-            vectored_objects.append(get_in_object_from_path(self, feature.lower()))
+            vectored_objects.append(dch.get_in_object_from_path(self, feature.lower()))
         return vectored_objects
 
     @classmethod
@@ -665,14 +677,6 @@ class DessiaObject(SerializableObject):
 
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
-
-    @classmethod
-    def display_settings(cls, **kwargs):
-        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = super().display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
-        return display_settings
 
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
@@ -907,7 +911,7 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+        return lambda x: (self._comparison_operator()(dch.get_in_object_from_path(value, f'#/{self.attribute}'),
                                                       self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
@@ -1199,3 +1203,71 @@ def get_attribute_names(object_class):
                                           for item in [float, int, bool, complex])]
     attributes += [a for a in subclass_numeric_attributes if a not in dcs.RESERVED_ARGNAMES]
     return attributes
+
+
+def data_eq(value1, value2):
+    """ Returns if two values are equal on data equality. """
+    if is_sequence(value1) and is_sequence(value2):
+        return sequence_data_eq(value1, value2)
+
+    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
+        return value1 == value2
+
+    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
+        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+
+    if not isinstance(value2, type(value1)) and not isinstance(value1, type(value2)):
+        return False
+
+    if isinstance_base_types(value1):
+        if isinstance(value1, float):
+            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+        return value1 == value2
+
+    if isinstance(value1, dict):
+        return dict_data_eq(value1, value2)
+
+    if isinstance(value1, (dcf.BinaryFile, dcf.StringFile)):
+        return value1 == value2
+
+    if isinstance(value1, type):
+        return full_classname(value1) == full_classname(value2)
+
+    # Else: its an object
+    if full_classname(value1) != full_classname(value2):
+        return False
+
+    # Test if _data_eq is customized
+    if hasattr(value1, '_data_eq'):
+        custom_method = value1._data_eq.__code__ is not DessiaObject._data_eq.__code__
+        if custom_method:
+            return value1._data_eq(value2)
+
+    # Not custom, use generic implementation
+    eq_dict = value1._data_eq_dict()
+    if 'name' in eq_dict:
+        del eq_dict['name']
+
+    other_eq_dict = value2._data_eq_dict()
+    return dict_data_eq(eq_dict, other_eq_dict)
+
+
+def dict_data_eq(dict1, dict2):
+    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
+    for key, value in dict1.items():
+        if key not in dict2:
+            return False
+        if not data_eq(value, dict2[key]):
+            return False
+    return True
+
+
+def sequence_data_eq(seq1, seq2):
+    """ Returns if two sequences are equal on data equality. """
+    if len(seq1) != len(seq2):
+        return False
+
+    for v1, v2 in zip(seq1, seq2):
+        if not data_eq(v1, v2):
+            return False
+    return True

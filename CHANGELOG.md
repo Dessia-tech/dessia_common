@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.18.0
+
+### Added
+
+- Displays : Tree is now a display
+- Files : Method from_file now sets Binary and StringFile filename attribute
+- Schemas : Order entry based on signature order
+
+### Changed
+
+- MultiObject : Now compute object names for sample names
+- Workflow : Remove workflow display from WorkflowRun
+- Displays : CAD/ volmdlr_primitives backward compatibility has been  
+
+
 ## 0.17.0
 
 ### Added

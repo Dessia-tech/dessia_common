@@ -188,9 +188,11 @@ class Schema:
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
+        order = [a.name for a in self.attributes]
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
-        schema.update({"required": required, "properties": properties, "description": self.documentation})
+        schema.update({"required": required, "order": order, "properties": properties,
+                       "description": self.documentation})
         schema.update(**kwargs)
         return schema
 
@@ -389,8 +391,10 @@ class MethodSchema(MemberSchema):
     def to_dict(self, **kwargs):
         """ Write the whole schema. """
         schema = deepcopy(SCHEMA_HEADER)
+        order = [str(i) for i in range(len(self.attributes))]
         properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
-        schema.update({"required": self.required_indices, "properties": properties, "description": self.documentation})
+        schema.update({"required": self.required_indices, "order": order, "properties": properties,
+                       "description": self.documentation})
         return schema
 
     def definition_json(self):

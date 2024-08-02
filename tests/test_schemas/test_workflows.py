@@ -10,7 +10,8 @@ class TestRunSchema(unittest.TestCase):
     @parameterized.expand([
         ("required", ["0", "3", "5"]),
         ("method", True),
-        ("type", "object")
+        ("type", "object"),
+        ("order", ['0', '1', '2', '3', '4', '5'])
     ])
     def test_items(self, key, value):
         self.assertEqual(self.schema[key], value)
