@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import (full_classname, get_python_class_from_class_name, is_sequence,
                                          get_in_object_from_path, set_in_object_from_path)
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.typings import InstanceOf, JsonSerializable
+from dessia_common.typings import InstanceOf, JsonSerializable, Literal
 from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
@@ -424,7 +424,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path)
-
+    elif origin is Literal:
+        deserialized_arg = argument
     elif type_ == dcty.Type:
         deserialized_arg = dcty.is_classname_transform(argument)
     else:
