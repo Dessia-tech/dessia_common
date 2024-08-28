@@ -8,7 +8,7 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Literal
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
@@ -18,7 +18,7 @@ import dessia_common.utils.types as dcty
 from dessia_common.utils.helpers import (full_classname, get_python_class_from_class_name, is_sequence,
                                          get_in_object_from_path, set_in_object_from_path)
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.typings import InstanceOf, JsonSerializable, Literal
+from dessia_common.typings import InstanceOf, JsonSerializable
 from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
