@@ -8,7 +8,7 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Literal
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
@@ -424,7 +424,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path)
-
+    elif origin is Literal:
+        deserialized_arg = argument
     elif type_ == dcty.Type:
         deserialized_arg = dcty.is_classname_transform(argument)
     else:
