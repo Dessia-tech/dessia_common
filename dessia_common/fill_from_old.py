@@ -1,5 +1,7 @@
 from dessia_common.core import DessiaObject
 from typing import List
+
+
 class ObjectTest(DessiaObject):
 
     def __init__(self, value_1: float, name= 'ObjectTest'):
@@ -19,4 +21,3 @@ class ListAssemblyObjectTest(DessiaObject):
     def __init__(self, list_assembly: List[AssemblyObjectTest], name='ObjectTest'):
         self.list_assembly = list_assembly
         DessiaObject.__init__(self, name=name)
-        
