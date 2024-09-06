@@ -857,6 +857,25 @@ class BeamStructure(DessiaObject):
 
         super().__init__(name=name)
 
+    @classmethod
+    def generate(cls, max_beams: int = 5, min_length: int = 10, max_length: int = 100, name: str = ""):
+        n_beams = randrange(1, max_beams + 1)
+        horizontal_beam = HorizontalBeam(length=(n_beams - 1) * 10, name="H")
+        vertical_beams = []
+        for j in range(n_beams):
+            length = randrange(min_length * 10, max_length * 10) / 10
+            vertical_beams.append(VerticalBeam(length=length, name=f"V{j + 1}"))
+        return cls(horizontal_beam=horizontal_beam, vertical_beams=vertical_beams, name=name)
+
+    @classmethod
+    def generate_from_text(cls, stream: StringFile):
+        """ Generate an object from text file in order to test frontend forms and backend streams. """
+        my_text = stream.getvalue()
+        my_file_name = stream.filename
+        max_beams, min_length, max_length = my_text.split(",")
+        return cls.generate(max_beams=int(max_beams), min_length=int(min_length),
+                            max_length=int(max_length), name=my_file_name)
+
     @plot_data_view("2D View")
     @picture_view("2D View")
     def plot2d(self, reference_path: str = "#"):
@@ -879,6 +898,26 @@ class BeamStructure(DessiaObject):
         primitives = [horizontal_primitive] + vertical_primitives
         return vm.core.VolumeModel(primitives).babylon_data()
 
+    def count_until(self, duration: float, raise_error: bool = False):
+        """
+        Test long execution with a user-input duration.
+
+        :param duration: Duration of the method in s
+        :param raise_error: Whether the computation should raise an error or not at the end
+        """
+        starting_time = time.time()
+        current_time = time.time()
+        last_duration = round(current_time - starting_time)
+        while current_time - starting_time <= duration:
+            current_time = time.time()
+            current_duration = current_time - starting_time
+            if current_duration > last_duration + 1:
+                last_duration = round(current_time - starting_time)
+                print(round(current_duration))
+
+        if raise_error:
+            raise RuntimeError(f"Evaluation stopped after {duration}s")
+
 
 class BeamStructureGenerator(DessiaObject):
     """ A dummy class to generate a lot of BeamStructures. """
@@ -896,17 +935,8 @@ class BeamStructureGenerator(DessiaObject):
 
     def generate(self) -> List[BeamStructure]:
         """ A dummy method to generate a certain number of BeamStructures. """
-        beam_structures = []
-        for i in range(self.n_solutions):
-            n_beams = randrange(1, self.max_beams + 1)
-            horizontal_beam = HorizontalBeam(length=(n_beams - 1) * 10, name="H")
-            vertical_beams = []
-            for j in range(n_beams):
-                length = randrange(self.min_length * 10, self.max_length * 10) / 10
-                vertical_beams.append(VerticalBeam(length=length, name=f"V{j + 1}"))
-            beam_structures.append(BeamStructure(horizontal_beam=horizontal_beam, vertical_beams=vertical_beams,
-                                                 name=f"{self.name} {i + 1}"))
-        return beam_structures
+        return [BeamStructure.generate(self.max_beams, self.min_length, self.max_length, f"{self.name} {i + 1}")
+                for i in range(self.n_solutions)]
 
 
 # Definition 1
