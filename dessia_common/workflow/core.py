@@ -1217,7 +1217,6 @@ class Workflow(Block):
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, documentation=documentation," \
                       f" name=\"{self.name}\")\n"
 
-        self.locked_inputs_to_script(prefix=prefix, full_script=full_script)
         imports.append(self.full_classname)
         full_script = f'documentation = """{self.documentation}"""\n\n' + full_script
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
@@ -1241,7 +1240,9 @@ class Workflow(Block):
             imports.append(self.pipes[0].full_classname)
 
         pipes_str = ""
+        pipe_names = []
         for ipipe, pipe in enumerate(self.pipes):
+            pipe_name = f"{prefix}pipe_{ipipe}"
             input_index = self.variable_indices(pipe.input_variable)
             if self.is_variable_nbv(pipe.input_variable):  # NBV handling
                 input_name = f'{prefix}variable_{input_index}'
@@ -1253,23 +1254,10 @@ class Workflow(Block):
                 output_name = f'{prefix}variable_{output_index}'
             else:
                 output_name = f"{prefix}block_{output_index[0]}.inputs[{output_index[2]}]"
-            pipes_str += f"{prefix}pipe_{ipipe} = Pipe({input_name}, {output_name})\n"
-        pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
+            pipes_str += f"{pipe_name} = Pipe({input_name}, {output_name})\n"
+            pipe_names.append(pipe_name)
+        pipes_str += f"{prefix}pipes = [{', '.join(pipe_names)}]\n"
         return pipes_str
-
-    def locked_inputs_to_script(self, prefix: str, full_script: str):
-        """ Set locked inputs to script. """
-        locked_inputs = []
-        for iblock, block in enumerate(self.blocks):
-            for i, input_ in enumerate(block.inputs):
-                if input_.locked:
-                    locked_inputs.append(f"{prefix}workflow.blocks[{iblock}].inputs[{i}]")
-
-        for i in self.nonblock_variables:
-            locked_inputs.append(f"{prefix}workflow.non_block_variables[{i}]")
-
-        for variable in locked_inputs:
-            full_script += f"{variable}.lock()"
 
     def save_script_to_stream(self, stream: StringFile):
         """ Save the workflow to a python script to a stream. """
