@@ -54,14 +54,53 @@ class Variable(DessiaObject):
         self.type_ = type_
         self.label = label
         self.position = position
+        self._locked = False
         super().__init__(name)
+
+    @property
+    def locked(self) -> bool:
+        if self._locked is False:
+            return False
+        if self.has_default_value:
+            return True
+        raise ValueError(f"Variable '{self.name}' of type '{self.type_}' and labelled '{self.label}' "
+                         f"is configured as 'Locked', but it does not implement a default value.")
+
+    @locked.setter
+    def locked(self, value: bool):
+        raise AttributeError("Attribute 'locked' of Variable cannot be changed without ensuring a default value is "
+                             "defined. Please use 'lock()' and 'unlock()' methods instead")
+
+    def lock(self, value: T = UNDEFINED):
+        """ Lock a variable while ensuring a default value is defined. """
+        if value is UNDEFINED and not self.has_default_value:
+            raise ValueError("Locking a Variable must implement a default value that is not UNDEFINED")
+
+        if value is not UNDEFINED:
+            self.default_value = value
+        self._locked = True
+
+    def unlock(self, keep_default: bool = True):
+        """ Unlock a variable. If 'keep_default' is falsy, Variable's default value is reset to UNDEFINED. """
+        if not keep_default:
+            self.default_value = UNDEFINED
+        self._locked = False
+
+    def equivalent_hash(self):
+        return len(self.name) + 7 * len(self.type_) + 11 * int(self.locked)
+
+    def equivalent(self, other: 'Variable'):
+        same_name = self.name == other.name
+        same_type = self.type_ == other.type_
+        same_lock = self.locked == other.locked
+        return same_name and same_type and same_lock
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
         dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
-                      "pretty_type": pretty_annotation(self.type_), "label": self.label})
+                      "pretty_type": pretty_annotation(self.type_), "label": self.label, "locked": self.locked})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
         return dict_
@@ -71,6 +110,9 @@ class Variable(DessiaObject):
         default_value = dict_.get("default_value", UNDEFINED)
         self.default_value = deserialize(default_value)
         self.label = dict_.get("label", "")
+        locked = dict_.get("locked")
+        if locked:
+            self.lock()
 
     @property
     def has_default_value(self):
@@ -172,14 +214,17 @@ class Block(DessiaObject):
 
         Used by workflow module only.
         """
-        return len(self.__class__.__name__)
+        return len(self.__class__.__name__) + 7 * len([i for i in self.inputs if i.locked])
 
-    def equivalent(self, other):
+    def equivalent(self, other: 'Block'):
         """
         Custom equal of block that does not overwrite __eq__ as we do not want to lose python default equality behavior.
 
         Used by workflow module only.
         """
+        for input_, other_input in zip(self.inputs, other.inputs):
+            if not input_.equivalent(other_input):
+                return False
         return self.__class__.__name__ == other.__class__.__name__
 
     def _docstring(self):
@@ -258,7 +303,6 @@ class Workflow(Block):
 
     :param blocks: A List with all the Blocks used by the Workflow.
     :param pipes: A List of Pipe objects.
-    :param imposed_variable_values: A dictionary of imposed variable values.
     :param description: A short description that will be displayed on workflow card (frontend).
         Should be shorter than 100 chars
     :param documentation: A long documentation that will be displayed on workflow page (frontend).
@@ -272,15 +316,10 @@ class Workflow(Block):
     _non_serializable_attributes = ["branch_by_display_selector", "branch_by_export_format",
                                     "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
-    def __init__(self, blocks, pipes, output, *, imposed_variable_values=None,
-                 detached_variables: List[Variable] = None, description: str = "",
+    def __init__(self, blocks, pipes, output, *, detached_variables: List[Variable] = None, description: str = "",
                  documentation: str = "", name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
-
-        if imposed_variable_values is None:
-            imposed_variable_values = {}
-        self.imposed_variable_values = imposed_variable_values
 
         self.coordinates = {}
 
@@ -298,6 +337,7 @@ class Workflow(Block):
         self._cached_graph = None
 
         inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
+        self.locked_inputs = [i for i in inputs if i.locked]
 
         self.description = description
         self.documentation = documentation
@@ -377,7 +417,7 @@ class Workflow(Block):
 
     def _data_hash(self):
         output_hash = hash(self.variable_indices(self.output))
-        base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.imposed_variable_values) + output_hash
+        base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.locked_inputs) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 1e6)
         return (base_hash + block_hash) % 1000000000
 
@@ -391,9 +431,6 @@ class Workflow(Block):
                 return False
 
         if not self._equivalent_pipes(other_object):
-            return False
-
-        if not self._equivalent_imposed_variables_values(other_object):
             return False
         return True
 
@@ -430,17 +467,6 @@ class Workflow(Block):
             other_pipes.append((other_input_index, other_output_index))
         return set(pipes) == set(other_pipes)
 
-    def _equivalent_imposed_variables_values(self, other_wf) -> bool:
-        ivvs = set()
-        other_ivvs = set()
-        for key, other_key in zip(self.imposed_variable_values.keys(), other_wf.imposed_variable_values.keys()):
-            variable_index = self.variable_index(key)
-            ivvs.add((variable_index, self.imposed_variable_values[key]))
-
-            other_variable_index = other_wf.variable_index(other_key)
-            other_ivvs.add((other_variable_index, other_wf.imposed_variable_values[other_key]))
-        return ivvs == other_ivvs
-
     def __deepcopy__(self, memo=None):
         """ Return the deep copy. """
         if memo is None:
@@ -455,17 +481,8 @@ class Workflow(Block):
             output = output_block.outputs[output_adress[2]]
 
         copied_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
-
         pipes = self.copy_pipes(copied_workflow)
-
-        imposed_variable_values = {}
-        for variable, value in self.imposed_variable_values.items():
-            new_variable = copied_workflow.variable_from_index(self.variable_indices(variable))
-            imposed_variable_values[new_variable] = value
-
-        copied_workflow = Workflow(blocks=blocks, pipes=pipes, output=output,
-                                   imposed_variable_values=imposed_variable_values, name=self.name)
-        return copied_workflow
+        return Workflow(blocks=blocks, pipes=pipes, output=output, name=self.name)
 
     def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
         """ Copy a single regular pipe. """
@@ -623,7 +640,7 @@ class Workflow(Block):
                 title = name
 
             # Editable and Default values
-            editable = input_ not in self.imposed_variable_values
+            editable = not input_.locked
             if input_.has_default_value:
                 attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
                                                   editable=editable, documentation=description))
@@ -632,14 +649,10 @@ class Workflow(Block):
                                                   documentation=description))
 
         schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
-        schemas = {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
-        return schemas
+        return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
         """ Compute a dict from the object content. """
-        if memo is None:
-            memo = {}
-
         dict_ = Block.to_dict(self, use_pointers=False)
 
         output = self.variable_indices(self.output)
@@ -649,18 +662,7 @@ class Workflow(Block):
                       "nonblock_variables": [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
                       "package_mix": self.package_mix()})
 
-        imposed_variable_values = {}
-        for variable, value in self.imposed_variable_values.items():
-            var_index = self.variable_indices(variable)
-            if use_pointers:
-                ser_value, memo = serialize_with_pointers(value=value, memo=memo,
-                                                          path=f"{path}/imposed_variable_values/{var_index}")
-            else:
-                ser_value = serialize(value)
-            imposed_variable_values[str(var_index)] = ser_value
-
-        dict_.update({"description": self.description, "documentation": self.documentation,
-                      "imposed_variable_values": imposed_variable_values})
+        dict_.update({"description": self.description, "documentation": self.documentation})
         return dict_
 
     @classmethod
@@ -674,24 +676,17 @@ class Workflow(Block):
 
         workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
 
-        imposed_variable_values = {}
         if "imposed_variable_values" in dict_:
-            # New format with a dict
+            # Backwards compatibility for locked inputs
             for variable_index_str, serialized_value in dict_["imposed_variable_values"].items():
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = workflow.variable_from_index(ast.literal_eval(variable_index_str))
-                imposed_variable_values[variable] = value
                 variable.default_value = value
-        elif "imposed_variable_indices" in dict_:
-            for variable_index in dict_["imposed_variable_indices"]:
-                variable = workflow.variable_from_index(variable_index)
-                imposed_variable_values[variable] = variable.default_value
-        else:
-            imposed_variable_values = None
+                variable.locked = True
 
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
-                   imposed_variable_values=imposed_variable_values, description=dict_.get("description", ""),
-                   documentation=dict_.get("documentation", ""), name=dict_["name"])
+                   description=dict_.get("description", ""), documentation=dict_.get("documentation", ""),
+                   name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
@@ -701,8 +696,7 @@ class Workflow(Block):
             arguments_values = {}
             for i, input_ in enumerate(self.inputs):
                 overwritten = input_.has_default_value and i in dict_
-                imposed = input_ in self.imposed_variable_values
-                if (not input_.has_default_value or overwritten) and not imposed:
+                if (not input_.has_default_value or overwritten) and not input_.locked:
                     path_value = f"{path}/inputs/{i}"
                     value = deserialize_argument(type_=input_.type_, argument=dict_[i], global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path_value)
@@ -715,14 +709,12 @@ class Workflow(Block):
             return {"input_values": arguments_values, "name": name}
         raise NotImplementedError(f"Method '{method}' is not allowed for Workflow. Expected 'run' or 'start_run'.")
 
+    @property
+    def default_values(self):
+        return {i: input_.default_value for i, input_ in enumerate(self.inputs) if input_.has_default_value}
+
     def _run_dict(self) -> JsonSerializable:
-        dict_ = {}
-        for input_ in self.inputs:
-            if input_.has_default_value:
-                dict_[str(self.variables.index(input_))] = serialize(input_.default_value)
-            if input_ in self.imposed_variable_values:
-                dict_[str(self.variables.index(input_))] = serialize(self.imposed_variable_values[input_])
-        return dict_
+        return {str(self.variables.index(i)): serialize(v) for i, v in self.default_values.items()}
 
     def _start_run_dict(self) -> Dict:
         return {}
@@ -1083,11 +1075,20 @@ class Workflow(Block):
                 labels[variable] = variable.name
         nx.draw_networkx_labels(self.graph, pos, labels)
 
-    def run(self, input_values, verbose=False, progress_callback=lambda x: None, name=None):
+    def input_values(self, user_values=None):
+        if user_values is None:
+            user_values = {}
+        allowed_values = {i: v for i, v in user_values.items() if not self.inputs[i].locked}
+        input_values = self.default_values
+        input_values.update(allowed_values)
+        return input_values
+
+    def run(self, input_values=None, verbose=False, progress_callback=lambda x: None, name=None):
         """ Full run of a workflow. Yields a WorkflowRun. """
         log = ""
 
-        state = self.start_run(input_values)
+        values = self.input_values(input_values)
+        state = self.start_run(values)
         state.activate_inputs(check_all_inputs=True)
 
         start_time = time.time()
@@ -1216,7 +1217,7 @@ class Workflow(Block):
                       f"Workflow({prefix}blocks, {prefix}pipes, output={output_name}, documentation=documentation," \
                       f" name=\"{self.name}\")\n"
 
-        self.imposed_variables_to_script(prefix=prefix, full_script=full_script)
+        self.locked_inputs_to_script(prefix=prefix, full_script=full_script)
         imports.append(self.full_classname)
         full_script = f'documentation = """{self.documentation}"""\n\n' + full_script
         return ToScriptElement(declaration=full_script, imports=imports, imports_as_is=imports_as_is)
@@ -1256,16 +1257,19 @@ class Workflow(Block):
         pipes_str += f"{prefix}pipes = [{', '.join([prefix + 'pipe_' + str(i) for i in range(len(self.pipes))])}]\n"
         return pipes_str
 
-    def imposed_variables_to_script(self, prefix, full_script):
-        """ Set imposed variable values to script. """
-        for key, value in self.imposed_variable_values.items():
-            variable_indice = self.variable_indices(key)
-            if self.is_variable_nbv(key):
-                variable_str = variable_indice
-            else:
-                [block_index, _, variable_index] = variable_indice
-                variable_str = f"{prefix}blocks[{block_index}].inputs[{variable_index}]"
-            full_script += f"{prefix}workflow.imposed_variable_values[{variable_str}] = {value}\n"
+    def locked_inputs_to_script(self, prefix: str, full_script: str):
+        """ Set locked inputs to script. """
+        locked_inputs = []
+        for iblock, block in enumerate(self.blocks):
+            for i, input_ in enumerate(block.inputs):
+                if input_.locked:
+                    locked_inputs.append(f"{prefix}workflow.blocks[{iblock}].inputs[{i}]")
+
+        for i in self.nonblock_variables:
+            locked_inputs.append(f"{prefix}workflow.non_block_variables[{i}]")
+
+        for variable in locked_inputs:
+            full_script += f"{variable}.lock()"
 
     def save_script_to_stream(self, stream: StringFile):
         """ Save the workflow to a python script to a stream. """
@@ -1784,9 +1788,7 @@ class WorkflowState(DessiaObject):
         for index, variable in enumerate(self.workflow.inputs):
             if index in self.input_values:
                 self._activate_input(input_=variable, value=self.input_values[index])
-            elif variable in self.workflow.imposed_variable_values:
-                self._activate_input(input_=variable, value=self.workflow.imposed_variable_values[variable])
-            elif variable.has_default_value:
+            elif variable.has_default_value | variable.locked:
                 self._activate_input(input_=variable, value=variable.default_value)
             elif check_all_inputs:
                 msg = f"Value {variable.name} of index {index} in inputs has no value"
