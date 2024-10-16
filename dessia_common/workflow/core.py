@@ -682,7 +682,7 @@ class Workflow(Block):
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
                 variable = workflow.variable_from_index(ast.literal_eval(variable_index_str))
                 variable.default_value = value
-                variable.locked = True
+                variable.lock()
 
         return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
                    description=dict_.get("description", ""), documentation=dict_.get("documentation", ""),
