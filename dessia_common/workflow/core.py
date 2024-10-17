@@ -47,13 +47,14 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
-                 name: str = "", label: str = "", position: Tuple[float, float] = (0, 0)):
+                 name: str = "", label: str = "", group: str = None, position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if type_ is None and self.has_default_value:
             type_ = type(default_value)
         self.type_ = type_
         self.label = label
         self.position = position
+        self.group = group
         self._locked = False
         super().__init__(name)
 
@@ -99,7 +100,7 @@ class Variable(DessiaObject):
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
+        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position, "group": self.group,
                       "pretty_type": pretty_annotation(self.type_), "label": self.label, "locked": self.locked})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
@@ -154,35 +155,6 @@ class Variable(DessiaObject):
         declaration = f"name='{self.name}', label='{self.label}', position={self.position}," \
                       f" type_={schema.pretty_annotation}"
         return ToScriptElement(declaration=declaration, imports=imports, imports_as_is=[])
-
-
-class TypedVariable(Variable):
-    """ Backward compatibility for <0.15.0. Should not be used anymore. """
-
-    def __init__(self, type_: Type[T], name: str = '', position: Tuple[float, float] = None):
-        warnings.warn("'TypedVariable' has been deprecated since 0.15.0 and should not be used anymore."
-                      "\nConsider using 'Variable', instead", DeprecationWarning)
-        super().__init__(type_=type_, position=position, name=name)
-
-
-class VariableWithDefaultValue(Variable):
-    """ Backward compatibility for <0.15.0. Should not be used anymore. """
-
-    has_default_value: bool = True
-
-    def __init__(self, default_value: Any, name: str = '', position: Tuple[float, float] = None):
-        warnings.warn("'VariableWithDefaultValue' has been deprecated since 0.15.5 and should not be used anymore."
-                      "\nConsider using 'Variable', instead", DeprecationWarning)
-        Variable.__init__(self, default_value=default_value, name=name, position=position)
-
-
-class TypedVariableWithDefaultValue(Variable):
-    """ Backward compatibility for <0.15.0. Should not be used anymore. """
-
-    def __init__(self, type_: Type[T], default_value: T, name: str = '', position: Tuple[float, float] = None):
-        warnings.warn("'TypedVariableWithDefaultValue' has been deprecated since 0.15.0 and should not be used anymore."
-                      "\nConsider using 'Variable', instead", DeprecationWarning)
-        Variable.__init__(self, type_=type_, default_value=default_value, name=name, position=position)
 
 
 RESULT_VARIABLE_NAME = "_result_name_"
@@ -1989,7 +1961,7 @@ class WorkflowRun(WorkflowState):
         return schemas
 
     def to_markdown(self, **kwargs) -> str:
-        """ Render to markdown the WorkflowRun. """
+        """ Render the WorkflowRun to markdown. """
         template = dessia_common.templates.workflow_run_markdown_template
         writer = MarkdownWriter(print_limit=25, table_limit=None)
 
@@ -2069,7 +2041,7 @@ def deserialize_pipes(pipes_dict, blocks, nonblock_variables, connected_nbvs):
             # The detached variable concept is completely flawed. NBVs MUST be able to exist without downstream blocks
             # This is plainly wrong because a NBV could be linked to several input ports with concurrent types
             # (by inheritance for example). Here we are resetting the NBV type to whatever we find last.
-            # All in all, as block reset their input every time (trust user code instead of frontend json),
+            # All in all, as blocks reset their inputs every time (trust user code instead of frontend json),
             # this is a way to reset NBVs type to user-code value and avoiding deserialization as string,
             # which are two completely different issues.
             variable1.type_ = variable2.type_
