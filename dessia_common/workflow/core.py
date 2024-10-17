@@ -1284,7 +1284,7 @@ class ExecutionInfo(DessiaObject):
                    after_block_memory_usage=after_block_memory_usage)
 
     def to_markdown(self, **kwargs):
-        """ Renders to markdown the ExecutionInfo. Requires blocks for clean order. """
+        """ Render to markdown. Require blocks for clean order. """
         table_content = []
         for block, mem_start in dict(self.before_block_memory_usage).items():
             mem_end = dict(self.after_block_memory_usage)[block]
@@ -1293,8 +1293,7 @@ class ExecutionInfo(DessiaObject):
                                   f"{humanize.naturalsize(mem_diff)}"))
         writer = MarkdownWriter(print_limit=25, table_limit=None)
         return writer.matrix_table(table_content,
-                                   ["Block", "Memory usage at start", "Memory usage at end",
-                                    "Memory diff"])
+                                   ["Block", "Memory usage at start", "Memory usage at end", "Memory diff"])
 
 
 class WorkflowState(DessiaObject):
