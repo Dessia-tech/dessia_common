@@ -91,16 +91,8 @@ class DessiaObject(SerializableObject):
     _init_variables = None
     _allowed_methods = []
 
-    def __init__(self, name: str = '', **kwargs):
+    def __init__(self, name: str = ''):
         self.name = name
-        if kwargs:
-            warnings.warn(('Providing attributes to DessiaObject __init__ to be stored in self is deprecated\n'
-                           + 'Please store your attributes by yourself in your init'),
-                          DeprecationWarning)
-
-        # The code below has shown to be inefficient and should be remove in future version (0.16?)
-        for property_name, property_value in kwargs.items():
-            setattr(self, property_name, property_value)
 
     def base_dict(self):
         """ Base dict of the object, with just its name. """
