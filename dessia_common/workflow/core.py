@@ -585,12 +585,6 @@ class Workflow(Block):
         return [b._docstring() for b in self.blocks]
 
     @property
-    def _method_jsonschemas(self):
-        """ Compute the run jsonschema (had to be overloaded). """
-        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        return self.method_schemas
-
-    @property
     def method_schemas(self):
         """ New support of method schemas. """
         attributes = []
@@ -691,12 +685,8 @@ class Workflow(Block):
     def _start_run_dict(self) -> Dict:
         return {}
 
-    def method_dict(self, method_name: str = None, method_jsonschema=None) -> Dict:
+    def method_dict(self, method_name: str = None) -> Dict:
         """ Wrapper method to get dictionaries of run and start_run methods. """
-        if method_jsonschema is not None:
-            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
-                          " Please remove it from your function call. Method name is sufficient to get schema",
-                          DeprecationWarning)
         if method_name == 'run':
             return self._run_dict()
         if method_name == 'start_run':
@@ -904,11 +894,6 @@ class Workflow(Block):
             if variable not in ancestors:
                 disconnected_elements.append(variable)
         return disconnected_elements
-
-    def index(self, variable):
-        """ Deprecated, will be remove in version 0.8.0. """
-        warnings.warn("index method is deprecated, use input_index instead", DeprecationWarning)
-        return self.input_index(variable)
 
     def input_index(self, variable: Variable) -> Optional[int]:
         """ If variable is a workflow input, returns its index. """
@@ -1868,27 +1853,10 @@ class WorkflowRun(WorkflowState):
         documentation.load_by_default = not any(displays_by_default)
         return [documentation] + block_settings
 
-    def method_dict(self, method_name: str = None, method_jsonschema=None):
-        """ Get run again default dict. """
-        warnings.warn("WorkflowRun's method 'method_dict' is not supported anymore.", DeprecationWarning)
-        if method_jsonschema is not None:
-            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
-                          " Please remove it from your function call. Method name is sufficient to get schema",
-                          DeprecationWarning)
-        if method_name is not None and method_name == 'run_again':
-            return serialize_dict(self.input_values)
-        raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
-
     def run_again(self, input_values, progress_callback=None, name=None):
         """ Execute workflow again with given inputs. """
         return self.workflow.run(input_values=input_values, verbose=False,
                                  progress_callback=progress_callback, name=name)
-
-    @property
-    def _method_jsonschemas(self):
-        """ Compute the run jsonschema (had to be overloaded). """
-        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        return self.method_schemas
 
     def _split_input_values(self):
         """ Split the input values for blocks and non-block variables. """
@@ -1951,14 +1919,6 @@ class WorkflowRun(WorkflowState):
             print(f'Changing filename to {filename}')
         with open(filename, 'w', encoding='utf-8') as file:
             self.save_script_to_stream(file)
-
-    @property
-    def method_schemas(self):
-        """ Copy old method_jsonschema behavior. Probably to be refactored. """
-        warnings.warn("WorkflowRun's method 'method_schemas' is not supported anymore.", DeprecationWarning)
-        schemas = {"run_again": self.workflow.method_schemas.pop('run')}
-        schemas["run_again"].update({"classes": ["dessia_common.workflow.core.WorkflowRun"], "required": []})
-        return schemas
 
     def to_markdown(self, **kwargs) -> str:
         """ Render the WorkflowRun to markdown. """

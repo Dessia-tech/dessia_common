@@ -199,12 +199,8 @@ class DessiaObject(SerializableObject):
         warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
         return self.method_schemas
 
-    def method_dict(self, method_name: str, method_jsonschema=None):
+    def method_dict(self, method_name: str):
         """ Return a default dict for the given method name. """
-        if method_jsonschema is not None:
-            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
-                          " Please remove it from your function call. Method name is sufficient to get schema",
-                          DeprecationWarning)
         schema = self.raw_method_schemas[method_name]
         return schema.default_dict()
 
