@@ -46,8 +46,8 @@ class Variable(DessiaObject):
 
     _eq_is_data_eq = False
 
-    def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED,
-                 name: str = "", label: str = "", group: str = None, position: Tuple[float, float] = (0, 0)):
+    def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED, name: str = "", label: str = "",
+                 group: str = None, step: int = 0, position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if type_ is None and self.has_default_value:
             type_ = type(default_value)
@@ -55,6 +55,7 @@ class Variable(DessiaObject):
         self.label = label
         self.position = position
         self.group = group
+        self.step = step
         self._locked = False
         super().__init__(name)
 
@@ -605,14 +606,9 @@ class Workflow(Block):
             if input_ in self.nonblock_variables and not title:
                 title = name
 
-            # Editable and Default values
-            editable = not input_.locked
-            if input_.has_default_value:
-                attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                                  editable=editable, documentation=description))
-            else:
-                attributes.append(SchemaAttribute(name=input_address, title=title, editable=editable,
-                                                  documentation=description))
+            attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
+                                              editable=not input_.locked, documentation=description, step=input_.step,
+                                              group=input_.group))
 
         schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}

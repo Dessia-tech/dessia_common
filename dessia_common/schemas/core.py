@@ -92,8 +92,8 @@ class SchemaAttribute:
     :param documentation: Parsed documentation for given attribute.
     """
 
-    def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "",
-                 editable: bool = True, documentation: ParsedAttribute = None):
+    def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "", editable: bool = True,
+                 documentation: ParsedAttribute = None, step: int = 0, group: str = None):
         self.name = name
         self.default_value = default_value
         self._title = title
@@ -101,6 +101,8 @@ class SchemaAttribute:
         if documentation is None:
             documentation = EMPTY_PARSED_ATTRIBUTE
         self.documentation = documentation
+        self.step = step
+        self.group = group
 
     def __str__(self):
         return self.name
@@ -189,6 +191,14 @@ class Schema:
         """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
         order = [a.name for a in self.attributes]
+        stepset = {a.step for a in self.attributes}
+        steps = {s: {} for s in stepset}
+        for attribute in self.attributes:
+            if attribute.group:
+                steps[attribute.step][attribute.group][attribute.name] = self.chunk(attribute)
+            else:
+                steps[attribute.step][attribute.name] = self.chunk(attribute)
+
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
         schema.update({"required": required, "order": order, "properties": properties,
@@ -1563,6 +1573,13 @@ class EnumProperty(TypingProperty):
         chunk = super().to_dict()
         chunk.update({"allowed_values": self.args, "type": "string"})
         return chunk
+
+
+class Step:
+    def __init__(self, schemas: List[Union[Property, ClassSchema]], display_selectors: List[str] = None,
+                 name: str = ""):
+        self.schemas = schemas
+        self.name = name
 
 
 def inspect_arguments(method: Callable, merge: bool = False) -> Tuple[List[str], Dict[str, Any]]:
