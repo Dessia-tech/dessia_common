@@ -6,7 +6,7 @@ import ast
 import time
 import datetime
 from functools import cached_property
-from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar
+from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, Callable
 import warnings
 
 import humanize
@@ -739,6 +739,27 @@ class Workflow(Block):
             i += 1
         return runtime_blocks
 
+    def secondary_block(self, block: Block):
+        return block not in self.runtime_blocks
+
+    def has_avaible_inputs(self, block: Block):
+
+
+    def _branch_blocks(self, block: Block, condition: Callable):
+        upstream_blocks = self.upstream_blocks(block)
+        branch_blocks = [block]
+        i = 0
+        candidates = upstream_blocks
+        while candidates and i <= len(self.blocks):
+            candidates = []
+            for upstream_block in upstream_blocks:
+                if condition(upstream_block) and upstream_block not in branch_blocks:
+                    branch_blocks.insert(0, upstream_block)
+                    candidates.extend(self.upstream_blocks(upstream_block))
+            upstream_blocks = candidates
+            i += 1
+        return branch_blocks
+
     def secondary_branch_blocks(self, block: Block) -> List[Block]:
         """
         Compute the necessary upstream blocks to run a part of a workflow that leads to the given block.
@@ -747,18 +768,7 @@ class Workflow(Block):
 
         :param block: Block that is the target of the secondary branch
         """
-        upstream_blocks = self.upstream_blocks(block)
-        branch_blocks = [block]
-        i = 0
-        candidates = upstream_blocks
-        while candidates and i <= len(self.blocks):
-            candidates = []
-            for upstream_block in upstream_blocks:
-                if upstream_block not in self.runtime_blocks and upstream_block not in branch_blocks:
-                    branch_blocks.insert(0, upstream_block)
-                    candidates.extend(self.upstream_blocks(upstream_block))
-            upstream_blocks = candidates
-            i += 1
+        branch_blocks = self._branch_blocks(block, self.secondary_block)
         for branch_block in branch_blocks:
             upstream_blocks = self.upstream_blocks(branch_block)
             for upstream_block in upstream_blocks:
@@ -846,6 +856,14 @@ class Workflow(Block):
         if incoming_pipe:
             return incoming_pipe.input_variable
         return None
+
+    def upstream_inputs(self, variable: Variable) -> List[Variable]:
+        """
+        Return all upstream inputs needed to reach given variables.
+
+        :param variable: Variable to reach
+        """
+
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
@@ -1228,6 +1246,19 @@ class Workflow(Block):
     def evaluate(self, values, **kwargs):
         """ Not implemented Workflow as Block evaluate method. """
         raise NotImplementedError("Method 'evaluate' is not implemented for class Workflow.")
+
+    @property
+    def displayable_outputs(self):
+        displayable_outputs = []
+        for block in self.blocks:
+            for output in block.outputs:
+                try:
+                    if issubclass(output.type_, DessiaObject):
+                        displayable_outputs.append(output)
+                        print(self.variable_index(output))
+                except TypeError:
+                    pass
+        return displayable_outputs
 
 
 class ExecutionInfo(DessiaObject):
@@ -1682,7 +1713,7 @@ class WorkflowState(DessiaObject):
         Blocks that can be activated are blocks that have all inputs ready for evaluation.
         """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
-                and (not self.activated_items[b] or b not in self.workflow.runtime_blocks)]
+                and (not self.activated_items[b] or self.workflow.secondary_block(b))]
 
     def _block_activable_by_inputs(self, block: Block):
         """Return whether a block has all its inputs active and can be activated."""
