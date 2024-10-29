@@ -31,7 +31,7 @@ from dessia_common.warnings import SerializationWarning
 from dessia_common.exports import ExportFormat, MarkdownWriter
 import dessia_common.templates
 from dessia_common.serialization import (deserialize, serialize_with_pointers, serialize, update_pointers_data,
-                                         serialize_dict, add_references, deserialize_argument)
+                                         add_references, deserialize_argument)
 from dessia_common.workflow.utils import (ToScriptElement, blocks_to_script, nonblock_variables_to_script,
                                           update_imports, generate_default_value)
 
