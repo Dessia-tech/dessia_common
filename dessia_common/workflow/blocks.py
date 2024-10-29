@@ -975,13 +975,15 @@ class MultiObject(Display):
         multiplot = pd.MultiplePlots(elements=samples, plots=plots, name="Results plot")
         return [multiplot.to_dict()]
 
-    # def _to_script(self, _) -> ToScriptElement:
-    #     """ Write block config into a chunk of script. """
-    #     script = (f"MultiObject("
-    #               f"selector_name='{self.selector.name}',"
-    #               f" attributes={self.attributes},"
-    #               f" {self.base_script()})")
-    #     return ToScriptElement(declaration=script, imports=[self.full_classname])
+    def _to_script(self, _) -> ToScriptElement:
+        """ Write block config into a chunk of script. """
+        imports = [c.full_classname for c in self.configurations] + [self.full_classname]
+        configurations = [f"{c._to_script()}" for i, c in enumerate(self.configurations)]
+        script = ("MultiObject("
+                  f"selector_name='{self.selector.name}',"
+                  f" configurations=[{', '.join(configurations)}],"
+                  f" {self.base_script()})")
+        return ToScriptElement(declaration=script, imports=imports)
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
@@ -1557,6 +1559,10 @@ class ScatterView(PlotDataView):
         return pd.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
                           elements=samples, name=self.name)
 
+    def _to_script(self) -> str:
+        attributes = "', '".join(self.attributes)
+        return f"{self.__class__.__name__}(attributes=('{attributes}'), name='{self.name}')"
+
 
 class ParallelView(PlotDataView):
     """ Scatter View Framework. """
@@ -1567,3 +1573,7 @@ class ParallelView(PlotDataView):
     def plot_data_object(self, objects, reference_path: str = "#") -> pd.ParallelPlot:
         samples = self.samples(objects=objects, reference_path=reference_path)
         return pd.ParallelPlot(elements=samples, disposition="horizontal", axes=self.attributes)
+
+    def _to_script(self) -> str:
+        attributes = "', '".join(self.attributes)
+        return f"{self.__class__.__name__}(attributes=['{attributes}'], name='{self.name}')"

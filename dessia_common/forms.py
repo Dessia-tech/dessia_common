@@ -918,10 +918,15 @@ class Literals(DessiaObject):
 
     _standalone_in_db = True
 
-    def __init__(self, direction: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red", name: str = ""):
-        self.direction = DIRECTIONS[direction]
+    def __init__(self, direction_name: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red",
+                 name: str = ""):
+        self.direction_name = direction_name
         self.color = color
         super().__init__(name=name)
+
+    @property
+    def direction(self):
+        return DIRECTIONS[self.direction_name]
 
 
 # Definition 2
