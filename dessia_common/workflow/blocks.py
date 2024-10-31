@@ -978,7 +978,7 @@ class MultiObject(Display):
     def _to_script(self, _) -> ToScriptElement:
         """ Write block config into a chunk of script. """
         imports = [c.full_classname for c in self.configurations] + [self.full_classname]
-        configurations = [f"{c._to_script()}" for i, c in enumerate(self.configurations)]
+        configurations = [f"{c._to_script()}" for c in self.configurations]
         script = ("MultiObject("
                   f"selector_name='{self.selector.name}',"
                   f" configurations=[{', '.join(configurations)}],"
