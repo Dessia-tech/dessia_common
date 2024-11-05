@@ -739,11 +739,15 @@ class Workflow(Block):
             i += 1
         return runtime_blocks
 
-    def secondary_block(self, block: Block):
+    def is_block_secondary(self, block: Block) -> bool:
         return block not in self.runtime_blocks
 
-    def has_avaible_inputs(self, block: Block):
+    def has_available_inputs(self, block: Block) -> bool:
+        available_inputs = [self.upstream_variable(i) is None and not i.locked for i in block.inputs]
+        return any(available_inputs)
 
+    def has_no_available_inputs(self, block: Block) -> bool:
+        return not self.has_available_inputs(block)
 
     def _branch_blocks(self, block: Block, condition: Callable):
         upstream_blocks = self.upstream_blocks(block)
@@ -768,7 +772,7 @@ class Workflow(Block):
 
         :param block: Block that is the target of the secondary branch
         """
-        branch_blocks = self._branch_blocks(block, self.secondary_block)
+        branch_blocks = self._branch_blocks(block, self.is_block_secondary)
         for branch_block in branch_blocks:
             upstream_blocks = self.upstream_blocks(branch_block)
             for upstream_block in upstream_blocks:
@@ -863,7 +867,10 @@ class Workflow(Block):
 
         :param variable: Variable to reach
         """
-
+        block = self.block_from_variable(variable)
+        branch_blocks = self._branch_blocks(block=block, condition=self.has_no_available_inputs)
+        print(branch_blocks)
+        return branch_blocks
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
@@ -1713,7 +1720,7 @@ class WorkflowState(DessiaObject):
         Blocks that can be activated are blocks that have all inputs ready for evaluation.
         """
         return [b for b in self.workflow.blocks if self._block_activable_by_inputs(b)
-                and (not self.activated_items[b] or self.workflow.secondary_block(b))]
+                and (not self.activated_items[b] or self.workflow.is_block_secondary(b))]
 
     def _block_activable_by_inputs(self, block: Block):
         """Return whether a block has all its inputs active and can be activated."""
