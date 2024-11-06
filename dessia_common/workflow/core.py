@@ -740,16 +740,14 @@ class Workflow(Block):
         return runtime_blocks
 
     def is_block_secondary(self, block: Block) -> bool:
+        """ Return whether given block is part of the main branch or not. """
         return block not in self.runtime_blocks
 
-    def has_available_inputs(self, block: Block) -> bool:
-        available_inputs = [self.upstream_variable(i) is None and not i.locked for i in block.inputs]
-        return any(available_inputs)
+    def has_upstream_block(self, block: Block) -> bool:
+        """ Return whether given block has any upstream block or not. """
+        return bool(self.upstream_blocks(block))
 
-    def has_no_available_inputs(self, block: Block) -> bool:
-        return not self.has_available_inputs(block)
-
-    def _branch_blocks(self, block: Block, condition: Callable):
+    def _branch_blocks(self, block: Block, condition: Callable[[Block], bool], include_last: bool = False):
         upstream_blocks = self.upstream_blocks(block)
         branch_blocks = [block]
         i = 0
@@ -757,10 +755,12 @@ class Workflow(Block):
         while candidates and i <= len(self.blocks):
             candidates = []
             for upstream_block in upstream_blocks:
-                if condition(upstream_block) and upstream_block not in branch_blocks:
+                if condition(upstream_block):
                     branch_blocks.insert(0, upstream_block)
                     candidates.extend(self.upstream_blocks(upstream_block))
-            upstream_blocks = candidates
+                elif include_last:
+                    branch_blocks.insert(0, upstream_block)
+            upstream_blocks = [b for b in candidates if b not in branch_blocks]
             i += 1
         return branch_blocks
 
@@ -826,18 +826,32 @@ class Workflow(Block):
             outgoing_pipes.extend(self.variable_output_pipes(output))
         return outgoing_pipes
 
+    def block_upstream_variables(self, block: Block):
+        """
+        Return block inputs configuration.
+
+        Inputs can be of different states :
+        - available : input has no upstream (it is not connected by a pipe) and is not locked -> references itself
+        - nonblock : input has an upstream, which is a nonblock variable, and is not locked -> references the NBV
+        - wired : input is connected by a pipe to another block output -> references upstream block output
+        - locked : input or upstream NBV is locked -> references itself or the NBV
+        """
+        upstream_variables = {"available": [], "nonblock": [], "wired": [], "locked": []}
+        input_upstreams = [self.upstream_variable(i) for i in block.inputs]
+        for upstream_variable, block_input in zip(input_upstreams, block.inputs):
+            if upstream_variable is None:
+                category = "locked" if block_input.locked else "available"
+                upstream_variables[category].append(block_input)
+            elif upstream_variable in self.nonblock_variables:
+                category = "locked" if upstream_variable.locked else "nonblock"
+                upstream_variables[category].append(upstream_variable)
+            else:
+                upstream_variables["wired"].append(upstream_variable)
+        return upstream_variables
+
     def upstream_blocks(self, block: Block) -> List[Block]:
         """ Return a list of given block's upstream blocks. """
-        # Setting a dict here to foresee a future use. Might be unnecessary
-        upstream_variables = {"available": [], "nonblock": [], "wired": []}
-        input_upstreams = [self.upstream_variable(i) for i in block.inputs]
-        for variable in input_upstreams:
-            if variable is None:
-                upstream_variables["available"].append(variable)
-            elif variable in self.nonblock_variables:
-                upstream_variables["nonblock"].append(variable)
-            else:
-                upstream_variables["wired"].append(variable)
+        upstream_variables = self.block_upstream_variables(block)
         upstream_blocks = [self.block_from_variable(v) for v in upstream_variables["wired"]]
         return list(set(upstream_blocks))
 
@@ -868,9 +882,12 @@ class Workflow(Block):
         :param variable: Variable to reach
         """
         block = self.block_from_variable(variable)
-        branch_blocks = self._branch_blocks(block=block, condition=self.has_no_available_inputs)
-        print(branch_blocks)
-        return branch_blocks
+        upstream_inputs = []
+        branch_blocks = self._branch_blocks(block=block, condition=self.has_upstream_block, include_last=True)
+        for block in branch_blocks:
+            upstream_variables = self.block_upstream_variables(block)
+            upstream_inputs.extend(upstream_variables["available"] + upstream_variables["nonblock"])
+        return list(set(upstream_inputs))
 
     def variable_indices(self, variable: Variable) -> Optional[Union[Tuple[int, int, int], int]]:
         """
