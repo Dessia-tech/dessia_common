@@ -855,6 +855,9 @@ class Workflow(Block):
         upstream_blocks = [self.block_from_variable(v) for v in upstream_variables["wired"]]
         return list(set(upstream_blocks))
 
+    def upstream_branch(self, block: Block) -> List[Block]:
+        return self._branch_blocks(block=block, condition=self.has_upstream_block, include_last=True)
+
     def get_upstream_nbv(self, variable: Variable) -> Variable:
         """ If given variable has an upstream nonblock_variable, return it otherwise return given variable itself. """
         if not self.nonblock_variables:
@@ -883,7 +886,7 @@ class Workflow(Block):
         """
         block = self.block_from_variable(variable)
         upstream_inputs = []
-        branch_blocks = self._branch_blocks(block=block, condition=self.has_upstream_block, include_last=True)
+        branch_blocks = self.upstream_branch(block)
         for block in branch_blocks:
             upstream_variables = self.block_upstream_variables(block)
             upstream_inputs.extend(upstream_variables["available"] + upstream_variables["nonblock"])
