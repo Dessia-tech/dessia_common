@@ -47,7 +47,7 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED, name: str = "", label: str = "",
-                 step: int = 0, position: Tuple[float, float] = (0, 0)):
+                 step: 'Step' = None, position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if type_ is None and self.has_default_value:
             type_ = type(default_value)
@@ -269,6 +269,59 @@ class WorkflowError(Exception):
     """ Specific WorkflowError Exception. """
 
 
+# class InputGroup:
+#     """ Group for inputs implementation. Enables to show displays in wizard. """
+#
+#     def __init__(self, display_setting: DisplaySetting, inputs: List[Variable]):
+#         self.display_setting = display_setting
+#         self.inputs = inputs
+#
+#
+# class Step:
+#     """ Wizard step implementation. """
+#
+#     def __init__(self, inputs: List[Union[Variable, InputGroup]]):
+#         # self.index = index
+#         # self.label = label or f"Step {index}"
+#         self.inputs = inputs
+#
+#     def add_input(self, input_: Variable, display_setting: DisplaySetting = None):
+#         if display_setting is None:
+#             self.inputs.append(input_)
+#         else:
+#             groups = [e for e in self.inputs if isinstance(e, InputGroup) and e.display_setting is display_setting]
+#             if len(groups) == 0:
+#                 group = InputGroup(display_setting=display_setting, inputs=[input_])
+#                 self.inputs.append(group)
+#             elif len(groups) == 1:
+#                 group = groups[0]
+#                 group.inputs.append(input_)
+#             else:
+#                 raise ValueError("Input cannot be added to several groups")
+#
+#     def add_display(self, display_setting: DisplaySetting, inputs: List[Variable]):
+#         for input_ in inputs:
+#             self.add_input(input_=input_, display_setting=display_setting)
+#
+#
+# class Wizard:
+#     """ Workflow and form wizard implementation. """
+#
+#     def __init__(self, steps: List[Step]):
+#         self.steps = steps
+#
+#     def insert_step(self, index: int = None):
+#         pass
+
+
+# class Step:
+#     """ Step. """
+#
+#     def __init__(self, label: str = "", display_setting: DisplaySetting = None):
+#         self.label = label
+#         self.display_setting = display_setting
+
+
 class Workflow(Block):
     """
     Class Block of Workflows.
@@ -326,6 +379,8 @@ class Workflow(Block):
 
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
+
+        self.steps = [Step()]
 
     @classmethod
     def generate_empty(cls):
@@ -606,8 +661,7 @@ class Workflow(Block):
                 title = name
 
             attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                              editable=not input_.locked, documentation=description, step=input_.step,
-                                              group=input_.group))
+                                              editable=not input_.locked, documentation=description, step=input_.step))
 
         schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
@@ -1244,12 +1298,30 @@ class Workflow(Block):
                 try:
                     if issubclass(output.type_, DessiaObject):
                         displayable_outputs.append(output)
-                        print(self.variable_index(output))
+                        print(self.variable_index(output), output.name, output.type_)
                 except TypeError:
                     pass
         return displayable_outputs
 
+    @staticmethod
+    def change_input_step(input_: Variable, step: Optional[Step]):
+        input_.step = step
 
+    def remove_input_from_step(self, input_: Variable):
+        self.change_input_step(input_=input_, step=None)
+
+    def insert_step(self, index: int = None, label: str = ""):
+        step = Step(label)
+        if index is None:
+            self.steps.append(step)
+        else:
+            self.steps.insert(index, Step(label))
+
+    def remove_step(self, step: Step):
+        self.steps.remove(step)
+        step_inputs = [i for i in self.inputs if i.step is step]
+        for input_ in step_inputs:
+            self.remove_input_from_step(input_)
 
 
 class ExecutionInfo(DessiaObject):

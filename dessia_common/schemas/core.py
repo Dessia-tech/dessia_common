@@ -11,7 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.displays import DisplayObject
+from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
                                    CadViewType, PlotDataType, MarkdownType, ViewType)
@@ -80,6 +80,14 @@ class ParsedDocstring(TypedDict):
     attributes: Dict[str, ParsedAttribute]
 
 
+class Step:
+    """ Step. """
+
+    def __init__(self, label: str = "", display_setting: DisplaySetting = None):
+        self.label = label
+        self.display_setting = display_setting
+
+
 class SchemaAttribute:
     """
     A wrapper that connects a schema attribute name with its attached data.
@@ -93,7 +101,7 @@ class SchemaAttribute:
     """
 
     def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "", editable: bool = True,
-                 documentation: ParsedAttribute = None, step: int = 0, group: str = None):
+                 documentation: ParsedAttribute = None, step: Step = 0):
         self.name = name
         self.default_value = default_value
         self._title = title
@@ -102,7 +110,6 @@ class SchemaAttribute:
             documentation = EMPTY_PARSED_ATTRIBUTE
         self.documentation = documentation
         self.step = step
-        self.group = group
 
     def __str__(self):
         return self.name
@@ -191,13 +198,11 @@ class Schema:
         """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
         order = [a.name for a in self.attributes]
-        stepset = {a.step for a in self.attributes}
-        steps = {s: {} for s in stepset}
-        for attribute in self.attributes:
-            if attribute.group:
-                steps[attribute.step][attribute.group][attribute.name] = self.chunk(attribute)
-            else:
-                steps[attribute.step][attribute.name] = self.chunk(attribute)
+        steps = {}
+        remaining_attributes = {}
+        # for attribute in self.attributes:
+        #     if attribute.step is not None:
+                # if step
 
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
