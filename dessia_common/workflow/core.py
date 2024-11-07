@@ -47,14 +47,13 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED, name: str = "", label: str = "",
-                 group: str = None, step: int = 0, position: Tuple[float, float] = (0, 0)):
+                 step: int = 0, position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if type_ is None and self.has_default_value:
             type_ = type(default_value)
         self.type_ = type_
         self.label = label
         self.position = position
-        self.group = group
         self.step = step
         self._locked = False
         super().__init__(name)
@@ -1054,7 +1053,6 @@ class Workflow(Block):
         digraph = self.layout_graph
         graph = digraph.to_undirected()
         connected_components = nx.connected_components(graph)
-
         return [self.graph_columns(digraph.subgraph(cc)) for cc in list(connected_components)]
 
     def plot_graph(self):
@@ -1115,42 +1113,6 @@ class Workflow(Block):
     def start_run(self, input_values=None, name: str = None):
         """ Partial run of a workflow. Yields a WorkflowState. """
         return WorkflowState(self, input_values=input_values, name=name)
-
-    def jointjs_layout(self, min_horizontal_spacing=300, min_vertical_spacing=200, max_height=800, max_length=1500):
-        """ Deprecated workflow layout. Used only in local plot method. """
-        coordinates = {}
-        elements_by_distance = {}
-        if self.output:
-            for element in self.nodes:
-                distances = []
-                paths = nx.all_simple_paths(self.graph, element, self.output)
-                for path in paths:
-                    distance = 1
-                    for path_element in path[1:-1]:
-                        if path_element in self.blocks + self.nonblock_variables:
-                            distance += 1
-                    distances.append(distance)
-                try:
-                    distance = max(distances)
-                except ValueError:
-                    distance = 3
-                if distance in elements_by_distance:
-                    elements_by_distance[distance].append(element)
-                else:
-                    elements_by_distance[distance] = [element]
-
-        if len(elements_by_distance) != 0:
-            max_distance = max(elements_by_distance.keys())
-        else:
-            max_distance = 3  # TODO: this is an awful quick fix
-
-        horizontal_spacing = max(min_horizontal_spacing, max_length / max_distance)
-
-        for i, distance in enumerate(sorted(elements_by_distance.keys())[::-1]):
-            vertical_spacing = min(min_vertical_spacing, max_height / len(elements_by_distance[distance]))
-            for j, element in enumerate(elements_by_distance[distance]):
-                coordinates[element] = (i * horizontal_spacing, (j + 0.5) * vertical_spacing)
-        return coordinates
 
     def is_valid(self, level: str = "error"):
         """ Tell if the workflow is valid by checking type compatibility of pipes inputs/outputs. """
@@ -1286,6 +1248,8 @@ class Workflow(Block):
                 except TypeError:
                     pass
         return displayable_outputs
+
+
 
 
 class ExecutionInfo(DessiaObject):
