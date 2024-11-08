@@ -17,7 +17,7 @@ import dessia_common.errors
 from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 
-from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE,
+from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, SchemaStep,
                                         serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
 from dessia_common.utils.types import recursive_type, typematch, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
@@ -47,14 +47,13 @@ class Variable(DessiaObject):
     _eq_is_data_eq = False
 
     def __init__(self, type_: Type[T] = None, default_value: T = UNDEFINED, name: str = "", label: str = "",
-                 step: 'Step' = None, position: Tuple[float, float] = (0, 0)):
+                 position: Tuple[float, float] = (0, 0)):
         self.default_value = default_value
         if type_ is None and self.has_default_value:
             type_ = type(default_value)
         self.type_ = type_
         self.label = label
         self.position = position
-        self.step = step
         self._locked = False
         super().__init__(name)
 
@@ -100,7 +99,7 @@ class Variable(DessiaObject):
                 id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Customize serialization method in order to handle undefined default value as well as pretty type. """
         dict_ = DessiaObject.base_dict(self)
-        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position, "group": self.group,
+        dict_.update({"type_": serialize_annotation(self.type_), "position": self.position,
                       "pretty_type": pretty_annotation(self.type_), "label": self.label, "locked": self.locked})
         if self.default_value is not UNDEFINED:
             dict_["default_value"] = serialize(self.default_value)
@@ -314,12 +313,15 @@ class WorkflowError(Exception):
 #         pass
 
 
-# class Step:
-#     """ Step. """
-#
-#     def __init__(self, label: str = "", display_setting: DisplaySetting = None):
-#         self.label = label
-#         self.display_setting = display_setting
+class Step:
+    """ Step. """
+
+    def __init__(self, label: str = "", inputs: List[Variable] = None, display_setting: DisplaySetting = None):
+        self.label = label
+        if inputs is None:
+            inputs = []
+        self.inputs = inputs
+        self.display_setting = display_setting
 
 
 class Workflow(Block):
@@ -380,7 +382,8 @@ class Workflow(Block):
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
 
-        self.steps = [Step()]
+        self._steps = []
+        self._default_step = Step(inputs=[i for i in self.inputs], label="Default Step")
 
     @classmethod
     def generate_empty(cls):
@@ -661,9 +664,11 @@ class Workflow(Block):
                 title = name
 
             attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                              editable=not input_.locked, documentation=description, step=input_.step))
+                                              editable=not input_.locked, documentation=description))
 
-        schema = Schema(annotations=annotations, attributes=attributes, documentation=self.description)
+        steps = [SchemaStep(label=s.label, attributes=[str(self.input_index(i)) for i in s.inputs]) for s in self.steps]
+
+        schema = Schema(annotations=annotations, attributes=attributes, steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
@@ -1303,25 +1308,54 @@ class Workflow(Block):
                     pass
         return displayable_outputs
 
-    @staticmethod
-    def change_input_step(input_: Variable, step: Optional[Step]):
-        input_.step = step
+    @property
+    def steps(self):
+        if self._default_step.inputs:
+            return self._steps + [self._default_step]
+        return self._steps
+
+    def change_input_step(self, input_: Variable, step: Step):
+        current_step = self.find_input_step(input_)
+        if current_step is self._default_step:
+            current_step.inputs.remove(input_)
+        step.inputs.append(input_)
 
     def remove_input_from_step(self, input_: Variable):
-        self.change_input_step(input_=input_, step=None)
+        self.change_input_step(input_=input_, step=self._default_step)
 
     def insert_step(self, index: int = None, label: str = ""):
-        step = Step(label)
+        step = Step(label=label)
         if index is None:
-            self.steps.append(step)
+            self._steps.append(step)
         else:
-            self.steps.insert(index, Step(label))
+            self._steps.insert(index, step)
 
     def remove_step(self, step: Step):
-        self.steps.remove(step)
-        step_inputs = [i for i in self.inputs if i.step is step]
-        for input_ in step_inputs:
-            self.remove_input_from_step(input_)
+        for input_ in step.inputs:
+            self.remove_input_from_step(input_=input_)
+        self._steps.remove(step)
+
+    def find_input_step(self, input_: Variable) -> Optional[Step]:
+        steps = [s for s in self.steps if input_ in s.inputs]
+        if not len(steps):
+            return None
+        if len(steps) == 1:
+            return steps[0]
+        raise ValueError(f"Input '{input_.name}', labelled '{input_.label}' found twice in steps.")
+
+    # def log_inputs(self, title: str = ""):
+    #     print(f"{title} =============================")
+    #     for i, input_ in enumerate(self.inputs):
+    #         print(f"{i} | {self.variable_index(input_)} | {input_.name} | {input_.label}")
+    #     print(f"=====================================")
+
+    def log_steps(self, title: str = ""):
+        print(f"{title} =============================")
+        for step in self.steps:
+            print(step.label)
+            for input_ in step.inputs:
+                print("  ", input_.name)
+        print(f"=====================================")
 
 
 class ExecutionInfo(DessiaObject):

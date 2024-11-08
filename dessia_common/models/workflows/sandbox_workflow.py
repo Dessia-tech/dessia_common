@@ -79,7 +79,22 @@ pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7, pipe_8,
 workflow = Workflow(blocks=blocks, pipes=pipes, output=generate_block.outputs[1], documentation=documentation,
                     name="Generator 2024.02")
 
+
 workflow.insert_step(None, "A")
-workflow.change_input_step(workflow.inputs[0], workflow.steps[1])
-for input_ in workflow.inputs:
-    print(input_.name, input_.step)
+workflow.insert_step(1, "B")
+workflow.insert_step(1, "C")
+
+for i, input_ in enumerate(workflow.inputs):
+    step = workflow._steps[i % len(workflow._steps)]
+    workflow.change_input_step(input_=input_, step=step)
+
+# workflow.log_steps("A")
+#
+# workflow.remove_step(workflow.steps[1])
+#
+# workflow.log_steps("B")
+#
+# for input_ in reversed(workflow._default_step.inputs):
+#     workflow.change_input_step(input_=input_, step=workflow.steps[0])
+#
+# workflow.log_steps("C")

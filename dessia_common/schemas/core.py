@@ -80,14 +80,6 @@ class ParsedDocstring(TypedDict):
     attributes: Dict[str, ParsedAttribute]
 
 
-class Step:
-    """ Step. """
-
-    def __init__(self, label: str = "", display_setting: DisplaySetting = None):
-        self.label = label
-        self.display_setting = display_setting
-
-
 class SchemaAttribute:
     """
     A wrapper that connects a schema attribute name with its attached data.
@@ -101,7 +93,7 @@ class SchemaAttribute:
     """
 
     def __init__(self, name: str, default_value: T = UNDEFINED, title: str = "", editable: bool = True,
-                 documentation: ParsedAttribute = None, step: Step = 0):
+                 documentation: ParsedAttribute = None):
         self.name = name
         self.default_value = default_value
         self._title = title
@@ -109,7 +101,6 @@ class SchemaAttribute:
         if documentation is None:
             documentation = EMPTY_PARSED_ATTRIBUTE
         self.documentation = documentation
-        self.step = step
 
     def __str__(self):
         return self.name
@@ -136,6 +127,19 @@ class SchemaAttribute:
         return {"title": self.title, "editable": self.editable, "description": self.description}
 
 
+class SchemaStep:
+    """ Schema representation of a step. """
+
+    def __init__(self, label: str = "", attributes: List[str] = None):
+        self.label = label
+        if attributes is None:
+            attributes = []
+        self.attributes = attributes
+
+    # def to_dict(self):
+    #     dict_ = {"label": self.label, "properties":}
+
+
 class Schema:
     """
     Abstraction of a Schema.
@@ -150,11 +154,12 @@ class Schema:
     """
 
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 documentation: str = "", name: str = ""):
+                 steps=None, documentation: str = "", name: str = ""):
         self.annotations = annotations
         self.attributes = attributes
         self.documentation = documentation
         self.name = name
+        self.steps = steps
 
         self.required = [a for a in attributes if not a.has_default_value]
 
@@ -198,14 +203,18 @@ class Schema:
         """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
         order = [a.name for a in self.attributes]
-        steps = {}
-        remaining_attributes = {}
-        # for attribute in self.attributes:
-        #     if attribute.step is not None:
-                # if step
 
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
+
+        steps = {
+            str(i): {
+                "label": s.label,
+                a: properties[a] for a in s.attributes
+            } for i, s in enumerate(self.steps)
+        }
+        print(steps)
+
         schema.update({"required": required, "order": order, "properties": properties,
                        "description": self.documentation})
         schema.update(**kwargs)
@@ -1580,11 +1589,11 @@ class EnumProperty(TypingProperty):
         return chunk
 
 
-class Step:
-    def __init__(self, schemas: List[Union[Property, ClassSchema]], display_selectors: List[str] = None,
-                 name: str = ""):
-        self.schemas = schemas
-        self.name = name
+# class Step:
+#     def __init__(self, schemas: List[Union[Property, ClassSchema]], display_selectors: List[str] = None,
+#                  name: str = ""):
+#         self.schemas = schemas
+#         self.name = name
 
 
 def inspect_arguments(method: Callable, merge: bool = False) -> Tuple[List[str], Dict[str, Any]]:
