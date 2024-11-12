@@ -11,7 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.displays import DisplayObject, DisplaySetting
+from dessia_common.displays import DisplayObject
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
                                    CadViewType, PlotDataType, MarkdownType, ViewType)
@@ -130,36 +130,12 @@ class SchemaAttribute:
 class SchemaStep:
     """ Schema representation of a step. """
 
-    def __init__(self, label: str = "", attributes: List[str] = None):
-        self.label = label
-        if attributes is None:
-            attributes = []
-        self.attributes = attributes
-
-    # def to_dict(self):
-    #     dict_ = {"label": self.label, "properties":}
-
-
-class Schema:
-    """
-    Abstraction of a Schema.
-
-    It takes annotations written as a dict and then writes into a Dict the recursive structure of an object
-    that can be handled by dessia_common.
-    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
-    for example.
-
-    Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
-    That is why it implements methods with the same name.
-    """
-
-    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 steps=None, documentation: str = "", name: str = ""):
+    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute], label: str = "",
+                 documentation: str = ""):
         self.annotations = annotations
+        self.label = label
         self.attributes = attributes
         self.documentation = documentation
-        self.name = name
-        self.steps = steps
 
         self.required = [a for a in attributes if not a.has_default_value]
 
@@ -182,13 +158,6 @@ class Schema:
         if schema is not None:
             return schema.to_dict()
 
-        # if attribute in self.default_arguments:
-        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
-        #     default = self.default_arguments.get(attribute, None)
-        #     print("Default", default)
-        #     chunk["default_value"] = schema.default_value(definition_default=default)
-        return {}
-
     @property
     def chunks(self) -> List[Dict[str, Any]]:
         """ Concatenate schema chunks into a List. """
@@ -201,23 +170,78 @@ class Schema:
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
-        schema = deepcopy(SCHEMA_HEADER)
         order = [a.name for a in self.attributes]
-
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
+        return {"required": required, "order": order, "properties": properties,
+                "description": self.documentation, "label": self.label, **kwargs}
 
-        steps = {
-            str(i): {
-                "label": s.label,
-                a: properties[a] for a in s.attributes
-            } for i, s in enumerate(self.steps)
-        }
-        print(steps)
+    def check_list(self, issues: CheckList):
+        for attribute in self.attributes:
+            # Is typed
+            is_typed_check = self.attribute_is_annotated(attribute.name)
+            issues += CheckList([is_typed_check])
 
-        schema.update({"required": required, "order": order, "properties": properties,
-                       "description": self.documentation})
-        schema.update(**kwargs)
+            if is_typed_check.level != "error":
+                # Specific check
+                schema = self.property_schemas[attribute.name]
+                issues += schema.check_list()
+
+    def attribute_is_annotated(self, attribute_name: str) -> PassedCheck:
+        """ Check whether given attribute is annotated in function definition or not. """
+        if attribute_name not in self.annotations:
+            return UntypedArgument(attribute_name)
+        return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
+
+
+class Schema:
+    """
+    Abstraction of a Schema.
+
+    It takes annotations written as a dict and then writes into a Dict the recursive structure of an object
+    that can be handled by dessia_common.
+    This dictionary can then be translated as a json to be read by the frontend in order to compute edit forms,
+    for example.
+
+    Right now Schema doesn't inherit from any DessiaObject class (SerializableObject ?), but could, in the future.
+    That is why it implements methods with the same name.
+    """
+
+    def __init__(self, steps=None, documentation: str = "", name: str = ""):
+        self.documentation = documentation
+        self.name = name
+        self.steps = steps
+
+    def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
+        """ Extract and compute a schema from one of the attributes. """
+        # self.steps
+        # schema = self.property_schemas.get(attribute.name, None)
+        #
+        # if schema is not None:
+        #     return schema.to_dict()
+
+        # if attribute in self.default_arguments:
+        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
+        #     default = self.default_arguments.get(attribute, None)
+        #     print("Default", default)
+        #     chunk["default_value"] = schema.default_value(definition_default=default)
+        return {}
+
+    # @property
+    # def chunks(self) -> List[Dict[str, Any]]:
+    #     """ Concatenate schema chunks into a List. """
+    #     return [self.chunk(a) for a in self.attributes]
+    #
+    # @property
+    # def standalone_properties(self) -> List[str]:
+    #     """ Return all properties that are standalone. """
+    #     return [a.name for a in self.attributes if self.property_schemas[a.name].standalone_in_db]
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        """ Base Schema. kwargs are added to result as well. """
+        schema = deepcopy(SCHEMA_HEADER)
+        steps = {str(i): s.to_dict() for i, s in enumerate(self.steps)}
+        schema.update({"steps": steps, "description": self.documentation})
         return schema
 
     def default_dict(self) -> Dict[str, Any]:
@@ -227,7 +251,7 @@ class Schema:
         If a definition default have been set by user, most schemas will return this value (or serialized).
         if not, schemas will compute a default compatible with platform (None most of the time).
         """
-        return {a: s.default_value() for a, s in self.property_schemas.items()}
+        return {a: s.default_value() for step in self.steps for a, s in step.property_schemas.items()}
 
     def default_value(self) -> Dict[str, Any]:
         """
@@ -236,7 +260,8 @@ class Schema:
         It differs from 'default_dict', as only user defined default_value are set here.
         In 'default_dict' method, every property is set.
         """
-        return {a: s.default_value() for a, s in self.property_schemas.items() if s.has_default_value}
+        return {a: s.default_value() for step in self.steps
+                for a, s in step.property_schemas.items() if s.has_default_value}
 
     def check_list(self) -> CheckList:
         """
@@ -247,28 +272,14 @@ class Schema:
         - Schema specific check
         """
         issues = CheckList([])
-
-        for attribute in self.attributes:
-            # Is typed
-            is_typed_check = self.attribute_is_annotated(attribute.name)
-            issues += CheckList([is_typed_check])
-
-            if is_typed_check.level != "error":
-                # Specific check
-                schema = self.property_schemas[attribute.name]
-                issues += schema.check_list()
+        for step in self.steps:
+            step.check_list(issues)
         return issues
 
     @property
     def is_valid(self) -> bool:
         """ Return whether the class definition is valid or not. """
         return not self.check_list().checks_above_level("error")
-
-    def attribute_is_annotated(self, attribute_name: str) -> PassedCheck:
-        """ Check whether given attribute is annotated in function definition or not. """
-        if attribute_name not in self.annotations:
-            return UntypedArgument(attribute_name)
-        return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
 
     @classmethod
     def from_type(cls, annotation: Type[T], attribute_name: str) -> 'Schema':
@@ -279,7 +290,8 @@ class Schema:
         """
         annotations = {attribute_name: annotation}
         attribute = SchemaAttribute(attribute_name)
-        return cls(annotations=annotations, attributes=[attribute])
+        step = SchemaStep(annotations=annotations, attributes=[attribute], label="Step 1")
+        return cls(steps=[step])
 
     @classmethod
     def from_serialized_type(cls, type_: str, attribute_name: str) -> 'Schema':
@@ -324,9 +336,13 @@ class MemberSchema(Schema):
                 required.append(attribute)
             attributes.append(attribute)
 
-        super().__init__(annotations=annotations, attributes=attributes, documentation=documentation, name=name)
+        step = SchemaStep(annotations=annotations, attributes=attributes) #, required=required)
 
-        self.required = required
+        super().__init__(steps=[step], documentation=documentation, name=name)
+
+    @property
+    def editable_attributes(self) -> List[str]:
+        return [a.name for s in self.steps for a in s.attributes]
 
 
 class ClassSchema(MemberSchema):
@@ -391,66 +407,66 @@ class MethodSchema(MemberSchema):
         docstring = method.__doc__
         super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=method.__name__)
 
-        self.required_indices = [str(self.attributes.index(a)) for a in self.required]
+        # self.required_indices = [str(self.attributes.index(a)) for a in self.required]
 
-    @property
-    def serialized(self) -> Dict[str, str]:
-        """ Get a dictionary with serialized annotations of method arguments. """
-        return {k: s.serialized for k, s in self.property_schemas.items()}
-
-    @property
-    def return_schema(self) -> 'Property':
-        """ Get the schema of the return annotation. """
-        attribute = SchemaAttribute(name="return", editable=False)
-        return get_schema(annotation=self.return_annotation, attribute=attribute)
-
-    @property
-    def return_serialized(self):
-        """ Get the serialized annotation of the return annotation. """
-        try:
-            return self.return_schema.serialized
-        except NotImplementedError:
-            return None
-
-    def to_dict(self, **kwargs):
-        """ Write the whole schema. """
-        schema = deepcopy(SCHEMA_HEADER)
-        order = [str(i) for i in range(len(self.attributes))]
-        properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
-        schema.update({"required": self.required_indices, "order": order, "properties": properties,
-                       "description": self.documentation})
-        return schema
-
-    def definition_json(self):
-        """ Dictionary that denotes the good definition of the method. Useful for low-code features. """
-        return {"name": self.name, "return": self.return_serialized, "arguments": self.serialized,
-                "valid": self.is_valid, "checks": self.check_list().to_dict()["checks"]}
-
-    def check_list(self) -> CheckList:
-        """
-        Browse all properties and List potential issues.
-
-        Checks performed for each argument :
-        - Is typed in method definition
-        - Schema specific check
-        """
-        issues = super().check_list()
-        issues += CheckList([self.return_is_annotated(), self.return_type_is_valid()])
-        return issues
-
-    def return_is_annotated(self) -> PassedCheck:
-        """ Check whether method return is annotated in definition or not. """
-        if "return" not in self.annotations:
-            return CheckWarning("Method return : is not annotated")
-        return PassedCheck("Method return : is annotated")
-
-    def return_type_is_valid(self) -> PassedCheck:
-        """ Check whether given attribute is annotated in function definition or not. """
-        try:
-            _ = self.return_schema
-            return PassedCheck(f"Method return : '{self.return_annotation}' is valid")
-        except NotImplementedError:
-            return CheckWarning(f"Method return : '{self.return_annotation} is not valid")
+    # @property
+    # def serialized(self) -> Dict[str, str]:
+    #     """ Get a dictionary with serialized annotations of method arguments. """
+    #     return {k: s.serialized for k, s in self.property_schemas.items()}
+    #
+    # @property
+    # def return_schema(self) -> 'Property':
+    #     """ Get the schema of the return annotation. """
+    #     attribute = SchemaAttribute(name="return", editable=False)
+    #     return get_schema(annotation=self.return_annotation, attribute=attribute)
+    #
+    # @property
+    # def return_serialized(self):
+    #     """ Get the serialized annotation of the return annotation. """
+    #     try:
+    #         return self.return_schema.serialized
+    #     except NotImplementedError:
+    #         return None
+    #
+    # def to_dict(self, **kwargs):
+    #     """ Write the whole schema. """
+    #     schema = deepcopy(SCHEMA_HEADER)
+    #     order = [str(i) for i in range(len(self.attributes))]
+    #     properties = {str(i): self.chunk(a) for i, a in enumerate(self.attributes)}
+    #     schema.update({"required": self.required_indices, "order": order, "properties": properties,
+    #                    "description": self.documentation})
+    #     return schema
+    #
+    # def definition_json(self):
+    #     """ Dictionary that denotes the good definition of the method. Useful for low-code features. """
+    #     return {"name": self.name, "return": self.return_serialized, "arguments": self.serialized,
+    #             "valid": self.is_valid, "checks": self.check_list().to_dict()["checks"]}
+    #
+    # def check_list(self) -> CheckList:
+    #     """
+    #     Browse all properties and List potential issues.
+    #
+    #     Checks performed for each argument :
+    #     - Is typed in method definition
+    #     - Schema specific check
+    #     """
+    #     issues = super().check_list()
+    #     issues += CheckList([self.return_is_annotated(), self.return_type_is_valid()])
+    #     return issues
+    #
+    # def return_is_annotated(self) -> PassedCheck:
+    #     """ Check whether method return is annotated in definition or not. """
+    #     if "return" not in self.annotations:
+    #         return CheckWarning("Method return : is not annotated")
+    #     return PassedCheck("Method return : is annotated")
+    #
+    # def return_type_is_valid(self) -> PassedCheck:
+    #     """ Check whether given attribute is annotated in function definition or not. """
+    #     try:
+    #         _ = self.return_schema
+    #         return PassedCheck(f"Method return : '{self.return_annotation}' is valid")
+    #     except NotImplementedError:
+    #         return CheckWarning(f"Method return : '{self.return_annotation} is not valid")
 
 
 class Property:

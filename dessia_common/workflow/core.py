@@ -645,30 +645,33 @@ class Workflow(Block):
     @property
     def method_schemas(self):
         """ New support of method schemas. """
-        attributes = []
-        annotations = {}
-        for i, input_ in enumerate(self.inputs + self.detached_variables):
-            input_address = str(i)
-            annotations[input_address] = input_.type_
+        steps = []
+        for step in self.steps:
+            attributes = []
+            annotations = {}
+            for input_ in step.inputs:
+                input_index = self.input_index(input_)
+                input_address = str(input_index)
+                annotations[input_address] = input_.type_
 
-            # Title & Description
-            description = EMPTY_PARSED_ATTRIBUTE
-            title = input_.label
-            name = prettyname(input_.name)
-            if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
-                block = self.block_from_variable(input_)
-                description = block.parse_input_doc(input_)
-                if not title:
-                    title = f"{block.name} - {name}"
-            if input_ in self.nonblock_variables and not title:
-                title = name
+                # Title & Description
+                description = EMPTY_PARSED_ATTRIBUTE
+                title = input_.label
+                name = prettyname(input_.name)
+                if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
+                    block = self.block_from_variable(input_)
+                    description = block.parse_input_doc(input_)
+                    if not title:
+                        title = f"{block.name} - {name}"
+                if input_ in self.nonblock_variables and not title:
+                    title = name
 
-            attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                              editable=not input_.locked, documentation=description))
+                attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
+                                                  editable=not input_.locked, documentation=description))
 
-        steps = [SchemaStep(label=s.label, attributes=[str(self.input_index(i)) for i in s.inputs]) for s in self.steps]
+            steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label))
 
-        schema = Schema(annotations=annotations, attributes=attributes, steps=steps, documentation=self.description)
+        schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):

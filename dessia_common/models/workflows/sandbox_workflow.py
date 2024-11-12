@@ -94,7 +94,12 @@ for i, input_ in enumerate(workflow.inputs):
 #
 # workflow.log_steps("B")
 #
-# for input_ in reversed(workflow._default_step.inputs):
-#     workflow.change_input_step(input_=input_, step=workflow.steps[0])
+for input_ in reversed(workflow.inputs):
+    workflow.change_input_step(input_=input_, step=workflow.steps[0])
 #
 # workflow.log_steps("C")
+
+run_schema = workflow.method_schemas["run"]
+step_0 = run_schema["steps"]["0"]
+for i, input_ in enumerate(workflow.inputs):
+    print("Required", str(i), str(i) in step_0["required"], input_.name)
