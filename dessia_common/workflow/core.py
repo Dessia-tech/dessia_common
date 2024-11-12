@@ -1319,7 +1319,7 @@ class Workflow(Block):
 
     def change_input_step(self, input_: Variable, step: Step):
         current_step = self.find_input_step(input_)
-        if current_step is self._default_step:
+        if current_step is not None:
             current_step.inputs.remove(input_)
         step.inputs.append(input_)
 
@@ -1346,18 +1346,19 @@ class Workflow(Block):
             return steps[0]
         raise ValueError(f"Input '{input_.name}', labelled '{input_.label}' found twice in steps.")
 
-    # def log_inputs(self, title: str = ""):
-    #     print(f"{title} =============================")
-    #     for i, input_ in enumerate(self.inputs):
-    #         print(f"{i} | {self.variable_index(input_)} | {input_.name} | {input_.label}")
-    #     print(f"=====================================")
+    def add_step_display(self, variable: Variable, step: Step, display_setting: DisplaySetting):
+        """ TODO argument should be an attribute getter (like DisplayView). """
+        upstream_inputs = self.upstream_inputs(variable)
+        for input_ in upstream_inputs:
+            self.change_input_step(input_=input_, step=step)
+        step.display_setting = display_setting
 
     def log_steps(self, title: str = ""):
         print(f"{title} =============================")
         for step in self.steps:
             print(step.label)
             for input_ in step.inputs:
-                print("  ", input_.name)
+                print(f"  {self.input_index(input_)} | {input_.name}")
         print(f"=====================================")
 
 
