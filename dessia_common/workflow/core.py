@@ -316,12 +316,21 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None, display_setting: DisplaySetting = None):
+    def __init__(self, label: str = "", inputs: List[Variable] = None):
         self.label = label
         if inputs is None:
             inputs = []
         self.inputs = inputs
+        self.group_inputs = None
+        self.display_setting = None
+
+    def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):
         self.display_setting = display_setting
+        self.group_inputs = [i for i in inputs]
+
+    def remove_display_setting(self):
+        self.display_setting = None
+        self.group_inputs = None
 
 
 class Workflow(Block):
@@ -669,7 +678,9 @@ class Workflow(Block):
                 attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
                                                   editable=not input_.locked, documentation=description))
 
-            steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label))
+            group_inputs = [str(self.input_index(i)) for i in step.group_inputs] if step.group_inputs else []
+            steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
+                                    display_setting=step.display_setting, group=group_inputs))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
@@ -1351,11 +1362,11 @@ class Workflow(Block):
         upstream_inputs = self.upstream_inputs(variable)
         for input_ in upstream_inputs:
             self.change_input_step(input_=input_, step=step)
-        step.display_setting = display_setting
+        step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs)
 
     @staticmethod
     def remove_step_display(step: Step):
-        step.display_setting = None
+        step.remove_display_setting()
 
     def log_steps(self, title: str = ""):
         print(f"{title} =============================")

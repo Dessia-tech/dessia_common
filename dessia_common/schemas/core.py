@@ -11,7 +11,7 @@ from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
-from dessia_common.displays import DisplayObject
+from dessia_common.displays import DisplayObject, DisplaySetting
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.typings import (MethodType, ClassMethodType, InstanceOf, Subclass, AttributeType, ClassAttributeType,
                                    CadViewType, PlotDataType, MarkdownType, ViewType)
@@ -130,11 +130,16 @@ class SchemaAttribute:
 class SchemaStep:
     """ Schema representation of a step. """
 
-    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute], label: str = "",
-                 documentation: str = ""):
+    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
+                 display_setting: DisplaySetting = None, group: List[str] = None,
+                 label: str = "", documentation: str = ""):
         self.annotations = annotations
-        self.label = label
         self.attributes = attributes
+        self.display_setting = display_setting
+        if group is None:
+            group = []
+        self.group = group
+        self.label = label
         self.documentation = documentation
 
         self.required = [a for a in attributes if not a.has_default_value]
@@ -154,7 +159,6 @@ class SchemaStep:
     def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
         """ Extract and compute a schema from one of the attributes. """
         schema = self.property_schemas.get(attribute.name, None)
-
         if schema is not None:
             return schema.to_dict()
 
@@ -173,8 +177,9 @@ class SchemaStep:
         order = [a.name for a in self.attributes]
         properties = {a.name: self.chunk(a) for a in self.attributes}
         required = [a.name for a in self.required]
-        return {"required": required, "order": order, "properties": properties,
-                "description": self.documentation, "label": self.label, **kwargs}
+        display_setting = self.display_setting.to_dict() if self.display_setting else None
+        return {"required": required, "order": order, "properties": properties, "group": self.group,
+                "display_setting": display_setting, "description": self.documentation, "label": self.label, **kwargs}
 
     def check_list(self, issues: CheckList):
         for attribute in self.attributes:
