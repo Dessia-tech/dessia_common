@@ -245,8 +245,7 @@ class Schema:
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
         schema = deepcopy(SCHEMA_HEADER)
-        steps = {str(i): s.to_dict() for i, s in enumerate(self.steps)}
-        schema.update({"steps": steps, "description": self.documentation})
+        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation})
         return schema
 
     def default_dict(self) -> Dict[str, Any]:
