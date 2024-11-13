@@ -1353,6 +1353,10 @@ class Workflow(Block):
             self.change_input_step(input_=input_, step=step)
         step.display_setting = display_setting
 
+    @staticmethod
+    def remove_step_display(step: Step):
+        step.display_setting = None
+
     def log_steps(self, title: str = ""):
         print(f"{title} =============================")
         for step in self.steps:
