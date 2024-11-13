@@ -236,11 +236,11 @@ class Schema:
     # def chunks(self) -> List[Dict[str, Any]]:
     #     """ Concatenate schema chunks into a List. """
     #     return [self.chunk(a) for a in self.attributes]
-    #
-    # @property
-    # def standalone_properties(self) -> List[str]:
-    #     """ Return all properties that are standalone. """
-    #     return [a.name for a in self.attributes if self.property_schemas[a.name].standalone_in_db]
+
+    @property
+    def standalone_properties(self) -> List[str]:
+        """ Return all properties that are standalone. """
+        return [p for s in self.steps for p in s.standalone_properties]
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
@@ -302,6 +302,14 @@ class Schema:
         """ Compute a Schema directly from the serialized value of the annotation. """
         annotation = deserialize_annotation(type_)
         return cls.from_type(annotation=annotation, attribute_name=attribute_name)
+
+    def find_attribute_step(self, attribute_name: str):
+        steps = [s for s in self.steps if attribute_name in [a.name for a in s.attributes]]
+        if not len(steps):
+            return None
+        if len(steps) == 1:
+            return steps[0]
+        raise ValueError(f"Attribute '{attribute_name}' found twice in steps.")
 
 
 class MemberSchema(Schema):
