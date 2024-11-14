@@ -229,13 +229,8 @@ class Schema:
         self.name = name
         self.steps = steps
 
-        self.property_schemas = {}
-        for step in steps:
-            self.property_schemas.update(step.property_schemas)
-
     def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
         """ Extract and compute a schema from one of the attributes. """
-        # self.steps
         # schema = self.property_schemas.get(attribute.name, None)
         #
         # if schema is not None:
@@ -257,6 +252,14 @@ class Schema:
     def standalone_properties(self) -> List[str]:
         """ Return all properties that are standalone. """
         return [p for s in self.steps for p in s.standalone_properties]
+
+    @property
+    def property_schemas(self):
+        """ Should we keep it ? Handle backward compatibility for backend. """
+        property_schemas = {}
+        for step in self.steps:
+            property_schemas.update(step.property_schemas)
+        return property_schemas
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
