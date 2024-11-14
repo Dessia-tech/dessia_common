@@ -80,6 +80,18 @@ class ParsedDocstring(TypedDict):
     attributes: Dict[str, ParsedAttribute]
 
 
+class PropertySchemas(dict):
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __getitem__(self, item):
+        pass
+
+    def __setitem__(self, key, value):
+        pass
+
+
 class SchemaAttribute:
     """
     A wrapper that connects a schema attribute name with its attached data.
@@ -217,6 +229,10 @@ class Schema:
         self.name = name
         self.steps = steps
 
+        self.property_schemas = {}
+        for step in steps:
+            self.property_schemas.update(step.property_schemas)
+
     def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
         """ Extract and compute a schema from one of the attributes. """
         # self.steps
@@ -306,6 +322,7 @@ class Schema:
     def find_attribute_step(self, attribute_name: str):
         steps = [s for s in self.steps if attribute_name in [a.name for a in s.attributes]]
         if not len(steps):
+            # Should raise an error ?
             return None
         if len(steps) == 1:
             return steps[0]
