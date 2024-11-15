@@ -18,7 +18,8 @@ from dessia_common.graph import get_column_by_node
 from dessia_common.core import DessiaObject
 
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, SchemaStep,
-                                        serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute)
+                                        serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute,
+                                        SchemaAttributeGroup)
 from dessia_common.utils.types import recursive_type, typematch, is_file_or_file_sequence
 from dessia_common.utils.copy import deepcopy_value
 from dessia_common.utils.diff import choose_hash
@@ -321,7 +322,7 @@ class Step:
         if inputs is None:
             inputs = []
         self.inputs = inputs
-        self.group_inputs = None
+        self.group_inputs = []
         self.display_setting = None
 
     def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):
@@ -330,7 +331,7 @@ class Step:
 
     def remove_display_setting(self):
         self.display_setting = None
-        self.group_inputs = None
+        self.group_inputs = []
 
 
 class Workflow(Block):
@@ -657,6 +658,7 @@ class Workflow(Block):
         steps = []
         for step in self.steps:
             attributes = []
+            group_attributes = []
             annotations = {}
             for input_ in step.inputs:
                 input_index = self.input_index(input_)
@@ -675,12 +677,17 @@ class Workflow(Block):
                 if input_ in self.nonblock_variables and not title:
                     title = name
 
-                attributes.append(SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                                  editable=not input_.locked, documentation=description))
+                attribute = SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
+                                            editable=not input_.locked, documentation=description)
+                if input_ in step.group_inputs:
+                    group_attributes.append(attribute)
+                else:
+                    attributes.append(attribute)
 
-            group_inputs = [str(self.input_index(i)) for i in step.group_inputs] if step.group_inputs else []
+            if group_attributes:
+                attributes.append(SchemaAttributeGroup(attributes=group_attributes, name=step.label))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
-                                    display_setting=step.display_setting, group=group_inputs))
+                                    display_setting=step.display_setting))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}

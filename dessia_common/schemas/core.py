@@ -136,21 +136,33 @@ class SchemaAttribute:
 
     def to_dict(self):
         """ Base attribute dict. """
-        return {"title": self.title, "editable": self.editable, "description": self.description}
+        return {"key": self.name, "is_group": False, "title": self.title, "editable": self.editable,
+                "description": self.description}
+
+
+class SchemaAttributeGroup(SchemaAttribute):
+    """ Enable to handle group of attribute and behave like one. """
+
+    def __init__(self, attributes: List[SchemaAttribute], name: str, default_value: T = UNDEFINED, title: str = "",
+                 editable: bool = True, documentation: ParsedAttribute = None):
+        self.attributes = attributes
+        super().__init__(name=name, default_value=default_value, title=title, editable=editable,
+                         documentation=documentation)
+
+    def to_dict(self):
+        dict_ = super().to_dict()
+        dict_.update({"attributes": [a.to_dict() for a in self.attributes], "is_group": True})
+        return dict_
 
 
 class SchemaStep:
     """ Schema representation of a step. """
 
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 display_setting: DisplaySetting = None, group: List[str] = None,
-                 label: str = "", documentation: str = ""):
+                 display_setting: DisplaySetting = None, label: str = "", documentation: str = ""):
         self.annotations = annotations
         self.attributes = attributes
         self.display_setting = display_setting
-        if group is None:
-            group = []
-        self.group = group
         self.label = label
         self.documentation = documentation
 
@@ -186,12 +198,11 @@ class SchemaStep:
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. kwargs are added to result as well. """
-        order = [a.name for a in self.attributes]
-        properties = {a.name: self.chunk(a) for a in self.attributes}
+        properties = [self.chunk(a) for a in self.attributes]
         required = [a.name for a in self.required]
         display_setting = self.display_setting.to_dict() if self.display_setting else None
-        return {"required": required, "order": order, "properties": properties, "group": self.group,
-                "display_setting": display_setting, "description": self.documentation, "label": self.label, **kwargs}
+        return {"required": required, "properties": properties, "display_setting": display_setting,
+                "description": self.documentation, "label": self.label, **kwargs}
 
     def check_list(self, issues: CheckList):
         for attribute in self.attributes:
