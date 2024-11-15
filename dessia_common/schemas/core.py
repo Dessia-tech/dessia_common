@@ -136,7 +136,7 @@ class SchemaAttribute:
 
     def to_dict(self):
         """ Base attribute dict. """
-        return {"key": self.name, "is_group": False, "title": self.title, "editable": self.editable,
+        return {"key": self.name, "isGroup": False, "title": self.title, "editable": self.editable,
                 "description": self.description}
 
 
@@ -151,7 +151,7 @@ class SchemaAttributeGroup(SchemaAttribute):
 
     def to_dict(self):
         dict_ = super().to_dict()
-        dict_.update({"attributes": [a.to_dict() for a in self.attributes], "is_group": True})
+        dict_.update({"attributes": [a.to_dict() for a in self.attributes], "isGroup": True})
         return dict_
 
 
@@ -201,7 +201,7 @@ class SchemaStep:
         properties = [self.chunk(a) for a in self.attributes]
         required = [a.name for a in self.required]
         display_setting = self.display_setting.to_dict() if self.display_setting else None
-        return {"required": required, "properties": properties, "display_setting": display_setting,
+        return {"required": required, "properties": properties, "displaySetting": display_setting,
                 "description": self.documentation, "label": self.label, **kwargs}
 
     def check_list(self, issues: CheckList):
@@ -421,7 +421,7 @@ class ClassSchema(MemberSchema):
         """ Write the whole schema. """
         schema = super().to_dict(**kwargs)
         classname = full_classname(object_=self.class_, compute_for="class")
-        schema.update({"classes": [classname], "standalone_in_db": self.standalone_in_db})
+        schema.update({"classes": [classname], "standaloneInDb": self.standalone_in_db})
         # TODO Check if we can get rid of this and use Property schema to simplify frontend
         return schema
 
@@ -565,9 +565,9 @@ class Property:
     def to_dict(self) -> PropertySchema:
         """ Write base schema as a Dict. """
         attribute_dict = self.attribute.to_dict()
-        dict_ = {"python_typing": self.serialized, "type": None, **attribute_dict}
+        dict_ = {"pythonTyping": self.serialized, "type": None, **attribute_dict}
         if self.has_default_value:
-            dict_["default_value"] = self.default_value()
+            dict_["defaultValue"] = self.default_value()
         return dict_
 
     def default_value(self):
@@ -860,7 +860,7 @@ class MeasureProperty(BuiltinProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Measure as a Dict. """
         chunk = Property.to_dict(self)
-        chunk.update({"si_unit": self.annotation.si_unit, "type": "number"})
+        chunk.update({"siUnit": self.annotation.si_unit, "type": "number"})
         return chunk
 
     def default_value(self):
@@ -909,7 +909,7 @@ class FileProperty(Property):
     def to_dict(self) -> Dict[str, Any]:
         """ Write File as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "text", "is_file": True})
+        chunk.update({"type": "text", "isFile": True})
         return chunk
 
     def check_list(self) -> CheckList:
@@ -961,7 +961,7 @@ class CustomClass(Property):
     def to_dict(self) -> Dict[str, Any]:
         """ Write CustomClass as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "object", "standalone_in_db": self.standalone_in_db, "classes": [self.serialized]})
+        chunk.update({"type": "object", "standaloneInDb": self.standalone_in_db, "classes": [self.serialized]})
         return chunk
 
     def default_value(self) -> Optional[Dict[str, Any]]:
@@ -1026,7 +1026,7 @@ class UnionProperty(TypingProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Union as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "object", "classes": self.classes, "standalone_in_db": self.standalone_in_db})
+        chunk.update({"type": "object", "classes": self.classes, "standaloneInDb": self.standalone_in_db})
         return chunk
 
     def default_value(self) -> T:
@@ -1333,8 +1333,8 @@ class InstanceOfProperty(TypingProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "object", "instance_of": self.classes[0], "classes": self.classes,
-                      "standalone_in_db": self.standalone_in_db})
+        chunk.update({"type": "object", "instanceOf": self.classes[0], "classes": self.classes,
+                      "standaloneInDb": self.standalone_in_db})
         return chunk
 
     def default_value(self) -> Dict[str, Any]:
@@ -1426,8 +1426,8 @@ class AttributeTypeProperty(TypingProperty):
             attribute_type = "attributes"
         classname = full_classname(self.origin, compute_for="class")
         chunk.update({
-            "type": "object", "object_class": classname, "is_attribute": True,
-            "attribute_type": attribute_type,
+            "type": "object", "object_class": classname, "isAttribute": True,
+            "attributeType": attribute_type,
             "properties": {
                 "class_": self.class_schema.to_dict(),
                 "name": {
@@ -1481,10 +1481,10 @@ class MethodTypeProperty(AttributeTypeProperty):
         """ Write MethodType as a Dict. """
         chunk = super().to_dict()
         if self.origin is ClassMethodType:
-            attribute_type = "class_methods"
+            attribute_type = "classMethods"
         else:
             attribute_type = "methods"
-        chunk["attribute_type"] = attribute_type
+        chunk["attributeType"] = attribute_type
         return chunk
 
 
@@ -1513,7 +1513,7 @@ class SelectorProperty(AttributeTypeProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write AttributeType as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"attribute_type": "view_selectors", "decorator": self.annotation.decorator})
+        chunk.update({"attributeType": "view_selectors", "decorator": self.annotation.decorator})
         return chunk
 
 
@@ -1546,7 +1546,7 @@ class ClassProperty(TypingProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Class as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "object", "is_class": True, "properties": {"name": {"type": "string"}}})
+        chunk.update({"type": "object", "isClass": True, "properties": {"name": {"type": "string"}}})
         return chunk
 
     def default_value(self) -> str:
@@ -1591,7 +1591,7 @@ class GenericTypeProperty(Property):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Type as a Dict. """
         chunk = super().to_dict()
-        chunk.update({"type": "object", "is_class": True, "properties": {"name": {"type": "string"}}})
+        chunk.update({"type": "object", "isClass": True, "properties": {"name": {"type": "string"}}})
         return chunk
 
 
@@ -1644,7 +1644,7 @@ class EnumProperty(TypingProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write chunk of Any property. Useful for low-code features. """
         chunk = super().to_dict()
-        chunk.update({"allowed_values": self.args, "type": "string"})
+        chunk.update({"allowedValues": self.args, "type": "string"})
         return chunk
 
 
