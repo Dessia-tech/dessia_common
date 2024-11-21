@@ -515,6 +515,8 @@ class MethodSchema(MemberSchema):
 class Property:
     """ Base class for a schema property. """
 
+    FORM_TYPE = "not_implemented"
+
     def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
         self.annotation = annotation
         self.attribute = attribute
@@ -562,10 +564,14 @@ class Property:
         """ Shortcut for Check message prefixes. """
         return f"Attribute '{self.attribute}' : "
 
+    @property
+    def form_type(self):
+        return self.FORM_TYPE
+
     def to_dict(self) -> PropertySchema:
         """ Write base schema as a Dict. """
         attribute_dict = self.attribute.to_dict()
-        dict_ = {"pythonTyping": self.serialized, "type": None, **attribute_dict}
+        dict_ = {"pythonTyping": self.serialized, "type": None, "formType": self.form_type, **attribute_dict}
         if self.has_default_value:
             dict_["defaultValue"] = self.default_value()
         return dict_
@@ -806,6 +812,8 @@ Builtin = Union[str, bool, float, int]
 class BuiltinProperty(Property):
     """ Schema class for Builtin type hints. """
 
+    FORM_TYPE = "builtin"
+
     def __init__(self, annotation: Type[Builtin], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -822,7 +830,8 @@ class BuiltinProperty(Property):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Builtin as a Dict. """
         chunk = super().to_dict()
-        chunk["type"] = TYPING_EQUIVALENCES[self.annotation]
+        type_ = TYPING_EQUIVALENCES[self.annotation]
+        chunk.update({"type": type_, "formType": type_})
         return chunk
 
     def default_value(self):
@@ -838,6 +847,8 @@ class BuiltinProperty(Property):
 
 class MeasureProperty(BuiltinProperty):
     """ Schema class for Measure type hints. """
+
+    FORM_TYPE = "measure"
 
     def __init__(self, annotation: Type[Measure], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
@@ -888,6 +899,8 @@ File = Union[StringFile, BinaryFile]
 class FileProperty(Property):
     """ Schema class for File type hints. """
 
+    FORM_TYPE = "file"
+
     def __init__(self, annotation: Type[File], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -934,6 +947,8 @@ class FileProperty(Property):
 
 class CustomClass(Property):
     """ Schema class for CustomClass type hints. """
+
+    FORM_TYPE = "custom_instance"
 
     def __init__(self, annotation: Type[CoreDessiaObject], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
@@ -990,6 +1005,8 @@ class CustomClass(Property):
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
 
+    FORM_TYPE = "custom_instance"  # TODO Check this
+
     def __init__(self, annotation: Type[Union[T]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -1026,6 +1043,7 @@ class UnionProperty(TypingProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write Union as a Dict. """
         chunk = super().to_dict()
+        # TODO FormType ?
         chunk.update({"type": "object", "classes": self.classes, "standaloneInDb": self.standalone_in_db})
         return chunk
 
@@ -1069,6 +1087,8 @@ class HeterogeneousSequence(TypingProperty):
 
     Datatype that can be seen as a Tuple. Have any amount of arguments but a limited length.
     """
+
+    FORM_TYPE = "heterogeneous_sequence"
 
     def __init__(self, annotation: Type[Tuple], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
@@ -1172,6 +1192,8 @@ class HomogeneousSequence(TypingProperty):
     Datatype that can be seen as a List. Have only one argument but an unlimited length.
     """
 
+    FORM_TYPE = "homogeneous_sequence"
+
     def __init__(self, annotation: Type[List[T]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -1179,6 +1201,12 @@ class HomogeneousSequence(TypingProperty):
     def annotation_from_serialized(cls, serialized: str) -> Type[List]:
         """ Deserialize List annotation. """
         return List[TypingProperty._args_from_serialized(serialized)]
+
+    @property
+    def form_type(self):
+        if self.is_file_related:
+            return "multiple_files"
+        return self.FORM_TYPE
 
     def to_dict(self) -> Dict[str, Any]:
         """ Write HomogeneousSequence as a Dict. """
@@ -1222,6 +1250,8 @@ class DynamicDict(TypingProperty):
     but an unlimited length.
     """
 
+    FORM_TYPE = "dynamic_dict"
+
     def __init__(self, annotation: Type[Dict[str, Builtin]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -1241,9 +1271,7 @@ class DynamicDict(TypingProperty):
         chunk = super().to_dict()
         chunk.update({"type": "object",
                       "patternProperties": {
-                          ".*": {
-                            "type": TYPING_EQUIVALENCES[value_type]
-                          }
+                          ".*": self.args_schemas[1].to_dict()
                       }})
         return chunk
 
@@ -1307,6 +1335,8 @@ class InstanceOfProperty(TypingProperty):
     Instances of these classes validate against this type.
     """
 
+    FORM_TYPE = "custom_instance"
+
     def __init__(self, annotation: Type[InstanceOf[BaseClass]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -1361,6 +1391,8 @@ class SubclassProperty(TypingProperty):
     Classes validate against this type.
     """
 
+    FORM_TYPE = "not_implemented"
+
     def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
@@ -1397,15 +1429,14 @@ class AttributeTypeProperty(TypingProperty):
     A specifically instantiated AttributeType validated against this type.
     """
 
+    FORM_TYPE = "attribute"
+
     def __init__(self, annotation: Type[AttributeType], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
 
         self.class_ = self.args[0]
-        if self.class_ is Type:
-            subdefault = UNDEFINED
-        else:
-            subdefault = self.class_
-        subattribute = SchemaAttribute(name=f"{attribute.name}/class", default_value=subdefault, title="Class",
+        default = UNDEFINED if self.class_ is Type else self.class_
+        subattribute = SchemaAttribute(name=f"{attribute.name}/class", default_value=default, title="Class",
                                        editable=attribute.editable)
         self.class_schema = get_schema(annotation=Type[self.class_], attribute=subattribute)
 
@@ -1480,11 +1511,7 @@ class MethodTypeProperty(AttributeTypeProperty):
     def to_dict(self) -> Dict[str, Any]:
         """ Write MethodType as a Dict. """
         chunk = super().to_dict()
-        if self.origin is ClassMethodType:
-            attribute_type = "classMethods"
-        else:
-            attribute_type = "methods"
-        chunk["attributeType"] = attribute_type
+        chunk["attributeType"] = "class_methods" if self.origin is ClassMethodType else "methods"
         return chunk
 
 
@@ -1526,6 +1553,8 @@ class ClassProperty(TypingProperty):
 
     Non DessiaObject sub-classes validated against this type.
     """
+
+    FORM_TYPE = "class"
 
     def __init__(self, annotation: Type[Class], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
