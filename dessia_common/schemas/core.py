@@ -202,7 +202,7 @@ class SchemaStep:
         required = [a.name for a in self.required]
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"required": required, "properties": properties, "displaySetting": display_setting,
-                "description": self.documentation, "label": self.label, **kwargs}
+                "documentation": self.documentation, "label": self.label, **kwargs}
 
     def check_list(self, issues: CheckList):
         for attribute in self.attributes:
