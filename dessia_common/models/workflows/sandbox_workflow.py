@@ -88,14 +88,14 @@ for i, input_ in enumerate(workflow.inputs):
     step = workflow._steps[i % len(workflow._steps)]
     workflow.change_input_step(input_=input_, step=step)
 
-workflow.log_steps("Before Setting Display")
-
-output = unpacker_block.outputs[0]
-workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
+# workflow.log_steps("Before Setting Display")
+#
+# output = unpacker_block.outputs[0]
+# workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
 
 # workflow.remove_step(workflow.steps[1])
 
-workflow.log_steps("After Setting Display")
+# workflow.log_steps("After Setting Display")
 
 # for input_ in reversed(workflow.inputs):
 #     workflow.change_input_step(input_=input_, step=workflow.steps[0])

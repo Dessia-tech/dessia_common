@@ -1324,7 +1324,6 @@ class Workflow(Block):
                 try:
                     if issubclass(output.type_, DessiaObject):
                         displayable_outputs.append(output)
-                        print(self.variable_index(output), output.name, output.type_)
                 except TypeError:
                     pass
         return displayable_outputs
