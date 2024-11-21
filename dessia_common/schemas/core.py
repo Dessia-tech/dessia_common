@@ -1005,7 +1005,7 @@ class CustomClass(Property):
 class UnionProperty(TypingProperty):
     """ Schema class for Union type hints. """
 
-    FORM_TYPE = "custom_instance"  # TODO Check this
+    FORM_TYPE = "custom_instance"
 
     def __init__(self, annotation: Type[Union[T]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
@@ -1639,6 +1639,8 @@ class AnyProperty(Property):
 
 class EnumProperty(TypingProperty):
     """ Generate an enum of a dict keys. """
+
+    FORM_TYPE = "string"
 
     def __init__(self, annotation: Type[Literal[""]], attribute: SchemaAttribute):
         super().__init__(annotation=annotation, attribute=attribute)
