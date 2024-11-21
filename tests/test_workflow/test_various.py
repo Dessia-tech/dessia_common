@@ -6,6 +6,8 @@ from dessia_common.workflow.core import Workflow, WorkflowError, Pipe
 from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 
 
+# TODO This needs to be refactor into a clearer version
+
 class WorkflowUnitTest(unittest.TestCase):
     block_0 = InstantiateModel(model_class=StandaloneObjectWithDefaultValues, name='Instantiate SOWDV')
     block_0_bis = InstantiateModel(model_class=StandaloneObjectWithDefaultValues, name='Instantiate SOWDV')
@@ -124,27 +126,16 @@ class WorkflowDataEq(WorkflowUnitTest):
         wf1 = Workflow(blocks=[self.block_0, self.block_1], pipes=[], output=self.block_0.outputs[0])
         wf2 = Workflow(blocks=[self.block_0, self.block_1], pipes=[], output=self.block_0.outputs[0])
 
-        wf1.imposed_variable_values[self.block_0.inputs[5]] = 42
+        wf1.blocks[0].inputs[5].lock(42)
         self.assertFalse(wf1._data_eq(wf2))
 
-        wf2.imposed_variable_values[self.block_0.inputs[5]] = 17
+        wf2.blocks[0].inputs[5].lock(17)
         self.assertFalse(wf1._data_eq(wf2))
 
-        wf2.imposed_variable_values[self.block_0.inputs[5]] = 42
+        wf2.blocks[0].inputs[5].lock(42)
         self.assertTrue(wf1._data_eq(wf2))
 
     #     test non-builtins variables : NOT IMPLEMENTED YET.
-
-    def test_imposed_variable_value_order(self):
-        wf1 = Workflow(blocks=[self.block_0, self.block_1], pipes=[], output=self.block_0.outputs[0])
-        wf2 = Workflow(blocks=[self.block_0, self.block_1], pipes=[], output=self.block_0.outputs[0])
-
-        wf1.imposed_variable_values[self.block_0.inputs[5]] = 42
-        wf1.imposed_variable_values[self.block_0.inputs[6]] = "my_test"
-
-        wf2.imposed_variable_values[self.block_0.inputs[6]] = "my_test"
-        wf2.imposed_variable_values[self.block_0.inputs[5]] = 42
-        self.assertTrue(wf1._data_eq(wf2))
 
     # def test_non_self.block_variables(self):
     #     blocks = [self.block_0, self.block_1]

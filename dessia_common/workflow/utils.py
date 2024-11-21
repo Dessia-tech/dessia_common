@@ -51,13 +51,19 @@ class ToScriptElement:
 def blocks_to_script(blocks, prefix: str, imports):
     """ Set Blocks to script. """
     blocks_str = ""
+    block_names = []
     for iblock, block in enumerate(blocks):
+        block_name = f"{prefix}block_{iblock}"
         block_script = block._to_script(prefix)
         imports.extend(block_script.imports)
         if block_script.before_declaration is not None:
             blocks_str += f"{block_script.before_declaration}\n"
-        blocks_str += f'{prefix}block_{iblock} = {block_script.declaration}\n'
-    blocks_str += f"{prefix}blocks = [{', '.join([prefix + 'block_' + str(i) for i in range(len(blocks))])}]\n"
+        blocks_str += f"{block_name} = {block_script.declaration}\n"
+        for i, input_ in enumerate(block.inputs):
+            if input_.locked:
+                blocks_str += f"{block_name}.inputs[{i}].lock()\n"
+        block_names.append(block_name)
+    blocks_str += f"{prefix}blocks = [{', '.join(block_names)}]\n"
     return blocks_str
 
 
