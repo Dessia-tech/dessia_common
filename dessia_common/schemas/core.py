@@ -80,18 +80,6 @@ class ParsedDocstring(TypedDict):
     attributes: Dict[str, ParsedAttribute]
 
 
-class PropertySchemas(dict):
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def __getitem__(self, item):
-        pass
-
-    def __setitem__(self, key, value):
-        pass
-
-
 class SchemaAttribute:
     """
     A wrapper that connects a schema attribute name with its attached data.
@@ -1677,13 +1665,6 @@ class EnumProperty(TypingProperty):
         chunk = super().to_dict()
         chunk.update({"allowedValues": self.args, "type": "string"})
         return chunk
-
-
-# class Step:
-#     def __init__(self, schemas: List[Union[Property, ClassSchema]], display_selectors: List[str] = None,
-#                  name: str = ""):
-#         self.schemas = schemas
-#         self.name = name
 
 
 def inspect_arguments(method: Callable, merge: bool = False) -> Tuple[List[str], Dict[str, Any]]:

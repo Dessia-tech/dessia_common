@@ -268,52 +268,6 @@ class Pipe(DessiaObject):
 class WorkflowError(Exception):
     """ Specific WorkflowError Exception. """
 
-
-# class InputGroup:
-#     """ Group for inputs implementation. Enables to show displays in wizard. """
-#
-#     def __init__(self, display_setting: DisplaySetting, inputs: List[Variable]):
-#         self.display_setting = display_setting
-#         self.inputs = inputs
-#
-#
-# class Step:
-#     """ Wizard step implementation. """
-#
-#     def __init__(self, inputs: List[Union[Variable, InputGroup]]):
-#         # self.index = index
-#         # self.label = label or f"Step {index}"
-#         self.inputs = inputs
-#
-#     def add_input(self, input_: Variable, display_setting: DisplaySetting = None):
-#         if display_setting is None:
-#             self.inputs.append(input_)
-#         else:
-#             groups = [e for e in self.inputs if isinstance(e, InputGroup) and e.display_setting is display_setting]
-#             if len(groups) == 0:
-#                 group = InputGroup(display_setting=display_setting, inputs=[input_])
-#                 self.inputs.append(group)
-#             elif len(groups) == 1:
-#                 group = groups[0]
-#                 group.inputs.append(input_)
-#             else:
-#                 raise ValueError("Input cannot be added to several groups")
-#
-#     def add_display(self, display_setting: DisplaySetting, inputs: List[Variable]):
-#         for input_ in inputs:
-#             self.add_input(input_=input_, display_setting=display_setting)
-#
-#
-# class Wizard:
-#     """ Workflow and form wizard implementation. """
-#
-#     def __init__(self, steps: List[Step]):
-#         self.steps = steps
-#
-#     def insert_step(self, index: int = None):
-#         pass
-
-
 class Step:
     """ Step. """
 
