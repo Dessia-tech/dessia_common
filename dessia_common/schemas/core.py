@@ -20,8 +20,7 @@ from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 
-SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
-                 "type": "object", "required": [], "properties": {}}
+SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object"}
 RESERVED_ARGNAMES = ["self", "cls", "progress_callback", "return"]
 TYPING_EQUIVALENCES = {int: "number", float: "number", bool: "boolean", str: "string"}
 TYPES_FROM_STRING = {"unicode": str, "str": str, "float": float, "int": int, "bool": bool}
@@ -173,6 +172,7 @@ class SchemaStep:
         schema = self.property_schemas.get(attribute.name, None)
         if schema is not None:
             return schema.to_dict()
+        raise ValueError(f"No schema defined for attribute '{attribute.name}'")
 
     @property
     def chunks(self) -> List[Dict[str, Any]]:
