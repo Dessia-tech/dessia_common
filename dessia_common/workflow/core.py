@@ -268,6 +268,7 @@ class Pipe(DessiaObject):
 class WorkflowError(Exception):
     """ Specific WorkflowError Exception. """
 
+
 class Step:
     """ Step. """
 
@@ -279,6 +280,19 @@ class Step:
         self.group_inputs = []
         self.display_setting = None
 
+    def to_dict(self):
+        """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
+        display_setting = self.display_setting.to_dict() if self.display_setting else None
+        return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
+                "group_inputs": [i.to_dict() for i in self.group_inputs]}
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        step = cls(label=dict_["label"], inputs=dict_["inputs"])
+        if dict_["display_setting"]:
+            step.add_display_setting(display_setting=dict_["display_setting"], inputs=dict_["group_inputs"])
+        return step
+
     def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):
         self.display_setting = display_setting
         self.group_inputs = [i for i in inputs]
@@ -286,6 +300,11 @@ class Step:
     def remove_display_setting(self):
         self.display_setting = None
         self.group_inputs = []
+
+    def log_inputs(self):
+        print("\n", self.label, "\n")
+        for i in self.inputs:
+            print(i.name, i.label)
 
 
 class Workflow(Block):
@@ -307,8 +326,9 @@ class Workflow(Block):
     _non_serializable_attributes = ["branch_by_display_selector", "branch_by_export_format",
                                     "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
-    def __init__(self, blocks, pipes, output, *, detached_variables: List[Variable] = None, description: str = "",
-                 documentation: str = "", name: str = ""):
+    def __init__(self, blocks: List[Block], pipes: List[Pipe], output, *, steps: List[Step] = None,
+                 detached_variables: List[Variable] = None, description: str = "", documentation: str = "",
+                 name: str = ""):
         self.blocks = blocks
         self.pipes = pipes
 
@@ -346,8 +366,14 @@ class Workflow(Block):
         self.branch_by_display_selector = self.branch_by_selector(self.display_blocks)
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
 
-        self._steps = []
-        self._default_step = Step(inputs=[i for i in self.inputs], label="Default Step")
+        if steps:
+            self._steps = steps
+            step_inputs = [i for s in steps for i in s.inputs]
+            non_step_inputs = [i for i in self.inputs if i not in step_inputs]
+        else:
+            self._steps = []
+            non_step_inputs = [i for i in self.inputs]
+        self._default_step = Step(inputs=non_step_inputs, label="Default Step")
 
     @classmethod
     def generate_empty(cls):
@@ -413,9 +439,11 @@ class Workflow(Block):
         output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.locked_inputs) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 1e6)
+        # TODO Steps
         return (base_hash + block_hash) % 1000000000
 
     def _data_eq(self, other_object) -> bool:
+        # TODO Steps
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
             return False
 
@@ -649,15 +677,21 @@ class Workflow(Block):
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
         """ Compute a dict from the object content. """
         dict_ = Block.to_dict(self, use_pointers=False)
-
-        output = self.variable_indices(self.output)
+        step_dicts = []
+        for step in self.steps:
+            step_dict = step.to_dict()
+            inputs = [self.variable_indices(i) for i in step.inputs]
+            group_inputs = [self.variable_indices(i) for i in step.group_inputs]
+            step_dict.update({"inputs": inputs, "group_inputs": group_inputs})
+            step_dicts.append(step_dict)
         dict_.update({"blocks": [b.to_dict(use_pointers=False) for b in self.blocks],
                       "pipes": [self.pipe_variable_indices(p) for p in self.pipes],
-                      "output": output,
+                      "output": self.variable_indices(self.output),
                       "nonblock_variables": [v.to_dict() for v in self.nonblock_variables + self.detached_variables],
-                      "package_mix": self.package_mix()})
-
-        dict_.update({"description": self.description, "documentation": self.documentation})
+                      "steps": step_dicts,
+                      "package_mix": self.package_mix(),
+                      "description": self.description,
+                      "documentation": self.documentation})
         return dict_
 
     @classmethod
@@ -669,19 +703,31 @@ class Workflow(Block):
             global_dict, pointers_memo = update_pointers_data(global_dict=global_dict, current_dict=dict_,
                                                               pointers_memo=pointers_memo)
 
-        workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
+        init_workflow = initialize_workflow(dict_=dict_, global_dict=global_dict, pointers_memo=pointers_memo)
 
         if "imposed_variable_values" in dict_:
             # Backwards compatibility for locked inputs
             for variable_index_str, serialized_value in dict_["imposed_variable_values"].items():
                 value = deserialize(serialized_value, global_dict=global_dict, pointers_memo=pointers_memo)
-                variable = workflow.variable_from_index(ast.literal_eval(variable_index_str))
+                variable = init_workflow.variable_from_index(ast.literal_eval(variable_index_str))
                 variable.default_value = value
                 variable.lock()
 
-        return cls(blocks=workflow.blocks, pipes=workflow.pipes, output=workflow.output,
-                   description=dict_.get("description", ""), documentation=dict_.get("documentation", ""),
-                   name=dict_["name"])
+        # Following code is meh.
+        if "steps" in dict_:
+            steps = []
+            # Backwards compatibility for steps
+            for step_dict in dict_["steps"]:
+                inputs = [init_workflow.variable_from_index(i) for i in step_dict["inputs"]]
+                group_inputs = [init_workflow.variable_from_index(i) for i in step_dict["group_inputs"]]
+                step_dict.update({"inputs": inputs, "group_inputs": group_inputs})
+                step = Step.dict_to_object(step_dict)
+                steps.append(step)
+        else:
+            steps = None
+        return cls(blocks=init_workflow.blocks, pipes=init_workflow.pipes, output=init_workflow.output,
+                   steps=steps, description=dict_.get("description", ""),
+                   documentation=dict_.get("documentation", ""), name=dict_["name"])
 
     def dict_to_arguments(self, dict_: JsonSerializable, method: str, global_dict=None, pointers_memo=None, path='#'):
         """ Process a JSON of arguments and deserialize them. """
