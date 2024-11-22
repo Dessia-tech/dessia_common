@@ -290,7 +290,8 @@ class Step:
     def dict_to_object(cls, dict_):
         step = cls(label=dict_["label"], inputs=dict_["inputs"])
         if dict_["display_setting"]:
-            step.add_display_setting(display_setting=dict_["display_setting"], inputs=dict_["group_inputs"])
+            display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
+            step.add_display_setting(display_setting=display_setting, inputs=dict_["group_inputs"])
         return step
 
     def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):

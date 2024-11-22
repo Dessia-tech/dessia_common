@@ -46,6 +46,17 @@ class DisplaySetting:
         return {"selector": self.selector, "type": self.type, "method": self.method, "arguments": self.arguments,
                 "serialize_data": self.serialize_data, "load_by_default": self.load_by_default}
 
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Custom dict_to_object implementation.
+
+        TODO Could it be generic without inheriting from DessiaObject ? => Serializable object ?
+        """
+        return cls(selector=dict_["selector"], type_=dict_["type"], method=dict_["method"],
+                   arguments=dict_["arguments"], serialize_data=dict_["serialize_data"],
+                   load_by_default=dict_["load_by_default"])
+
     def compose(self, attribute: str):
         """
         Handles deep calls to method.
