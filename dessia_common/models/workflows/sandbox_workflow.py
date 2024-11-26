@@ -90,8 +90,8 @@ for i, input_ in enumerate(workflow.inputs):
 
 # workflow.log_steps("Before Setting Display")
 
-# output = unpacker_block.outputs[0]
-# workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
+output = unpacker_block.outputs[0]
+workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
 
 # workflow.remove_step(workflow.steps[1])
 

@@ -668,7 +668,10 @@ class Workflow(Block):
                     attributes.append(attribute)
 
             if group_attributes:
-                attributes.append(SchemaAttributeGroup(attributes=group_attributes, name=step.label))
+                group_name = step.display_setting.selector if step.display_setting else f"Group '{step.label}'"
+                group_annotations = {a.name: annotations.pop(a.name) for a in group_attributes}
+                attributes.append(SchemaAttributeGroup(annotations=group_annotations, attributes=group_attributes,
+                                                       name=group_name))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
                                     display_setting=step.display_setting))
 
