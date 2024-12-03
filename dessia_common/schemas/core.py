@@ -146,10 +146,6 @@ class SchemaAttributeCollection:
         return [a for a in self._attributes]
 
     @property
-    def required_attributes(self) -> List[str]:
-        return [a.name for a in self.attributes if not a.has_default_value]
-
-    @property
     def editable_attributes(self) -> List[str]:
         """ Attributes that are not in RESERVED_ARGNAMES. """
         return [a.name for a in self.attributes if a.name not in RESERVED_ARGNAMES]
@@ -191,7 +187,7 @@ class SchemaAttributeCollection:
         return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
 
     def to_dict(self):
-        return {"properties": [self.chunk(a) for a in self._attributes], "required": self.required_attributes}
+        return {"properties": [self.chunk(a) for a in self._attributes]}
 
 
 class SchemaAttributeGroup(SchemaAttribute, SchemaAttributeCollection):
@@ -226,12 +222,11 @@ class SchemaStep(SchemaAttributeCollection):
     def attributes(self):
         return [a for a in self._attributes if not isinstance(a, SchemaAttributeGroup)]
 
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """ Base Schema. kwargs are added to result as well. """
+    def to_dict(self) -> Dict[str, Any]:
+        """ Base Schema. """
         dict_ = super().to_dict()
         display_setting = self.display_setting.to_dict() if self.display_setting else None
-        dict_.update({"displaySetting": display_setting, "documentation": self.documentation,
-                      "label": self.label, **kwargs})
+        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label})
         return dict_
 
 
@@ -267,9 +262,9 @@ class Schema:
         return property_schemas
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """ Base Schema. kwargs are added to result as well. """
+        """ Base Schema. """
         schema = deepcopy(SCHEMA_HEADER)
-        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation})
+        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation}, **kwargs)
         return schema
 
     def default_dict(self) -> Dict[str, Any]:
@@ -362,18 +357,9 @@ class MemberSchema(Schema):
 
         _, default_arguments = split_default_args(argspecs=argspec, merge=False)
 
-        attributes = []
-        required = []
-        for attribute_name in attribute_names:
-            attribute_documentation = descriptions.get(attribute_name, EMPTY_PARSED_ATTRIBUTE)
-            attribute = SchemaAttribute(name=attribute_name, documentation=attribute_documentation)
-            if attribute_name in default_arguments:
-                attribute.default_value = default_arguments[attribute_name]
-            else:
-                required.append(attribute)
-            attributes.append(attribute)
-
-        step = SchemaStep(annotations=annotations, attributes=attributes) #, required=required)
+        attributes = [SchemaAttribute(name=n, documentation=descriptions.get(n, EMPTY_PARSED_ATTRIBUTE),
+                                      default_value=default_arguments.get(n, UNDEFINED)) for n in attribute_names]
+        step = SchemaStep(annotations=annotations, attributes=attributes)
 
         super().__init__(steps=[step], documentation=documentation, name=name)
 
@@ -411,9 +397,9 @@ class ClassSchema(MemberSchema):
         """ Return True if class is standalone. """
         return self.class_._standalone_in_db
 
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """ Write the whole schema. """
-        schema = super().to_dict(**kwargs)
+        schema = super().to_dict()
         classname = full_classname(object_=self.class_, compute_for="class")
         schema.update({"classes": [classname], "standaloneInDb": self.standalone_in_db})
         # TODO Check if we can get rid of this and use Property schema to simplify frontend
@@ -444,8 +430,6 @@ class MethodSchema(MemberSchema):
         docstring = method.__doc__
         super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=method.__name__)
 
-        # self.required_indices = [str(self.attributes.index(a)) for a in self.required]
-
     # @property
     # def serialized(self) -> Dict[str, str]:
     #     """ Get a dictionary with serialized annotations of method arguments. """
@@ -465,7 +449,7 @@ class MethodSchema(MemberSchema):
     #     except NotImplementedError:
     #         return None
     #
-    # def to_dict(self, **kwargs):
+    # def to_dict(self):
     #     """ Write the whole schema. """
     #     schema = deepcopy(SCHEMA_HEADER)
     #     order = [str(i) for i in range(len(self.attributes))]
