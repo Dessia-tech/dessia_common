@@ -21,9 +21,7 @@ This will give them the powers to be handled by dessia platforms.
 
 ## Documentations
 
-For user documentation on how to use this SDK: https://documentation.dessia.tech
-
-For developement documentation or precise questions on classes and method: https://documentation.dessia.tech/dessia_common/
+For user documentation on how to use this SDK: https://documentation.dessia.io
 
 ## Changelog & roadmap
 
