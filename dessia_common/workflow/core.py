@@ -5,6 +5,7 @@
 import ast
 import time
 import datetime
+import uuid
 from functools import cached_property
 from typing import List, Union, Type, Any, Dict, Tuple, Optional, TypeVar, Callable
 import warnings
@@ -272,11 +273,14 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None):
+    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None):
         self.label = label
         if inputs is None:
             inputs = []
         self.inputs = inputs
+        if group_id is None:
+            group_id = str(uuid.uuid4())
+        self.group_id = group_id
         self.group_inputs = []
         self.display_setting = None
 
@@ -284,11 +288,11 @@ class Step:
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
-                "group_inputs": [i.to_dict() for i in self.group_inputs]}
+                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id}
 
     @classmethod
     def dict_to_object(cls, dict_):
-        step = cls(label=dict_["label"], inputs=dict_["inputs"])
+        step = cls(label=dict_["label"], inputs=dict_["inputs"], group_id=dict_.get("group_id", None))
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
             step.add_display_setting(display_setting=display_setting, inputs=dict_["group_inputs"])
@@ -671,7 +675,7 @@ class Workflow(Block):
                 group_name = step.display_setting.selector if step.display_setting else f"Group '{step.label}'"
                 group_annotations = {a.name: annotations.pop(a.name) for a in group_attributes}
                 attributes.append(SchemaAttributeGroup(annotations=group_annotations, attributes=group_attributes,
-                                                       name=group_name))
+                                                       name=step.group_id, title=group_name))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
                                     display_setting=step.display_setting))
 
