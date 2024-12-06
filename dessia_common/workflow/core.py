@@ -291,8 +291,9 @@ class Step:
                 "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id}
 
     @classmethod
-    def dict_to_object(cls, dict_):
-        step = cls(label=dict_["label"], inputs=dict_["inputs"], group_id=dict_.get("group_id", None))
+    def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
+        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None))
+        step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
             step.add_display_setting(display_setting=display_setting, inputs=dict_["group_inputs"])
@@ -507,9 +508,32 @@ class Workflow(Block):
             output_block = blocks[output_adress[0]]
             output = output_block.outputs[output_adress[2]]
 
-        copied_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
-        pipes = self.copy_pipes(copied_workflow)
-        return Workflow(blocks=blocks, pipes=pipes, output=output, name=self.name)
+        # TODO Following code, while easily understandable, is not ideal.
+        #  Instead of creating workflows with all blocks and pipes and stuff,
+        #  we should generate them additevely, ie. crteate them as empty, then add blocks, then add pipes, and so on
+
+        # Pipes need a workflow that has blocks in order to connect equivalent variables
+        unpiped_workflow = Workflow(blocks=blocks, pipes=[], output=output, name=self.name)
+        pipes = self.copy_pipes(unpiped_workflow)
+        piped_workflow = Workflow(blocks=blocks, pipes=pipes, output=output, name=self.name)
+
+        # Steps need a workflow that has pipe in order to handle NBVs and detached variables
+        steps = [self.copy_step(copied_workflow=piped_workflow, step=s) for s in self.steps]
+        return Workflow(blocks=blocks, pipes=pipes, output=output, steps=steps, name=self.name)
+
+    def copy_step(self, copied_workflow: 'Workflow', step: Step) -> Step:
+        inputs = []
+        group_inputs = []
+        for input_ in step.inputs:
+            input_index = self.variable_indices(input_)
+            copied_input = copied_workflow.variable_from_index(input_index)
+            inputs.append(copied_input)
+            if input_ in step.group_inputs:
+                group_inputs.append(copied_input)
+        copied_step = Step(label=step.label, inputs=inputs)
+        copied_step.group_inputs = group_inputs
+        copied_step.display_setting = step.display_setting
+        return copied_step
 
     def copy_pipe(self, copied_workflow: 'Workflow', pipe: Pipe) -> Pipe:
         """ Copy a single regular pipe. """
@@ -728,8 +752,7 @@ class Workflow(Block):
             for step_dict in dict_["steps"]:
                 inputs = [init_workflow.variable_from_index(i) for i in step_dict["inputs"]]
                 group_inputs = [init_workflow.variable_from_index(i) for i in step_dict["group_inputs"]]
-                step_dict.update({"inputs": inputs, "group_inputs": group_inputs})
-                step = Step.dict_to_object(step_dict)
+                step = Step.dict_to_object(step_dict, inputs, group_inputs)
                 steps.append(step)
         else:
             steps = None
@@ -1357,6 +1380,7 @@ class Workflow(Block):
             self._steps.append(step)
         else:
             self._steps.insert(index, step)
+        return self.method_schemas["run"]
 
     def remove_step(self, step: Step):
         for input_ in step.inputs:
