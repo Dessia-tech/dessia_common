@@ -1386,14 +1386,16 @@ class Workflow(Block):
             return self._steps + [self._default_step]
         return self._steps
 
-    def change_input_step(self, input_: Variable, step: Step):
+    def change_input_step(self, input_index: int, new_step_index: int = None):
+        input_ = self.inputs[input_index]
+        step = self._default_step if new_step_index is None else self.steps[new_step_index]
         current_step = self.find_input_step(input_)
         if current_step is not None:
             current_step.inputs.remove(input_)
         step.inputs.append(input_)
 
-    def remove_input_from_step(self, input_: Variable):
-        self.change_input_step(input_=input_, step=self._default_step)
+    def remove_input_from_step(self, index: int):
+        self.change_input_step(input_index=index)
 
     def insert_step(self, index: int = None, label: str = ""):
         step = Step(label=label)
@@ -1403,9 +1405,11 @@ class Workflow(Block):
             self._steps.insert(index, step)
         return self.method_schemas["run"]
 
-    def remove_step(self, step: Step):
+    def remove_step(self, index: int):
+        step = self.steps[index]
         for input_ in step.inputs:
-            self.remove_input_from_step(input_=input_)
+            input_index = self.inputs.index(input_)
+            self.remove_input_from_step(input_index)
         self._steps.remove(step)
 
     def find_input_step(self, input_: Variable) -> Optional[Step]:
