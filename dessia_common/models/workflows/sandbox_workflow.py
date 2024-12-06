@@ -52,7 +52,7 @@ blocks = [generator_block, generate_block, models_block, mp_block, unpacker_bloc
 
 variable_0 = Variable(name='_result_name_', label='Result Name', type_=str)
 variable_1 = Variable(name='Substring 2', label='XLSX Filename Suffix', type_=str)
-variable_1.lock("My Locked NBV")
+# variable_1.lock("My Locked NBV")
 
 pipe_0 = Pipe(variable_0, generator_block.inputs[3])
 pipe_1 = Pipe(generator_block.outputs[0], generate_block.inputs[0])

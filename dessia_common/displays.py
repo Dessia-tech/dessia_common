@@ -26,6 +26,18 @@ class DisplaySetting:
         self.serialize_data = serialize_data
         self.load_by_default = load_by_default
 
+    def __hash__(self):
+        return (hash(self.selector) + hash(self.type) + hash(self.method)
+                + 97 * self.serialize_data + 769 * self.load_by_default)
+
+    def __eq__(self, other):
+        same_selector = self.selector == other.selector
+        same_type = self.type == other.type
+        same_method = self.method == other.method
+        same_serialize = self.serialize_data == other.serialize_data
+        same_loading = self.load_by_default == other.load_by_default
+        return same_selector and same_type and same_method and same_serialize and same_loading
+
     @property
     def reference_path(self) -> str:
         """

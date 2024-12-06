@@ -137,11 +137,11 @@ class Variable(DessiaObject):
         """
         if memo is None:
             memo = {}
-        if self.has_default_value:
-            copied_default_value = deepcopy_value(self.default_value, memo=memo)
-        else:
-            copied_default_value = UNDEFINED
-        return Variable(type_=self.type_, default_value=copied_default_value, name=self.name)
+        default_value = deepcopy_value(self.default_value, memo=memo) if self.has_default_value else UNDEFINED
+        variable = Variable(type_=self.type_, default_value=default_value, name=self.name)
+        if self.locked:
+            variable.lock()
+        return variable
 
     def _to_script(self) -> ToScriptElement:
         script = self._get_to_script_elements()
@@ -284,6 +284,16 @@ class Step:
         self.group_inputs = []
         self.display_setting = None
 
+    def __hash__(self):
+        return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
+
+    def __eq__(self, other: 'Step'):
+        same_label = self.label = other.label
+        same_inputs = all(i.equivalent(other_i) for i, other_i in zip(self.inputs, other.inputs))
+        same_group = all(i.equivalent(other_i) for i, other_i in zip(self.group_inputs, other.group_inputs))
+        same_display_setting = self.display_setting == other.display_setting
+        return same_label and same_inputs and same_group and same_display_setting
+
     def to_dict(self):
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
@@ -296,7 +306,7 @@ class Step:
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
-            step.add_display_setting(display_setting=display_setting, inputs=dict_["group_inputs"])
+            step.add_display_setting(display_setting=display_setting, inputs=group_inputs)
         return step
 
     def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):
@@ -354,7 +364,6 @@ class Workflow(Block):
         self._cached_graph = None
 
         inputs = [v for v in self.variables if len(nx.ancestors(self.graph, v)) == 0]
-        self.locked_inputs = [i for i in inputs if i.locked]
 
         self.description = description
         self.documentation = documentation
@@ -390,6 +399,10 @@ class Workflow(Block):
     def nodes(self):
         """ Return the list of blocks and non_block_variables (nodes) of the Workflow. """
         return self.blocks + self.nonblock_variables
+
+    @property
+    def locked_inputs(self) -> List[Variable]:
+        return [i for i in self.inputs if i.locked]
 
     @cached_property
     def file_inputs(self):
@@ -445,11 +458,10 @@ class Workflow(Block):
         output_hash = hash(self.variable_indices(self.output))
         base_hash = len(self.blocks) + 11 * len(self.pipes) + 23 * len(self.locked_inputs) + output_hash
         block_hash = int(sum(b.equivalent_hash() for b in self.blocks) % 1e6)
-        # TODO Steps
-        return (base_hash + block_hash) % 1000000000
+        step_hash = sum(hash(s) for s in self.steps)
+        return (base_hash + block_hash + step_hash) % 1000000000
 
     def _data_eq(self, other_object) -> bool:
-        # TODO Steps
         if hash(self) != hash(other_object) or not Block.equivalent(self, other_object):
             return False
 
@@ -459,6 +471,9 @@ class Workflow(Block):
                 return False
 
         if not self._equivalent_pipes(other_object):
+            return False
+
+        if not all(s == other_s for s, other_s in zip(self.steps, other_object.steps)):
             return False
         return True
 
@@ -519,7 +534,13 @@ class Workflow(Block):
 
         # Steps need a workflow that has pipe in order to handle NBVs and detached variables
         steps = [self.copy_step(copied_workflow=piped_workflow, step=s) for s in self.steps]
-        return Workflow(blocks=blocks, pipes=pipes, output=output, steps=steps, name=self.name)
+        workflow = Workflow(blocks=blocks, pipes=pipes, output=output, steps=steps, name=self.name)
+
+        # Locking variables
+        for i, input_ in enumerate(self.inputs):
+            if input_.locked:
+                workflow.inputs[i].lock(input_.default_value)
+        return workflow
 
     def copy_step(self, copied_workflow: 'Workflow', step: Step) -> Step:
         inputs = []
