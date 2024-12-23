@@ -26,6 +26,18 @@ class DisplaySetting:
         self.serialize_data = serialize_data
         self.load_by_default = load_by_default
 
+    def __hash__(self):
+        return (hash(self.selector) + hash(self.type) + hash(self.method)
+                + 97 * self.serialize_data + 769 * self.load_by_default)
+
+    def __eq__(self, other):
+        same_selector = self.selector == other.selector
+        same_type = self.type == other.type
+        same_method = self.method == other.method
+        same_serialize = self.serialize_data == other.serialize_data
+        same_loading = self.load_by_default == other.load_by_default
+        return same_selector and same_type and same_method and same_serialize and same_loading
+
     @property
     def reference_path(self) -> str:
         """
@@ -45,6 +57,17 @@ class DisplaySetting:
         """ Serialization: make a dict from class instance attributes. """
         return {"selector": self.selector, "type": self.type, "method": self.method, "arguments": self.arguments,
                 "serialize_data": self.serialize_data, "load_by_default": self.load_by_default}
+
+    @classmethod
+    def dict_to_object(cls, dict_):
+        """
+        Custom dict_to_object implementation.
+
+        TODO Could it be generic without inheriting from DessiaObject ? => Serializable object ?
+        """
+        return cls(selector=dict_["selector"], type_=dict_["type"], method=dict_["method"],
+                   arguments=dict_["arguments"], serialize_data=dict_["serialize_data"],
+                   load_by_default=dict_["load_by_default"])
 
     def compose(self, attribute: str):
         """
