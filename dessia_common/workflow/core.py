@@ -383,13 +383,12 @@ class Workflow(Block):
         self.branch_by_export_format = self.branch_by_selector(self.export_blocks)
 
         if steps:
-            self._steps = steps
+            self.steps = steps
             step_inputs = [i for s in steps for i in s.inputs]
-            non_step_inputs = [i for i in self.inputs if i not in step_inputs]
+            self.spare_inputs = [i for i in self.inputs if i not in step_inputs]
         else:
-            self._steps = []
-            non_step_inputs = [i for i in self.inputs]
-        self._default_step = Step(inputs=non_step_inputs, label="Default Step")
+            self.steps = []
+            self.spare_inputs = [i for i in self.inputs]
 
     @classmethod
     def generate_empty(cls):
@@ -685,6 +684,25 @@ class Workflow(Block):
         """ Compute documentation of all blocks. """
         return [b._docstring() for b in self.blocks]
 
+    def input_schema(self, input_: Variable, annotations: Dict[str, type]):
+        input_index = self.input_index(input_)
+        input_address = str(input_index)
+        annotations[input_address] = input_.type_
+
+        # Title & Description
+        description = EMPTY_PARSED_ATTRIBUTE
+        title = input_.label
+        name = prettyname(input_.name)
+        if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
+            block = self.block_from_variable(input_)
+            description = block.parse_input_doc(input_)
+            if not title:
+                title = f"{block.name} - {name}"
+        if input_ in self.nonblock_variables and not title:
+            title = name
+        return SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
+                               editable=not input_.locked, documentation=description)
+
     @property
     def method_schemas(self):
         """ New support of method schemas. """
@@ -694,24 +712,7 @@ class Workflow(Block):
             group_attributes = []
             annotations = {}
             for input_ in step.inputs:
-                input_index = self.input_index(input_)
-                input_address = str(input_index)
-                annotations[input_address] = input_.type_
-
-                # Title & Description
-                description = EMPTY_PARSED_ATTRIBUTE
-                title = input_.label
-                name = prettyname(input_.name)
-                if input_ not in self.nonblock_variables and input_ not in self.detached_variables:
-                    block = self.block_from_variable(input_)
-                    description = block.parse_input_doc(input_)
-                    if not title:
-                        title = f"{block.name} - {name}"
-                if input_ in self.nonblock_variables and not title:
-                    title = name
-
-                attribute = SchemaAttribute(name=input_address, default_value=input_.default_value, title=title,
-                                            editable=not input_.locked, documentation=description)
+                attribute = self.input_schema(input_=input_, annotations=annotations)
                 if input_ in step.group_inputs:
                     group_attributes.append(attribute)
                 else:
@@ -724,6 +725,10 @@ class Workflow(Block):
                                                        name=step.group_id, title=group_name))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
                                     display_setting=step.display_setting))
+        if self.spare_inputs:
+            spare_annotations = {}
+            spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
+            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step"))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
@@ -1381,32 +1386,30 @@ class Workflow(Block):
                     pass
         return displayable_outputs
 
-    @property
-    def steps(self):
-        if self._default_step.inputs:
-            return self._steps + [self._default_step]
-        return self._steps
-
     def change_input_step(self, input_index: int, new_step_index: int = None):
         """ Callable from frontend. """
         input_ = self.inputs[input_index]
-        step = self._default_step if new_step_index is None else self.steps[new_step_index]
         current_step = self.find_input_step(input_)
-        if current_step is not None:
+        if new_step_index is None:
             current_step.inputs.remove(input_)
-        step.inputs.append(input_)
+            self.spare_inputs.append(input_)
+        else:
+            step = self.steps[new_step_index]
+            current_collection = self.spare_inputs if current_step is None else current_step.inputs
+            current_collection.remove(input_)
+            step.inputs.append(input_)
 
     def remove_input_from_step(self, index: int):
         """ Callable from frontend. """
-        self.change_input_step(input_index=index)
+        self.change_input_step(index)
 
     def insert_step(self, index: int = None, label: str = ""):
         """ Callable from frontend. """
         step = Step(label=label)
         if index is None:
-            self._steps.append(step)
+            self.steps.append(step)
         else:
-            self._steps.insert(index, step)
+            self.steps.insert(index, step)
         return self.method_schemas["run"]
 
     def remove_step(self, index: int):
@@ -1415,11 +1418,11 @@ class Workflow(Block):
         for input_ in step.inputs:
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
-        self._steps.remove(step)
+        self.steps.remove(step)
 
     def reset_steps(self):
         """ Callable from frontend. """
-        for i in reversed(range(len(self._steps))):
+        for i in reversed(range(len(self.steps))):
             self.remove_step(i)
 
     def find_input_step(self, input_: Variable) -> Optional[Step]:
@@ -1452,16 +1455,7 @@ class Workflow(Block):
         print(f"=====================================")
 
     def debug(self):
-        log = (f"Default Step =========================\n"
-               f"{self._default_step.label}\n"
-               f"{self._default_step.log_inputs()}\n"
-               f"Steps {len(self.steps)} =============================\n"
-               f"{[s.log_inputs() for s in self.steps]}\n"
-               f"_steps {len(self._steps)} =============================\n"
-               f"{[s.log_inputs() for s in self._steps]}\n"
-               f"===================================================\n")
-        print(log)
-        return log
+        return f"Steps {len(self.steps)} =============================\n{[s.log_inputs() for s in self.steps]}\n"
 
 
 class ExecutionInfo(DessiaObject):
