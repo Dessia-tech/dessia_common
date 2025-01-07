@@ -318,9 +318,10 @@ class Step:
         self.group_inputs = []
 
     def log_inputs(self):
-        print("\n", self.label, "\n")
+        log = self.label + "\n"
         for i in self.inputs:
-            print(i.name, i.label)
+            log += f"  Name : {i.name}\n"
+        return log
 
 
 class Workflow(Block):
@@ -1387,6 +1388,7 @@ class Workflow(Block):
         return self._steps
 
     def change_input_step(self, input_index: int, new_step_index: int = None):
+        """ Callable from frontend. """
         input_ = self.inputs[input_index]
         step = self._default_step if new_step_index is None else self.steps[new_step_index]
         current_step = self.find_input_step(input_)
@@ -1395,9 +1397,11 @@ class Workflow(Block):
         step.inputs.append(input_)
 
     def remove_input_from_step(self, index: int):
+        """ Callable from frontend. """
         self.change_input_step(input_index=index)
 
     def insert_step(self, index: int = None, label: str = ""):
+        """ Callable from frontend. """
         step = Step(label=label)
         if index is None:
             self._steps.append(step)
@@ -1406,11 +1410,17 @@ class Workflow(Block):
         return self.method_schemas["run"]
 
     def remove_step(self, index: int):
+        """ Callable from frontend. """
         step = self.steps[index]
         for input_ in step.inputs:
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
         self._steps.remove(step)
+
+    def reset_steps(self):
+        """ Callable from frontend. """
+        for i in reversed(range(len(self._steps))):
+            self.remove_step(i)
 
     def find_input_step(self, input_: Variable) -> Optional[Step]:
         steps = [s for s in self.steps if input_ in s.inputs]
@@ -1421,7 +1431,9 @@ class Workflow(Block):
         raise ValueError(f"Input '{input_.name}', labelled '{input_.label}' found twice in steps.")
 
     def add_step_display(self, variable: Variable, step: Step, display_setting: DisplaySetting):
-        """ TODO argument should be an attribute getter (like DisplayView). """
+        """
+        TODO argument should be an attribute getter (like DisplayView).
+        """
         upstream_inputs = self.upstream_inputs(variable)
         for input_ in upstream_inputs:
             self.change_input_step(input_=input_, step=step)
@@ -1438,6 +1450,18 @@ class Workflow(Block):
             for input_ in step.inputs:
                 print(f"  {self.input_index(input_)} | {input_.name}")
         print(f"=====================================")
+
+    def debug(self):
+        log = (f"Default Step =========================\n"
+               f"{self._default_step.label}\n"
+               f"{self._default_step.log_inputs()}\n"
+               f"Steps {len(self.steps)} =============================\n"
+               f"{[s.log_inputs() for s in self.steps]}\n"
+               f"_steps {len(self._steps)} =============================\n"
+               f"{[s.log_inputs() for s in self._steps]}\n"
+               f"===================================================\n")
+        print(log)
+        return log
 
 
 class ExecutionInfo(DessiaObject):
