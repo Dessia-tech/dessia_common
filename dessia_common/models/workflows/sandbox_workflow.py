@@ -80,18 +80,8 @@ workflow = Workflow(blocks=blocks, pipes=pipes, output=generate_block.outputs[1]
                     name="Sandbox")
 
 
-workflow.insert_step(None, "A")
-workflow.insert_step(1, "B")
-workflow.insert_step(1, "C")
-
-for i, input_ in enumerate(workflow.inputs):
-    step = workflow._steps[i % len(workflow._steps)]
-    workflow.change_input_step(input_=input_, step=step)
-
-# workflow.log_steps("Before Setting Display")
-
 output = unpacker_block.outputs[0]
-workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
+# workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
 
 # workflow.remove_step(workflow.steps[1])
 
