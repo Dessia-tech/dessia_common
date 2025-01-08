@@ -1386,22 +1386,30 @@ class Workflow(Block):
                     pass
         return displayable_outputs
 
-    def change_input_step(self, input_index: int, new_step_index: int = None):
+    def change_input_step(self, input_index: int, new_step_index: int):
         """ Callable from frontend. """
         input_ = self.inputs[input_index]
         current_step = self.find_input_step(input_)
-        if new_step_index is None:
-            current_step.inputs.remove(input_)
-            self.spare_inputs.append(input_)
-        else:
-            step = self.steps[new_step_index]
-            current_collection = self.spare_inputs if current_step is None else current_step.inputs
-            current_collection.remove(input_)
-            step.inputs.append(input_)
+        new_step = self.steps[new_step_index]
+        new_step.inputs.append(input_)
+        current_collection = self.spare_inputs if current_step is None else current_step.inputs
+        current_collection.remove(input_)
 
     def remove_input_from_step(self, index: int):
         """ Callable from frontend. """
-        self.change_input_step(index)
+        input_ = self.inputs[index]
+        self.spare_inputs.append(input_)
+        current_step = self.find_input_step(input_)
+        current_step.inputs.remove(input_)
+
+    def reorder_step_inputs(self, step_index: int, order: list[int]):
+        """ Callable from frontend. """
+        step = self.steps[step_index]
+        step_input_indices = [self.input_index(v) for v in step.inputs]
+        if set(step_input_indices) != set(order):
+            raise ValueError(f"Reordering inputs of step '{step.label}' failed. "
+                             f"Given order '{order}' does not match step inputs of indices '{step_input_indices}'")
+        step.inputs = [self.inputs[i] for i in order]
 
     def insert_step(self, label: str = "", index: int = None):
         """ Callable from frontend. """
@@ -1429,7 +1437,7 @@ class Workflow(Block):
     def remove_step(self, index: int):
         """ Callable from frontend. """
         step = self.steps[index]
-        for input_ in step.inputs:
+        for input_ in reversed(step.inputs):
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
         self.steps.remove(step)
@@ -1447,13 +1455,15 @@ class Workflow(Block):
             return steps[0]
         raise ValueError(f"Input '{input_.name}', labelled '{input_.label}' found twice in steps.")
 
-    def add_step_display(self, variable: Variable, step: Step, display_setting: DisplaySetting):
+    def add_step_display(self, variable: Variable, step_index: int, display_setting: DisplaySetting):
         """
         TODO argument should be an attribute getter (like DisplayView).
         """
         upstream_inputs = self.upstream_inputs(variable)
         for input_ in upstream_inputs:
-            self.change_input_step(input_=input_, step=step)
+            index = self.input_index(input_)
+            self.change_input_step(input_index=index, new_step_index=step_index)
+        step = self.steps[step_index]
         step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs)
 
     @staticmethod

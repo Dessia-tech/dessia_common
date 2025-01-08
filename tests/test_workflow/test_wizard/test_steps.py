@@ -43,7 +43,6 @@ class TestHandling(unittest.TestCase):
         ([0, 0, 0], [])
     ])
     def test_remove_many(self, indices: list[int], expected_labels: list[str]):
-        """ Base steps are ['A', 'B', 'C'] """
         for i, index in enumerate(indices):
             self.workflow.remove_step(index)
         self.assertEqual(len(self.workflow.steps), len(expected_labels))
