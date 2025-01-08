@@ -288,7 +288,7 @@ class Step:
         return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
 
     def __eq__(self, other: 'Step'):
-        same_label = self.label = other.label
+        same_label = self.label == other.label
         same_inputs = all(i.equivalent(other_i) for i, other_i in zip(self.inputs, other.inputs))
         same_group = all(i.equivalent(other_i) for i, other_i in zip(self.group_inputs, other.group_inputs))
         same_display_setting = self.display_setting == other.display_setting
