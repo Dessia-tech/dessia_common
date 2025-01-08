@@ -1403,7 +1403,7 @@ class Workflow(Block):
         """ Callable from frontend. """
         self.change_input_step(index)
 
-    def insert_step(self, index: int = None, label: str = ""):
+    def insert_step(self, label: str = "", index: int = None):
         """ Callable from frontend. """
         step = Step(label=label)
         if index is None:
@@ -1411,6 +1411,20 @@ class Workflow(Block):
         else:
             self.steps.insert(index, step)
         return self.method_schemas["run"]
+
+    def rename_step(self, index: int, label: str = ""):
+        """ Callable from frontend. """
+        step = self.steps[index]
+        step.label = label
+
+    def reorder_steps(self, order: list[int]):
+        """ Callable from frontend. """
+        if len(order) != len(self.steps):
+            raise ValueError(f"Given order '{order}' of length '{len(order)}' is missing items."
+                             f"It should be of length '{len(self.steps)}' ")
+        if len(set(order)) != len(self.steps):
+            raise ValueError(f"Duplicated indices found in given order '{order}'")
+        self.steps = [self.steps[i] for i in order]
 
     def remove_step(self, index: int):
         """ Callable from frontend. """
