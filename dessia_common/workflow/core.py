@@ -16,7 +16,7 @@ import networkx as nx
 
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
-from dessia_common.core import DessiaObject
+from dessia_common.core import DessiaObject, display_settings_from_selector
 
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, SchemaStep,
                                         serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute,
@@ -87,6 +87,15 @@ class Variable(DessiaObject):
         if not keep_default:
             self.default_value = UNDEFINED
         self._locked = False
+
+    @property
+    def available_display_settings(self) -> List[DisplaySetting]:
+        try:
+            if issubclass(self.type_, DessiaObject):
+                return self.type_.display_settings()
+        except TypeError:
+            pass
+        return []
 
     def equivalent_hash(self):
         return len(self.name) + 7 * len(self.type_) + 11 * int(self.locked)
@@ -645,8 +654,8 @@ class Workflow(Block):
                 display_settings.append(settings)
         return display_settings
 
-    @staticmethod
-    def display_settings(**kwargs) -> List[DisplaySetting]:
+    @classmethod
+    def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Compute the displays settings of the workflow. """
         return [DisplaySetting(selector="Workflow", type_="workflow", method="to_dict"),
                 DisplaySetting(selector="Documentation", type_="markdown", method="to_markdown"),
@@ -1376,15 +1385,7 @@ class Workflow(Block):
 
     @property
     def displayable_outputs(self):
-        displayable_outputs = []
-        for block in self.blocks:
-            for output in block.outputs:
-                try:
-                    if issubclass(output.type_, DessiaObject):
-                        displayable_outputs.append(output)
-                except TypeError:
-                    pass
-        return displayable_outputs
+        return [o for b in self.blocks for o in b.outputs if o.available_display_settings]
 
     def change_input_step(self, input_index: int, new_step_index: int):
         """ Callable from frontend. """
@@ -1455,19 +1456,21 @@ class Workflow(Block):
             return steps[0]
         raise ValueError(f"Input '{input_.name}', labelled '{input_.label}' found twice in steps.")
 
-    def add_step_display(self, variable: Variable, step_index: int, display_setting: DisplaySetting):
-        """
-        TODO argument should be an attribute getter (like DisplayView).
-        """
+    def add_step_display(self, variable_index: int, step_index: int, selector: str):
+        """ Callable from frontend. """
+        variable = self.variables[variable_index]
         upstream_inputs = self.upstream_inputs(variable)
         for input_ in upstream_inputs:
             index = self.input_index(input_)
             self.change_input_step(input_index=index, new_step_index=step_index)
         step = self.steps[step_index]
+        display_setting = display_settings_from_selector(display_settings=variable.available_display_settings,
+                                                         selector=selector)
         step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs)
 
-    @staticmethod
-    def remove_step_display(step: Step):
+    def remove_step_display(self, step_index: int):
+        """ Callable from frontend. """
+        step = self.steps[step_index]
         step.remove_display_setting()
 
     def log_steps(self, title: str = ""):
@@ -2099,6 +2102,10 @@ class WorkflowRun(WorkflowState):
                                        load_by_default=True)
         documentation.load_by_default = not any(displays_by_default)
         return [documentation] + block_settings
+
+    def _display_settings_from_selector(self, selector: str):
+        """ Get display settings from given selector. """
+        return display_settings_from_selector(display_settings=self.display_settings(), selector=selector)
 
     def run_again(self, input_values, progress_callback=None, name=None):
         """ Execute workflow again with given inputs. """
