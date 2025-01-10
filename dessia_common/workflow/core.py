@@ -1473,6 +1473,27 @@ class Workflow(Block):
         step = self.steps[step_index]
         step.remove_display_setting()
 
+    def rename_input(self, input_index: int, label: str):
+        """ Callable from frontend. """
+        input_ = self.inputs[input_index]
+        input_.label = label
+        return self.method_schemas["run"]
+
+    def lock_input(self, input_index: int, default_value=UNDEFINED):
+        """ Callable from frontend. """
+        input_ = self.inputs[input_index]
+        input_.lock(default_value)
+        return self.method_schemas["run"]
+
+    def set_input_default(self, input_index: int, value):
+        """ Callable from frontend. """
+        input_ = self.inputs[input_index]
+        input_.default_value = value
+        return self.method_schemas["run"]
+
+    def reset_input_default(self, input_index: int):
+        return self.set_input_default(input_index=input_index, value=UNDEFINED)
+
     def log_steps(self, title: str = ""):
         print(f"{title} =============================")
         for step in self.steps:
