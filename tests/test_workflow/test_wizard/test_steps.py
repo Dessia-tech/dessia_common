@@ -59,7 +59,7 @@ class TestHandling(unittest.TestCase):
 
     def test_rename(self):
         new_label = "Renamed A"
-        self.workflow.rename_step(0, new_label)
+        self.workflow.rename_step(step_index=0, label=new_label)
         self.assertEqual(self.workflow.steps[0].label, new_label)
 
     def test_reset(self):
@@ -79,8 +79,8 @@ class TestInsertion(unittest.TestCase):
         (1000, "C"),
         (None, "D")
     ])
-    def test_insert_one(self, index: int, label: str):
-        self.workflow.insert_step(label=label, index=index)
+    def test_insert_one(self, step_index: int, label: str):
+        self.workflow.insert_step(label=label, step_index=step_index)
         self.assertEqual(len(self.workflow.steps), 1)
         self.assertEqual(self.workflow.steps[0].label, label)
 
@@ -95,8 +95,8 @@ class TestInsertion(unittest.TestCase):
         ),
     ])
     def test_insert_many(self, indices: list[int], labels: list[str], expected_order: list[str]):
-        for i, index in enumerate(indices):
-            self.workflow.insert_step(label=labels[i], index=index)
+        for i, step_index in enumerate(indices):
+            self.workflow.insert_step(label=labels[i], step_index=step_index)
         self.assertEqual(len(indices), len(self.workflow.steps))
         ordered_labels = [s.label for s in self.workflow.steps]
         self.assertListEqual(ordered_labels, expected_order)

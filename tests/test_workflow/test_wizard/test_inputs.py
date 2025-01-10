@@ -75,7 +75,7 @@ class TestSingleStep(BaseClass):
 
     def test_remove_inputs(self):
         self.workflow.change_input_step(input_index=0, new_step_index=0)
-        self.workflow.remove_input_from_step(index=0)
+        self.workflow.remove_input_from_step(input_index=0)
         self.assertEqual(len(self.workflow.steps[0].inputs), 0)
         self.assertEqual(len(self.workflow.inputs), 4)
 
@@ -113,7 +113,7 @@ class TestMultipleSteps(BaseClass):
         self.assertEqual(len(self.workflow.spare_inputs), expected_spare_length)
 
     def test_remove_inputs(self):
-        self.workflow.remove_input_from_step(index=0)
+        self.workflow.remove_input_from_step(input_index=0)
         self.assertEqual(len(self.workflow.steps[0].inputs), 0)
         self.assertEqual(len(self.workflow.spare_inputs), 2)
 

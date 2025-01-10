@@ -1397,9 +1397,9 @@ class Workflow(Block):
         current_collection.remove(input_)
         return self.method_schemas["run"]
 
-    def remove_input_from_step(self, index: int):
+    def remove_input_from_step(self, input_index: int):
         """ Callable from frontend. """
-        input_ = self.inputs[index]
+        input_ = self.inputs[input_index]
         self.spare_inputs.append(input_)
         current_step = self.find_input_step(input_)
         current_step.inputs.remove(input_)
@@ -1415,18 +1415,18 @@ class Workflow(Block):
         step.inputs = [self.inputs[i] for i in order]
         return self.method_schemas["run"]
 
-    def insert_step(self, label: str = "", index: int = None):
+    def insert_step(self, label: str = "", step_index: int = None):
         """ Callable from frontend. """
         step = Step(label=label)
-        if index is None:
+        if step_index is None:
             self.steps.append(step)
         else:
-            self.steps.insert(index, step)
+            self.steps.insert(step_index, step)
         return self.method_schemas["run"]
 
-    def rename_step(self, index: int, label: str = ""):
+    def rename_step(self, step_index: int, label: str = ""):
         """ Callable from frontend. """
-        step = self.steps[index]
+        step = self.steps[step_index]
         step.label = label
         return self.method_schemas["run"]
 
@@ -1440,9 +1440,9 @@ class Workflow(Block):
         self.steps = [self.steps[i] for i in order]
         return self.method_schemas["run"]
 
-    def remove_step(self, index: int):
+    def remove_step(self, step_index: int):
         """ Callable from frontend. """
-        step = self.steps[index]
+        step = self.steps[step_index]
         for input_ in reversed(step.inputs):
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
