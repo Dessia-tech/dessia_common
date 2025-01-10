@@ -1395,6 +1395,7 @@ class Workflow(Block):
         new_step.inputs.append(input_)
         current_collection = self.spare_inputs if current_step is None else current_step.inputs
         current_collection.remove(input_)
+        return self.method_schemas["run"]
 
     def remove_input_from_step(self, index: int):
         """ Callable from frontend. """
@@ -1402,6 +1403,7 @@ class Workflow(Block):
         self.spare_inputs.append(input_)
         current_step = self.find_input_step(input_)
         current_step.inputs.remove(input_)
+        return self.method_schemas["run"]
 
     def reorder_step_inputs(self, step_index: int, order: list[int]):
         """ Callable from frontend. """
@@ -1411,6 +1413,7 @@ class Workflow(Block):
             raise ValueError(f"Reordering inputs of step '{step.label}' failed. "
                              f"Given order '{order}' does not match step inputs of indices '{step_input_indices}'")
         step.inputs = [self.inputs[i] for i in order]
+        return self.method_schemas["run"]
 
     def insert_step(self, label: str = "", index: int = None):
         """ Callable from frontend. """
@@ -1425,6 +1428,7 @@ class Workflow(Block):
         """ Callable from frontend. """
         step = self.steps[index]
         step.label = label
+        return self.method_schemas["run"]
 
     def reorder_steps(self, order: list[int]):
         """ Callable from frontend. """
@@ -1434,6 +1438,7 @@ class Workflow(Block):
         if len(set(order)) != len(self.steps):
             raise ValueError(f"Duplicated indices found in given order '{order}'")
         self.steps = [self.steps[i] for i in order]
+        return self.method_schemas["run"]
 
     def remove_step(self, index: int):
         """ Callable from frontend. """
@@ -1442,11 +1447,13 @@ class Workflow(Block):
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
         self.steps.remove(step)
+        return self.method_schemas["run"]
 
     def reset_steps(self):
         """ Callable from frontend. """
         for i in reversed(range(len(self.steps))):
             self.remove_step(i)
+        return self.method_schemas["run"]
 
     def find_input_step(self, input_: Variable) -> Optional[Step]:
         steps = [s for s in self.steps if input_ in s.inputs]
@@ -1467,11 +1474,13 @@ class Workflow(Block):
         display_setting = display_settings_from_selector(display_settings=variable.available_display_settings,
                                                          selector=selector)
         step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs)
+        return self.method_schemas["run"]
 
     def remove_step_display(self, step_index: int):
         """ Callable from frontend. """
         step = self.steps[step_index]
         step.remove_display_setting()
+        return self.method_schemas["run"]
 
     def rename_input(self, input_index: int, label: str):
         """ Callable from frontend. """
