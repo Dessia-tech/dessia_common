@@ -212,11 +212,12 @@ class SchemaStep(SchemaAttributeCollection):
     """ Schema representation of a step. """
 
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 display_setting: DisplaySetting = None, label: str = "", documentation: str = ""):
+                 display_setting: DisplaySetting = None, label: str = "", documentation: str = "", is_fallback: bool = False):
         super().__init__(annotations=annotations, attributes=attributes)
         self.display_setting = display_setting
         self.label = label
         self.documentation = documentation
+        self.is_fallback = is_fallback
 
     @property
     def attributes(self):
@@ -226,7 +227,7 @@ class SchemaStep(SchemaAttributeCollection):
         """ Base Schema. """
         dict_ = super().to_dict()
         display_setting = self.display_setting.to_dict() if self.display_setting else None
-        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label})
+        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label, "isFallback": self.is_fallback})
         return dict_
 
 
