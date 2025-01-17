@@ -282,7 +282,7 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None):
+    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False):
         self.label = label
         if inputs is None:
             inputs = []
@@ -292,6 +292,7 @@ class Step:
         self.group_id = group_id
         self.group_inputs = []
         self.display_setting = None
+        self.is_fallback = is_fallback
 
     def __hash__(self):
         return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
@@ -307,11 +308,11 @@ class Step:
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
-                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id}
+                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id, "is_fallback": self.is_fallback}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
-        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None))
+        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None), is_fallback=dict_.get("is_fallback", False))
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
@@ -737,7 +738,7 @@ class Workflow(Block):
         if self.spare_inputs:
             spare_annotations = {}
             spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
-            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step"))
+            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step", is_fallback=True))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
