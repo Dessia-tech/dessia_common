@@ -440,7 +440,7 @@ class DessiaObject(SerializableObject):
     def _display_settings_from_selector(cls, selector: str):
         """ Get display settings from given selector. """
         try:
-            display_settings_from_selector(display_settings=cls.display_settings(), selector=selector)
+            return display_settings_from_selector(display_settings=cls.display_settings(), selector=selector)
         except ValueError:
             raise ValueError(f"No such selector '{selector}' in display of class '{cls.__name__}'")
 
