@@ -1388,7 +1388,7 @@ class Workflow(Block):
     def displayable_outputs(self):
         return [o for b in self.blocks for o in b.outputs if o.available_display_settings]
 
-    def displayable_display_settings_per_steps(self):
+    def displayable_display_settings(self):
         """Callable from frontend."""
         missing_inputs = []
         available_display_settings = []
