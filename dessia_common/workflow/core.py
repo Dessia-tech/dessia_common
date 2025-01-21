@@ -1488,7 +1488,10 @@ class Workflow(Block):
         """ Callable from frontend. """
         variable = self.variables[variable_index]
         upstream_inputs = self.upstream_inputs(variable)
+        previous_step_inputs = [input_ for step in self.steps[:step_index] for input_ in step.inputs]
         for input_ in upstream_inputs:
+            if input_ in previous_step_inputs:
+                continue
             index = self.input_index(input_)
             self.change_input_step(input_index=index, new_step_index=step_index)
         step = self.steps[step_index]
