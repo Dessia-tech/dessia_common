@@ -1398,12 +1398,12 @@ class Workflow(Block):
         }
         for step in reversed(self.steps):
             if not step.is_fallback:
-                step_display_settings = []
+                step_display_settings = {}
                 for output, indexes in ds_inputs.items():
                     if all(index not in missing_inputs for index in indexes):
-                        step_display_settings.append(
-                            [ds.to_dict() for ds in output.available_display_settings]
-                        )
+                        step_display_settings[self.variables.index(output)] = [
+                            ds.to_dict() for ds in output.available_display_settings
+                        ]
                 available_display_settings.append(step_display_settings)
                 missing_inputs.extend(self.inputs.index(step_input) for step_input in step.inputs)
         return available_display_settings[::-1]
