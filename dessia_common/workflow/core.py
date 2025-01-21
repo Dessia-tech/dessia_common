@@ -1389,18 +1389,23 @@ class Workflow(Block):
         return [o for b in self.blocks for o in b.outputs if o.available_display_settings]
 
     def displayable_display_settings_per_steps(self):
-        """ Callable from frontend. """
+        """Callable from frontend."""
         missing_inputs = []
         available_display_settings = []
-        ds_inputs = {o: [self.inputs.index(el) for el in self.upstream_inputs(o)] for o in self.displayable_outputs}
-        for step in self.steps[::-1]:
-            if step.is_fallback is False:
-                available_display_settings.append([
-                    [ds.to_dict() for ds in o.available_display_settings]
-                    for o, indexes in ds_inputs.items()
-                    if not any([index in missing_inputs for index in indexes])
-                ])
-                missing_inputs.extend([self.inputs.index(step_input) for step_input in step.inputs])
+        ds_inputs = {
+            output: [self.inputs.index(upstream_input) for upstream_input in self.upstream_inputs(output)]
+            for output in self.displayable_outputs
+        }
+        for step in reversed(self.steps):
+            if not step.is_fallback:
+                step_display_settings = []
+                for output, indexes in ds_inputs.items():
+                    if all(index not in missing_inputs for index in indexes):
+                        step_display_settings.append(
+                            [ds.to_dict() for ds in output.available_display_settings]
+                        )
+                available_display_settings.append(step_display_settings)
+                missing_inputs.extend(self.inputs.index(step_input) for step_input in step.inputs)
         return available_display_settings[::-1]
 
     def change_input_step(self, input_index: int, new_step_index: int):
