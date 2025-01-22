@@ -282,7 +282,7 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False):
+    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False, documentation: str = ""):
         self.label = label
         if inputs is None:
             inputs = []
@@ -293,6 +293,7 @@ class Step:
         self.group_inputs = []
         self.display_setting = None
         self.is_fallback = is_fallback
+        self.documentation = documentation
 
     def __hash__(self):
         return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
@@ -308,11 +309,11 @@ class Step:
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
-                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id, "is_fallback": self.is_fallback}
+                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id, "is_fallback": self.is_fallback, "documentation": self.documentation}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
-        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None), is_fallback=dict_.get("is_fallback", False))
+        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None), is_fallback=dict_.get("is_fallback", False), documentation=dict_.get("documentation", ""))
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
@@ -734,7 +735,7 @@ class Workflow(Block):
                 attributes.append(SchemaAttributeGroup(annotations=group_annotations, attributes=group_attributes,
                                                        name=step.group_id, title=group_name))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
-                                    display_setting=step.display_setting))
+                                    display_setting=step.display_setting, documentation=step.documentation))
         if self.spare_inputs:
             spare_annotations = {}
             spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
@@ -1507,6 +1508,12 @@ class Workflow(Block):
         """ Callable from frontend. """
         step = self.steps[step_index]
         step.remove_display_setting()
+        return self.method_schemas["run"]
+
+    def save_step_documentation(self, step_index: int, documentation: str):
+        """ Callable from frontend. """
+        step = self.steps[step_index]
+        step.documentation = documentation
         return self.method_schemas["run"]
 
     def rename_input(self, input_index: int, label: str):
