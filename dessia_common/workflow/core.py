@@ -1396,17 +1396,20 @@ class Workflow(Block):
             output: [self.inputs.index(upstream_input) for upstream_input in self.upstream_inputs(output)]
             for output in self.displayable_outputs
         }
+        outputs_labels = {}
         for step in reversed(self.steps):
             if not step.is_fallback:
                 step_display_settings = {}
                 for output, indexes in ds_inputs.items():
                     if all(index not in missing_inputs for index in indexes):
-                        step_display_settings[self.variables.index(output)] = [
+                        output_index = self.variables.index(output)
+                        step_display_settings[output_index] = [
                             ds.to_dict() for ds in output.available_display_settings
                         ]
+                        outputs_labels[output_index] = output.label
                 available_display_settings.append(step_display_settings)
                 missing_inputs.extend(self.inputs.index(step_input) for step_input in step.inputs)
-        return available_display_settings[::-1]
+        return {"available_display_settings": available_display_settings[::-1],"outputs_labels": outputs_labels}
 
     def change_input_step(self, input_index: int, new_step_index: int):
         """ Callable from frontend. """
