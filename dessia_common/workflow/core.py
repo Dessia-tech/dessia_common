@@ -282,7 +282,8 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False, documentation: str = ""):
+    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False,
+                 documentation: str = ""):
         self.label = label
         if inputs is None:
             inputs = []
@@ -309,11 +310,13 @@ class Step:
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
-                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id, "is_fallback": self.is_fallback, "documentation": self.documentation}
+                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id,
+                "is_fallback": self.is_fallback, "documentation": self.documentation}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
-        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None), is_fallback=dict_.get("is_fallback", False), documentation=dict_.get("documentation", ""))
+        step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None),
+                   is_fallback=dict_.get("is_fallback", False), documentation=dict_.get("documentation", ""))
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
@@ -1509,6 +1512,37 @@ class Workflow(Block):
         step = self.steps[step_index]
         step.remove_display_setting()
         return self.method_schemas["run"]
+
+    def compute_step_display(self, step_index: int, variable_index: int, input_values):
+        """
+        Callable from frontend.
+
+        Compute the branch that is needed to run in order to generate the output whose display is being display
+        on frontend.
+        TODO : variable_index as input seems redundant here. It might be simpler to store the information of the
+          given output inside the step itself, to avoid frontend from having to provide the info
+
+        :param step_index: The index of the step that needs to update its current view based on dict_ argument.
+        :param variable_index: The index of the variable whose display setting is selected
+        :param input_values: The dict_ of needed inputs given by users from frontend.
+        :return: The display dict
+        """
+        step = self.steps[step_index]
+        display_setting = step.display_setting
+        if display_setting is None:
+            return None
+        variable = self.variables[variable_index]
+        block_index, variable_type, output_index = self.variable_indices(variable)
+        if variable_type == 0:
+            raise ValueError("Given variable is an input and cannot be used to display in a form")
+        block = self.blocks[block_index]
+        branch = self.upstream_branch(block)
+        workflow_state = self.start_run(input_values=input_values)
+        block_args = {b: {} for b in branch}
+        evaluated_blocks = workflow_state.evaluate_branch(blocks=branch, block_args=block_args)
+        output = evaluated_blocks[block][output_index]
+        display_object = output._display_from_selector(display_setting.selector)
+        return display_object.to_dict()
 
     def save_step_documentation(self, step_index: int, documentation: str):
         """ Callable from frontend. """
