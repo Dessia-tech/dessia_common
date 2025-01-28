@@ -1527,17 +1527,14 @@ class Workflow(Block):
         step.remove_display_setting()
         return self.method_schemas["run"]
 
-    def compute_step_display(self, step_index: int, variable_index: int, dict_):
+    def compute_step_display(self, step_index: int, dict_):
         """
         Callable from frontend.
 
         Compute the branch that is needed to run in order to generate the output whose display is being display
         on frontend.
-        TODO : variable_index as input seems redundant here. It might be simpler to store the information of the
-          given output inside the step itself, to avoid frontend from having to provide the info
 
         :param step_index: The index of the step that needs to update its current view based on dict_ argument.
-        :param variable_index: The index of the variable whose display setting is selected
         :param dict_: The dict_ of needed inputs given by users from frontend.
         :return: The display dict
         """
@@ -1545,7 +1542,7 @@ class Workflow(Block):
         display_setting = step.display_setting
         if display_setting is None:
             return None
-        variable = self.variables[variable_index]
+        variable = self.variables[step.display_variable_index]
         block_index, variable_type, output_index = self.variable_indices(variable)
         if variable_type == 0:
             raise ValueError("Given variable is an input and cannot be used to display in a form")
