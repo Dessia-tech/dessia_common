@@ -1513,7 +1513,7 @@ class Workflow(Block):
         step.remove_display_setting()
         return self.method_schemas["run"]
 
-    def compute_step_display(self, step_index: int, variable_index: int, input_values):
+    def compute_step_display(self, step_index: int, variable_index: int, dict_):
         """
         Callable from frontend.
 
@@ -1524,7 +1524,7 @@ class Workflow(Block):
 
         :param step_index: The index of the step that needs to update its current view based on dict_ argument.
         :param variable_index: The index of the variable whose display setting is selected
-        :param input_values: The dict_ of needed inputs given by users from frontend.
+        :param dict_: The dict_ of needed inputs given by users from frontend.
         :return: The display dict
         """
         step = self.steps[step_index]
@@ -1537,6 +1537,7 @@ class Workflow(Block):
             raise ValueError("Given variable is an input and cannot be used to display in a form")
         block = self.blocks[block_index]
         branch = self.upstream_branch(block)
+        input_values = deserialize(dict_)
         workflow_state = self.start_run(input_values=input_values)
         block_args = {b: {} for b in branch}
         evaluated_blocks = workflow_state.evaluate_branch(blocks=branch, block_args=block_args)
