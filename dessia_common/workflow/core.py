@@ -16,7 +16,7 @@ import networkx as nx
 
 import dessia_common.errors
 from dessia_common.graph import get_column_by_node
-from dessia_common.core import DessiaObject, display_settings_from_selector
+from dessia_common.core import DessiaObject, display_settings_from_selector, stringify_dict_keys
 
 from dessia_common.schemas.core import (get_schema, FAILED_ATTRIBUTE_PARSING, EMPTY_PARSED_ATTRIBUTE, SchemaStep,
                                         serialize_annotation, pretty_annotation, UNDEFINED, Schema, SchemaAttribute,
@@ -1548,13 +1548,14 @@ class Workflow(Block):
             raise ValueError("Given variable is an input and cannot be used to display in a form")
         block = self.blocks[block_index]
         branch = self.upstream_branch(block)
-        input_values = deserialize(dict_)
+        deserialized_dict = {int(i): deserialize(v) for i, v in dict_.items()}
+        input_values = self.input_values(deserialized_dict)
         workflow_state = self.start_run(input_values=input_values)
         block_args = {b: {} for b in branch}
         evaluated_blocks = workflow_state.evaluate_branch(blocks=branch, block_args=block_args)
         output = evaluated_blocks[block][output_index]
         display_object = output._display_from_selector(display_setting.selector)
-        return display_object.to_dict()
+        return stringify_dict_keys(display_object.to_dict())
 
     def save_step_documentation(self, step_index: int, documentation: str):
         """ Callable from frontend. """
