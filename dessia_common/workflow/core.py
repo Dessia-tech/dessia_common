@@ -283,7 +283,7 @@ class Step:
     """ Step. """
 
     def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False,
-                 documentation: str = ""):
+                 documentation: str = "", display_variable_index: int = None):
         self.label = label
         if inputs is None:
             inputs = []
@@ -295,6 +295,7 @@ class Step:
         self.display_setting = None
         self.is_fallback = is_fallback
         self.documentation = documentation
+        self.display_variable_index = display_variable_index
 
     def __hash__(self):
         return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
@@ -311,7 +312,8 @@ class Step:
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
                 "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id,
-                "is_fallback": self.is_fallback, "documentation": self.documentation}
+                "is_fallback": self.is_fallback, "documentation": self.documentation,
+                "display_variable_index": self.display_variable_index}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
@@ -320,16 +322,20 @@ class Step:
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
-            step.add_display_setting(display_setting=display_setting, inputs=group_inputs)
+            display_variable_index = dict_.get("display_variable_index", None)
+            step.add_display_setting(display_setting=display_setting, inputs=group_inputs,
+                                     variable_index=display_variable_index)
         return step
 
-    def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable]):
+    def add_display_setting(self, display_setting: DisplaySetting, inputs: List[Variable], variable_index: int):
         self.display_setting = display_setting
         self.group_inputs = [i for i in inputs]
+        self.display_variable_index = variable_index
 
     def remove_display_setting(self):
         self.display_setting = None
         self.group_inputs = []
+        self.display_variable_index = None
 
     def log_inputs(self):
         log = self.label + "\n"
@@ -1504,7 +1510,7 @@ class Workflow(Block):
         step = self.steps[step_index]
         display_setting = display_settings_from_selector(display_settings=variable.available_display_settings,
                                                          selector=selector)
-        step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs)
+        step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs, variable_index=variable_index)
         return self.method_schemas["run"]
 
     def remove_step_display(self, step_index: int):
