@@ -212,12 +212,14 @@ class SchemaStep(SchemaAttributeCollection):
     """ Schema representation of a step. """
 
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 display_setting: DisplaySetting = None, label: str = "", documentation: str = "", is_fallback: bool = False):
+                 display_setting: DisplaySetting = None, label: str = "", documentation: str = "",
+                 is_fallback: bool = False, display_variable: int = None):
         super().__init__(annotations=annotations, attributes=attributes)
         self.display_setting = display_setting
         self.label = label
         self.documentation = documentation
         self.is_fallback = is_fallback
+        self.display_variable = display_variable #  TODO Meh. Weird to have a workflow specific element, here.
 
     @property
     def attributes(self):
@@ -227,7 +229,8 @@ class SchemaStep(SchemaAttributeCollection):
         """ Base Schema. """
         dict_ = super().to_dict()
         display_setting = self.display_setting.to_dict() if self.display_setting else None
-        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label, "isFallback": self.is_fallback})
+        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label,
+                      "isFallback": self.is_fallback, "displayVariable": self.display_variable})
         return dict_
 
 

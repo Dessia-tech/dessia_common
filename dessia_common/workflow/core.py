@@ -298,14 +298,19 @@ class Step:
         self.display_variable_index = display_variable_index
 
     def __hash__(self):
-        return hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
+        return (hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
+                + len(self.documentation) + int(self.is_fallback) + self.display_variable_index)
 
     def __eq__(self, other: 'Step'):
         same_label = self.label == other.label
         same_inputs = all(i.equivalent(other_i) for i, other_i in zip(self.inputs, other.inputs))
         same_group = all(i.equivalent(other_i) for i, other_i in zip(self.group_inputs, other.group_inputs))
         same_display_setting = self.display_setting == other.display_setting
-        return same_label and same_inputs and same_group and same_display_setting
+        same_documentation = len(self.documentation) == len(other.documentation)
+        same_variable = self.display_variable_index == other.display_variable_index
+        same_fallback = self.is_fallback is other.is_fallback
+        return (same_label and same_inputs and same_group and same_display_setting and same_documentation
+                and same_variable and same_fallback)
 
     def to_dict(self):
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
@@ -571,7 +576,8 @@ class Workflow(Block):
             inputs.append(copied_input)
             if input_ in step.group_inputs:
                 group_inputs.append(copied_input)
-        copied_step = Step(label=step.label, inputs=inputs)
+        copied_step = Step(label=step.label, inputs=inputs, is_fallback=step.is_fallback,
+                           documentation=step.documentation, display_variable_index=step.display_variable_index)
         copied_step.group_inputs = group_inputs
         copied_step.display_setting = step.display_setting
         return copied_step
@@ -744,11 +750,13 @@ class Workflow(Block):
                 attributes.append(SchemaAttributeGroup(annotations=group_annotations, attributes=group_attributes,
                                                        name=step.group_id, title=group_name))
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
-                                    display_setting=step.display_setting, documentation=step.documentation))
+                                    display_setting=step.display_setting, documentation=step.documentation,
+                                    display_variable=step.display_variable_index))
         if self.spare_inputs:
             spare_annotations = {}
             spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
-            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step", is_fallback=True))
+            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step",
+                                    is_fallback=True))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
