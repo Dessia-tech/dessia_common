@@ -1443,13 +1443,14 @@ class Workflow(Block):
             self.change_input_step(input_index, new_step_index)
         return self.method_schemas["run"]
 
-    def remove_input_from_step(self, input_index: int):
+    def remove_input_from_step(self, input_index: int, return_schema = True):
         """ Callable from frontend. """
         input_ = self.inputs[input_index]
         self.spare_inputs.append(input_)
         current_step = self.find_input_step(input_)
         current_step.inputs.remove(input_)
-        return self.method_schemas["run"]
+        if return_schema:
+            return self.method_schemas["run"]
 
     def reorder_step_inputs(self, step_index: int, order: list[int]):
         """ Callable from frontend. """
@@ -1491,7 +1492,7 @@ class Workflow(Block):
         step = self.steps[step_index]
         for input_ in reversed(step.inputs):
             input_index = self.inputs.index(input_)
-            self.remove_input_from_step(input_index)
+            self.remove_input_from_step(input_index, False)
         self.steps.remove(step)
         return self.method_schemas["run"]
 
