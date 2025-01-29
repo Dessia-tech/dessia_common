@@ -31,6 +31,8 @@ class DisplaySetting:
                 + 97 * self.serialize_data + 769 * self.load_by_default)
 
     def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
         same_selector = self.selector == other.selector
         same_type = self.type == other.type
         same_method = self.method == other.method

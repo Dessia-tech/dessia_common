@@ -305,7 +305,7 @@ class Step:
         same_label = self.label == other.label
         same_inputs = all(i.equivalent(other_i) for i, other_i in zip(self.inputs, other.inputs))
         same_group = all(i.equivalent(other_i) for i, other_i in zip(self.group_inputs, other.group_inputs))
-        same_display_setting = self.display_setting == other.display_setting if other.display_setting else other.display_setting == self.display_setting
+        same_display_setting = self.display_setting == other.display_setting
         same_documentation = len(self.documentation) == len(other.documentation)
         same_variable = self.display_variable_index == other.display_variable_index
         same_fallback = self.is_fallback is other.is_fallback
