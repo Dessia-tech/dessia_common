@@ -1492,7 +1492,7 @@ class Workflow(Block):
         for input_ in reversed(step.inputs):
             input_index = self.inputs.index(input_)
             self.remove_input_from_step(input_index)
-        self.steps.remove(step)
+        del self.steps[step_index]
         return self.method_schemas["run"]
 
     def reset_steps(self):
