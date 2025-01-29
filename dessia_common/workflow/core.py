@@ -1430,13 +1430,17 @@ class Workflow(Block):
         return {"available_display_settings": available_display_settings[::-1],"outputs_labels": outputs_labels}
 
     def change_input_step(self, input_index: int, new_step_index: int):
-        """ Callable from frontend. """
         input_ = self.inputs[input_index]
         current_step = self.find_input_step(input_)
         new_step = self.steps[new_step_index]
         new_step.inputs.append(input_)
         current_collection = self.spare_inputs if current_step is None else current_step.inputs
         current_collection.remove(input_)
+
+    def change_inputs_step(self, input_indices: List[int], new_step_index: int):
+        """ Callable from frontend. """
+        for input_index in input_indices:
+            self.change_input_step(input_index, new_step_index)
         return self.method_schemas["run"]
 
     def remove_input_from_step(self, input_index: int):
