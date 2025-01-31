@@ -562,7 +562,7 @@ class Tree(Model):
         skl_state = {'max_depth': int(state['max_depth']),
                      'node_count': int(state['node_count']),
                      'values': npy.array(state['values']),
-                     'nodes': npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'])}
+                     'nodes': npy.array(state['nodes']['values'], dtype=state['nodes']['dtypes'][:-1])}
         model.__setstate__(skl_state)
         return model
 
