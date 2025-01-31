@@ -5,7 +5,8 @@ import numpy as npy
 
 try:
     from plot_data.core import Dataset as pl_Dataset
-    from plot_data.core import EdgeStyle, Tooltip, MultiplePlots, PointStyle, Graph2D, Axis, Sample
+    from plot_data.core import (EdgeStyle, Tooltip, MultiplePlots, PointStyle, PrimitiveGroup, Axis, Sample, Point2D,
+                                LineSegment2D, Label, Graph2D)
     from plot_data.colors import BLACK, RED, BLUE, WHITE
 except ImportError:
     pass
@@ -22,9 +23,9 @@ Points = list[dict[str, float]]
 NO_LINE = EdgeStyle(0.0001)
 STD_LINE = EdgeStyle(line_width=1.5, color_stroke=BLACK)
 
-REF_POINT_STYLE = PointStyle(BLUE, BLUE, 0.1, 2., 'circle')
-VAL_POINT_STYLE = PointStyle(RED, RED, 0.1, 2., 'circle')
-LIN_POINT_STYLE = PointStyle(BLACK, BLACK, 0.1, 1, 'crux')
+REF_POINT_STYLE = PointStyle(BLUE, BLUE, 0.1, 12, 'circle')
+VAL_POINT_STYLE = PointStyle(RED, RED, 0.1, 12, 'circle')
+LIN_POINT_STYLE = PointStyle(BLACK, BLACK, 0.1, 12, 'crux')
 INV_POINT_STYLE = PointStyle(WHITE, WHITE, 0.1, 1, 'crux')
 
 
@@ -421,13 +422,19 @@ class TrainTestData(DessiaObject):
     def _tooltip(self) -> Tooltip:
         return Tooltip(self.input_names + sum(self._ref_pred_names(), []))
 
-    def _ref_pred_datasets(self, points_train: Points, points_test: Points) -> list[pl_Dataset]:
-        tooltip = self._tooltip()
-        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data', 'tooltip': tooltip}
-                    #, 'partial_points': False} waiting for plot_data release
-        pred_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data', 'tooltip': tooltip}
-                    #, 'partial_points': False} waiting for plot_data release
-        return [pl_Dataset(elements=points_train, **ref_args), pl_Dataset(elements=points_test, **pred_args)]
+    def _ref_pred_datasets(self, points_train: Points, points_test: Points) -> list[Point2D]:
+        ref_args = {'point_style': REF_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Train data'}
+        pred_args = {'point_style': VAL_POINT_STYLE, 'edge_style': NO_LINE, 'name': 'Test data'}
+
+        points = [Point2D(sample.values['n_di_ref'], sample.values['n_di_pred'], ref_args['point_style'],
+                          reference_path=sample.reference_path,
+                          tooltip=f"ref: {sample.values['n_di_ref']} ; pred: {sample.values['n_di_pred']}")
+                  for sample in points_train]
+        points += [Point2D(sample.values['n_di_ref'], sample.values['n_di_pred'], pred_args['point_style'],
+                           reference_path=sample.reference_path,
+                           tooltip=f"ref: {sample.values['n_di_ref']} ; pred: {sample.values['n_di_pred']}")
+                   for sample in points_test]
+        return points
 
     def _bisectrice_points(self) -> Points:
         hack_bisectrices = []
@@ -441,17 +448,24 @@ class TrainTestData(DessiaObject):
         return self.training_valdata.points(self.input_names, self.output_names, reference_path), \
             self.testing_valdata.points(self.input_names, self.output_names, reference_path), self._bisectrice_points()
 
-    def build_graphs(self, reference_path: str) -> list[Graph2D]:
+    def build_labels(self) -> list[Label]:
+        return [
+            Label(title="Train Data", shape=Point2D(0, 0, point_style=REF_POINT_STYLE)),
+            Label(title="Test Data", shape=Point2D(0, 0, point_style=VAL_POINT_STYLE)),
+            Label(title="y = x", shape=LineSegment2D([0, 0], [1, 1], edge_style=STD_LINE))
+        ]
+
+    def build_graphs(self, reference_path: str) -> tuple[PrimitiveGroup, list[Point2D]]:
         """ Build elements and graphs for `plot_data` method. """
         points_train, points_test, points_bisectrice = self._to_val_points(reference_path)
-        pl_datasets = self._ref_pred_datasets(points_train, points_test)
-        pl_datasets.append(pl_Dataset(points_bisectrice, point_style=LIN_POINT_STYLE, edge_style=STD_LINE,
-                                      name="Reference = Predicted"))
-
-        graphs = []
-        for (ref, pred) in self._ref_pred_names():
-            graphs.append(Graph2D(graphs=pl_datasets, axis=axis_style(10, 10), x_variable=ref, y_variable=pred))
-        return graphs, points_train + points_test + points_bisectrice
+        primitives = [LineSegment2D([points_bisectrice[0]['n_di_ref'], points_bisectrice[0]['n_di_pred']],
+                                    [points_bisectrice[-1]['n_di_ref'], points_bisectrice[-1]['n_di_pred']],
+                                    edge_style=STD_LINE)]
+        primitives += [Point2D(point['n_di_ref'], point['n_di_pred'], point_style=LIN_POINT_STYLE)
+                       for point in points_bisectrice]
+        primitives += self._ref_pred_datasets(points_train, points_test)
+        primitives += self.build_labels()
+        return [PrimitiveGroup(primitives, axis_on=True)], points_train + points_test + points_bisectrice
 
     def plot_data(self, reference_path: str = '#', **_):
         """ Plot data method for `TrainTestData`. """
