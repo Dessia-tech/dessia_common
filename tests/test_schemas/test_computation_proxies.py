@@ -15,7 +15,7 @@ class TestFaulty(unittest.TestCase):
     def test_schema_check(self, schema):
         self.assertEqual(schema.args, (int,))
         computed_schema = schema.to_dict()
-        self.assertEqual(computed_schema["python_typing"], "List[int]")
+        self.assertEqual(computed_schema["pythonTyping"], "List[int]")
 
 
 if __name__ == '__main__':

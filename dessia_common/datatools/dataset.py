@@ -900,3 +900,6 @@ class Dataset(DessiaObject):
             non_optimal_points = list(itertools.compress(non_optimal_points, map(lambda x: not x, pareto_sheet)))
             non_optimal_costs = list(itertools.compress(non_optimal_costs, map(lambda x: not x, pareto_sheet)))
         return pareto_sheets, Dataset(non_optimal_points, self.name)
+
+    def plot_data(self, **kwargs):
+        return []

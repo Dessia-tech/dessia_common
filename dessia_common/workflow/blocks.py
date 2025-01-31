@@ -300,7 +300,7 @@ class Sequence(Block):
     def __init__(self, number_arguments: int, name: str = "Sequence", position:  Position = (0, 0)):
         self.number_arguments = number_arguments
         inputs = [Variable(name=f"Sequence element {i}") for i in range(self.number_arguments)]
-        outputs = [Variable(type_=List[T], name="Sequence")]
+        outputs = [Variable(name="Sequence")]
         super().__init__(inputs=inputs, outputs=outputs, name=name, position=position)
 
     def equivalent_hash(self):
