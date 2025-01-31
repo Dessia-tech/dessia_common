@@ -1,5 +1,4 @@
 """ Library for building clusters on Dataset or List. """
-from typing import List
 
 from scipy.spatial.distance import cdist
 import numpy as npy
@@ -26,21 +25,21 @@ class ClusteredDataset(Dataset):
 
     :param dessia_objects:
         List of DessiaObjects to store in `ClusteredDataset`
-    :type dessia_objects: `List[DessiaObject]`, `optional`, defaults to `None`
+    :type dessia_objects: `list[DessiaObject]`, `optional`, defaults to `None`
 
     :param labels:
         Labels of DessiaObjects' cluster stored in `ClusteredDataset`
-    :type labels: `List[int]`, `optional`, defaults to `None`
+    :type labels: `list[int]`, `optional`, defaults to `None`
 
     :param name:
         Name of `ClusteredDataset`
     :type name: `str`, `optional`, defaults to `""`
 
     :Properties:
-        * **common_attributes:** (`List[str]`)
+        * **common_attributes:** (`list[str]`)
             --------
             Common attributes of DessiaObjects contained in the current `ClusteredDataset`
-        * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
+        * **matrix:** (`list[list[float]]`, `n_samples x n_features`)
             --------
             Matrix of data computed by calling the to_vector method of all dessia_objects
         * **n_cluster:** (`int`)
@@ -52,7 +51,7 @@ class ClusteredDataset(Dataset):
 
     _allowed_methods = ['from_agglomerative_clustering', 'from_kmeans', 'from_dbscan', 'from_pareto_sheets']
 
-    def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
+    def __init__(self, dessia_objects: list[DessiaObject] = None, labels: list[int] = None, name: str = ''):
         """ See class docstring. """
         Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
         if labels is None:
@@ -80,7 +79,7 @@ class ClusteredDataset(Dataset):
         # new_dataset.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_dataset
 
-    def _pick_from_boolist(self, key: List[bool]):
+    def _pick_from_boolist(self, key: list[bool]):
         new_dataset = Dataset._pick_from_boolist(self, key)
         new_dataset.labels = DessiaFilter.apply(self.labels, key)
         # new_dataset.name += "_list")
@@ -162,7 +161,7 @@ class ClusteredDataset(Dataset):
 
         :return: A list of `n_cluster` lists of `n_samples` where each element is the average value in a dimension in \
         one cluster.
-        :rtype: List[List[float]]
+        :rtype: list[list[float]]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -208,7 +207,7 @@ class ClusteredDataset(Dataset):
         :type **kwargs: `dict`, `optional`
 
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
-        :rtype: List[List[float]]
+        :rtype: list[list[float]]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -254,7 +253,7 @@ class ClusteredDataset(Dataset):
         :type **kwargs: `dict`, `optional`
 
         :return: `n_clusters` lists of distances of all elements of a cluster from its mean.
-        :rtype: List[List[float]]
+        :rtype: list[list[float]]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -352,7 +351,7 @@ class ClusteredDataset(Dataset):
         See more : https://scikit-learn.org/stable/modules/clustering.html#hierarchical-clustering
 
         :param data: The future clustered data.
-        :type data: List[DessiaObject]
+        :type data: list[DessiaObject]
 
         :param n_clusters:
             Number of wished clusters.
@@ -419,7 +418,7 @@ class ClusteredDataset(Dataset):
         See more : https://scikit-learn.org/stable/modules/clustering.html#k-means
 
         :param data: The future clustered data.
-        :type data: List[DessiaObject]
+        :type data: list[DessiaObject]
 
         :param n_clusters:
             Number of wished clusters
@@ -466,7 +465,7 @@ class ClusteredDataset(Dataset):
         See more : https://scikit-learn.org/stable/modules/clustering.html#dbscan
 
         :param data: The future clustered data.
-        :type data: List[DessiaObject]
+        :type data: list[DessiaObject]
 
         :param eps:
             The maximum distance between two samples for one to be considered as in the neighborhood of the other.
@@ -511,7 +510,7 @@ class ClusteredDataset(Dataset):
         return cls(data.dessia_objects, skl_cluster.labels_.tolist(), name=name)
 
     @classmethod
-    def from_pareto_sheets(cls, h_list: Dataset, costs_columns: List[str], nb_sheets: int = 1):
+    def from_pareto_sheets(cls, h_list: Dataset, costs_columns: list[str], nb_sheets: int = 1):
         """
         Get successive Pareto sheets where each label is the index of a Pareto sheet put them in a `ClusteredDataset`.
 
@@ -520,8 +519,8 @@ class ClusteredDataset(Dataset):
         :param h_list: The Dataset in which to pick optimal points.
         :type h_list: Dataset
 
-         :param costs_columns: List of columns' indexes or attributes on which costs are stored in current Dataset
-         :type costs_columns: `List[str]`
+         :param costs_columns: list of columns' indexes or attributes on which costs are stored in current Dataset
+         :type costs_columns: `list[str]`
 
         :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: `int`, `optional`, default to `1`
@@ -541,7 +540,7 @@ class ClusteredDataset(Dataset):
         return cls(dessia_objects, labels)
 
     @staticmethod
-    def fit_cluster(skl_cluster: cluster, matrix: List[List[float]], scaling: bool):
+    def fit_cluster(skl_cluster: cluster, matrix: list[list[float]], scaling: bool):
         """
         Find clusters in data set for `skl_cluster` model.
 
@@ -549,7 +548,7 @@ class ClusteredDataset(Dataset):
         :type data: cluster
 
         :param matrix:
-            List of data
+            list of data
         :type matrix: `float`, `n_samples x n_features`
 
         :param scaling:
@@ -567,24 +566,24 @@ class ClusteredDataset(Dataset):
         return skl_cluster
 
     @classmethod
-    def list_agglomerative_clustering(cls, data: List[DessiaObject], n_clusters: int = 2,
+    def list_agglomerative_clustering(cls, data: list[DessiaObject], n_clusters: int = 2,
                                       metric: str = 'euclidean', linkage: str = 'ward',
                                       distance_threshold: float = None, scaling: bool = False, name: str = ""):
-        """ Does the same as `from_agglomerative_clustering` method but data is a `List[DessiaObject]`. """
+        """ Does the same as `from_agglomerative_clustering` method but data is a `list[DessiaObject]`. """
         return cls.from_agglomerative_clustering(Dataset(data), n_clusters=n_clusters, metric=metric,
                                                  linkage=linkage, distance_threshold=distance_threshold,
                                                  scaling=scaling, name=name)
 
     @classmethod
-    def list_kmeans(cls, data: List[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
+    def list_kmeans(cls, data: list[DessiaObject], n_clusters: int = 2, n_init: int = 10, tol: float = 1e-4,
                     scaling: bool = False, name: str = ""):
-        """ Does the same as `from_kmeans` method but data is a `List[DessiaObject]`. """
+        """ Does the same as `from_kmeans` method but data is a `list[DessiaObject]`. """
         return cls.from_kmeans(Dataset(data), n_clusters=n_clusters, n_init=n_init, tol=tol, scaling=scaling,
                                name=name)
 
     @classmethod
-    def list_dbscan(cls, data: List[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
+    def list_dbscan(cls, data: list[DessiaObject], eps: float = 0.5, min_samples: int = 5, mink_power: float = 2,
                     leaf_size: int = 30, metric: str = "euclidean", scaling: bool = False, name: str = ""):
-        """ Does the same as `from_dbscan` method but data is a `List[DessiaObject]`. """
+        """ Does the same as `from_dbscan` method but data is a `list[DessiaObject]`. """
         return cls.from_dbscan(Dataset(data), eps=eps, min_samples=min_samples, mink_power=mink_power,
                                leaf_size=leaf_size, metric=metric, scaling=scaling, name=name)

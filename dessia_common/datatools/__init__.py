@@ -1,7 +1,6 @@
 """ __init__ method for datatools module. """
 
 import warnings
-from typing import List
 from dessia_common.core import DessiaObject
 import dessia_common.datatools.dataset as DS
 import dessia_common.datatools.cluster as DC
@@ -11,7 +10,7 @@ import dessia_common.datatools.cluster as DC
 
 
 class HeterogeneousList(DS.Dataset):
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+    def __init__(self, dessia_objects: list[DessiaObject] = None, name: str = ''):
         self.warning_string()
         DS.Dataset.__init__(self, dessia_objects=dessia_objects, name=name)
 
@@ -23,7 +22,7 @@ class HeterogeneousList(DS.Dataset):
 
 
 class CategorizedList(DC.ClusteredDataset):
-    def __init__(self, dessia_objects: List[DessiaObject] = None, labels: List[int] = None, name: str = ''):
+    def __init__(self, dessia_objects: list[DessiaObject] = None, labels: list[int] = None, name: str = ''):
         self.warning_string()
         DC.ClusteredDataset.__init__(self, dessia_objects=dessia_objects, labels=labels, name=name)
 
