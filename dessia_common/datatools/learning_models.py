@@ -234,7 +234,7 @@ class Model(DessiaObject):
         return outputs
 
     @classmethod
-    def init_for_modeler_(cls, **parameters: dict[str, Any]) -> tuple['Model', dict[str, Any], str]:
+    def init_for_modeler_(cls, **parameters: dict[str, Any]) -> 'Model':
         """ Initialize class of Model with its name and hyperparameters to fit in Modeler. """
         return cls(parameters=parameters)
 
@@ -347,8 +347,7 @@ class Ridge(LinearModel):
         return linear_model.Ridge
 
     @classmethod
-    def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True,
-                         tol: float = 0.001) -> tuple['Ridge', dict[str, Any], str]:
+    def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True, tol: float = 0.001) -> 'Ridge':
         """
         Initialize class `Ridge` with its name and hyperparameters to fit in Modeler.
 
@@ -451,8 +450,7 @@ class LinearRegression(LinearModel):
         return linear_model.LinearRegression
 
     @classmethod
-    def init_for_modeler(cls, fit_intercept: bool = True,
-                         positive: bool = False) -> tuple['LinearRegression', dict[str, Any], str]:
+    def init_for_modeler(cls, fit_intercept: bool = True, positive: bool = False) -> 'LinearRegression':
         """
         Initialize class `LinearRegression` with its name and hyperparameters to fit in Modeler.
 
@@ -637,8 +635,7 @@ class DecisionTreeRegressor(Model):
         return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
     @classmethod
-    def init_for_modeler(cls, criterion: str = 'squared_error',
-                         max_depth: int = None) -> tuple['DecisionTreeRegressor', dict[str, Any], str]:
+    def init_for_modeler(cls, criterion: str = 'squared_error', max_depth: int = None) -> 'DecisionTreeRegressor':
         """
         Initialize class `DecisionTreeRegressor` with its name and hyperparameters to fit in Modeler.
 
@@ -829,7 +826,7 @@ class RandomForest(Model):
 
     @classmethod
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
-                         max_depth: int = None) -> tuple['RandomForest', dict[str, Any], str]:
+                         max_depth: int = None) -> 'RandomForest':
         """
         Initialize class `RandomForest` with its name and hyperparameters to fit in `Modeler`.
 
@@ -1091,7 +1088,7 @@ class SupportVectorMachine(Model):
                 '_sparse': model._sparse}
 
     @classmethod
-    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> tuple['SupportVectorMachine', dict[str, Any], str]:
+    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> 'SupportVectorMachine':
         """
         Initialize class `SupportVectorMachine` with its name and hyperparameters to fit in Modeler.
 
@@ -1345,8 +1342,7 @@ class MultiLayerPerceptron(Model):
 
     @classmethod
     def init_for_modeler(cls, hidden_layer_sizes: list[int], activation: str = 'relu', alpha: float = 0.0001,
-                         solver: str = 'adam', max_iter: int = 200,
-                         tol: float = 0.0001) -> tuple['MultiLayerPerceptron', dict[str, Any], str]:
+                         solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001) -> 'MultiLayerPerceptron':
         """
         Initialize class `MultiLayerPerceptron` with its name and hyperparameters to fit in `Modeler`.
 
