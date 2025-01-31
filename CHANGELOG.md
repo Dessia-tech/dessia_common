@@ -19,10 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.18.2
 
-### Changed
-
-- Sequence : Untyped sequence block outputs
-
 ### Fixed
 
 - Blocks : MultiObject now properly exports to .py
