@@ -91,16 +91,8 @@ class DessiaObject(SerializableObject):
     _init_variables = None
     _allowed_methods = []
 
-    def __init__(self, name: str = '', **kwargs):
+    def __init__(self, name: str = ''):
         self.name = name
-        if kwargs:
-            warnings.warn(('Providing attributes to DessiaObject __init__ to be stored in self is deprecated\n'
-                           + 'Please store your attributes by yourself in your init'),
-                          DeprecationWarning)
-
-        # The code below has shown to be inefficient and should be remove in future version (0.16?)
-        for property_name, property_value in kwargs.items():
-            setattr(self, property_name, property_value)
 
     def base_dict(self):
         """ Base dict of the object, with just its name. """
@@ -159,22 +151,12 @@ class DessiaObject(SerializableObject):
     @classmethod
     def raw_schema(cls):
         """ Schema of class: transfer python data structure to web standard. """
-        if hasattr(cls, '_jsonschema'):
-            warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
-                          "Please consider so", DeprecationWarning)
-            return cls._jsonschema
         return dcs.ClassSchema(cls)
 
     @classmethod
     def schema(cls):
         """ Serialized Schema as a dict. """
         return cls.raw_schema().to_dict()
-
-    @classmethod
-    def jsonschema(cls):
-        """ Jsonschema of class: transfer python data structure to web standard. """
-        warnings.warn("'jsonschema' method is deprecated. Use schema instead", DeprecationWarning)
-        return cls.schema()
 
     @property
     def raw_method_schemas(self):
@@ -193,18 +175,8 @@ class DessiaObject(SerializableObject):
         """ Generate dynamic schemas for methods of class. """
         return {method_name: schema.to_dict() for method_name, schema in self.raw_method_schemas.items()}
 
-    @property
-    def _method_jsonschemas(self):
-        """ Generates dynamic schemas for methods of class. """
-        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        return self.method_schemas
-
-    def method_dict(self, method_name: str, method_jsonschema=None):
+    def method_dict(self, method_name: str):
         """ Return a default dict for the given method name. """
-        if method_jsonschema is not None:
-            warnings.warn("method_jsonschema argument is deprecated and its use will be removed in a future version."
-                          " Please remove it from your function call. Method name is sufficient to get schema",
-                          DeprecationWarning)
         schema = self.raw_method_schemas[method_name]
         return schema.default_dict()
 
@@ -382,16 +354,6 @@ class DessiaObject(SerializableObject):
             if arg != 'self':
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
-
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """
-        Base plot_data method. Overwrite this to display 2D or graphs on platform.
-
-        Should return a list of plot_data's objects.
-        """
-        warnings.warn("Function 'plot_data' is deprecated and should not be used to compute graphs and 2D displays,"
-                      "anymore. Please use Display Decorators, instead", DeprecationWarning)
-        return []
 
     def plot(self, reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
@@ -1153,41 +1115,6 @@ def type_from_annotation(type_, module):
         # Evaluating types
         type_ = dcs.TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
-
-
-def prettyname(namestr):
-    """ Create a pretty name from as str. """
-    warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
-    return dch.prettyname(namestr)
-
-
-def inspect_arguments(method, merge=False):
-    """
-    Find default value and required arguments of class construction.
-
-    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    """
-    warnings.warn("Method 'inspect_arguments' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.inspect_arguments(method=method, merge=merge)
-
-
-def split_default_args(argspecs, merge: bool = False):
-    """
-    Find default value and required arguments of class construction.
-
-    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    """
-    warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.split_default_args(argspecs=argspecs, merge=merge)
-
-
-def split_argspecs(argspecs) -> Tuple[int, int]:
-    """ Get number of regular arguments as well as arguments with default values. """
-    warnings.warn("Method 'split_argspecs' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.split_argspecs(argspecs=argspecs)
 
 
 def get_attribute_names(object_class):
