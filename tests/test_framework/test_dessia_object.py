@@ -1,15 +1,14 @@
 import unittest
 from parameterized import parameterized
 from dessia_common import REF_MARKER
-from dessia_common.forms import EmbeddedSubobject, StandaloneObject, EnhancedEmbeddedSubobject,\
-    DEF_SO, DEF_SOWDV
+from dessia_common.forms import EmbeddedSubobject, StandaloneObject, EnhancedEmbeddedSubobject, DEF_SO, DEF_SOWDV
 from dessia_common.utils.helpers import full_classname
 
 
 class TestFeatures(unittest.TestCase):
 
     def test_viability(self):
-        DEF_SO._check_platform()
+        self.assertRaises(ValueError, DEF_SO._check_platform)
 
     @parameterized.expand([
         ("#/standalone_subobject/floatarg", 0.3),

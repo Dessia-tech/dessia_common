@@ -6,7 +6,7 @@ from dessia_common.workflow.blocks import InstantiateModel, ModelMethod
 from dessia_common.typings import MethodType
 from dessia_common.models.workflows.sandbox_workflow import (workflow, generator_block, generate_block, zip_block,
                                                              foreach_block, concat_block, setattr_block, import_block,
-                                                             variable_0)
+                                                             variable_0, variable_1)
 
 
 PARAMETER = generator_block.inputs[0]
@@ -18,9 +18,7 @@ DURATION = foreach_block.inputs[1]
 RAISE_ERROR = foreach_block.inputs[2]
 STREAM = import_block.inputs[0]
 RESULT_NAME = variable_0
-
-
-generator_block = InstantiateModel(model_class=Generator, name="Generator")
+SUFFIX = variable_1
 
 
 class TestUpstreamVariables(unittest.TestCase):
@@ -28,11 +26,11 @@ class TestUpstreamVariables(unittest.TestCase):
         (generator_block.outputs[0], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME]),
         (generate_block.outputs[0], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME]),
         (generate_block.outputs[1], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME]),
-        (zip_block.outputs[0], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME, FILENAME]),
+        (zip_block.outputs[0], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME, FILENAME, SUFFIX]),
         (foreach_block.outputs[0], [
             PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME, DURATION, RAISE_ERROR, OVERWRITE_TUPLE, STREAM
         ]),
-        (concat_block.outputs[0], [RESULT_NAME])
+        (concat_block.outputs[0], [SUFFIX, RESULT_NAME])
     ])
     def test_necessary_inputs(self, variable, expected_inputs):
         inputs = workflow.upstream_inputs(variable)
