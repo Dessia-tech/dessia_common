@@ -10,7 +10,7 @@ from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, MethodType, ClassMethodType
 from dessia_common.files import BinaryFile, StringFile
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, union_is_default_value, is_typing, serialize_annotation
-from dessia_common.utils.helpers import get_python_class_from_class_name
+from dessia_common.utils.helpers import get_python_class_from_class_name, is_sequence
 
 SIMPLE_TYPES = [int, str]
 
@@ -44,12 +44,6 @@ def is_jsonable(obj):
         return False
 
 
-def is_serializable(_):
-    """ Return True if object is deeply serializable as Dessia's standards, else False. """
-    msg = "Function is_serializable has been moved to module serialization.py. Please use this one instead."
-    raise NotImplementedError(msg)
-
-
 def is_sequence(obj) -> bool:
     """
     Return True if object is sequence (but not string), else False.
@@ -57,6 +51,9 @@ def is_sequence(obj) -> bool:
     :param obj: Object to check
     :return: bool. True if object is a sequence but not a string. False otherwise
     """
+    if isinstance(obj, (str, bytes)):
+        return False
+
     if not hasattr(obj, "__len__") or not hasattr(obj, "__getitem__"):
         # Performance improvements for trivial checks
         return False
@@ -96,8 +93,18 @@ def isinstance_base_types(obj):
 
 
 def is_dessia_file(obj):
-    """Return if the object inherits from dessia files."""
+    """ Whether object inherits from dessia files. """
     return isinstance(obj, (BinaryFile, StringFile))
+
+
+def is_file_or_file_sequence(object_):
+    """ Whether object inherits from dessia file or is a container of such objects. """
+    is_file = is_dessia_file(object_)
+    if not is_file and is_sequence(object_):
+        for obj in object_:
+            if is_file_or_file_sequence(obj):
+                return True
+    return is_file
 
 
 def unfold_deep_annotation(typing_=None):
@@ -279,7 +286,7 @@ def recursive_type(obj):
 
 def typematch(type_: Type, match_against: Type) -> bool:
     """
-    Return wether type_ matches against match_against.
+    Return whether type_ matches against match_against.
 
     match_against needs to be "wider" than type_, and the check is not bilateral
     """

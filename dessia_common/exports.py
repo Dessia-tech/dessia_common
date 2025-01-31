@@ -35,7 +35,16 @@ def is_builtins_list(list_):
 
 
 class ExportFormat:
-    """ Define which method of an object should be called for each Export. """
+    """
+    Define which method of an object should be called for each Export.
+
+    :param str selector: A custom and unique identifier for current ExportFormat.
+    :param str extension: The extension of the file to create (without '.')
+    :param str method_name: The method to call to generate the export. Should be the one that handles the stream.
+    :param bool text: Whether the resulting file is text-like or binary-like.
+    :param str export_name: Enables user to set their own custom export name.
+    :param Dict args: Arguments to pass to the called function.
+    """
 
     def __init__(self, selector: Optional[str], extension: str, method_name: str, text: bool,
                  export_name: str = "", args: Dict[str, Any] = None):
@@ -116,29 +125,45 @@ class XLSXWriter:
                 cell.font = self.white_font
                 i += 1
 
+    def compute_cell_link(self, value):
+        """ Compute the hyperlink for given value."""
+        cell_link = None
+        if value:
+            if isinstance(value, dict):
+                cell_link = f'#{list(value.values())[0].__class__.__name__}!A2'
+            elif isinstance(value, (list, set)) and not is_builtins_list(value):
+                cell_link = f'#{value[0].__class__.__name__}!A2'
+            elif is_hashable(value) and value in self.object_to_sheet_row:
+                ref_sheet, ref_row_number, _ = self.object_to_sheet_row[value]
+                cell_link = f'#{ref_sheet.title}!A{ref_row_number+2}'
+
+        return cell_link
+
     def write_value_to_cell(self, value, sheet, row_number, column_number):
         """ Write a given value to a cell. Insert it as a link if it is an object. """
-        cell_link = None
         if isinstance(value, dict):
-            str_v = f'Dict of {len(value)} items'
+            cell_content = f'Dict of {len(value)} items'
         elif isinstance(value, list):
             if is_builtins_list(value):
-                str_v = str(value)
+                cell_content = str(value)
             else:
-                str_v = f'List of {len(value)} items'
+                cell_content = f'List of {len(value)} items'
 
         elif isinstance(value, set):
-            str_v = f'Set of {len(value)} items'
-        elif isinstance(value, float):
-            str_v = round(value, 6)
-        elif is_hashable(value) and value in self.object_to_sheet_row:
-            ref_sheet, ref_row_number, ref_path = self.object_to_sheet_row[value]
-            str_v = ref_path
-            cell_link = f'#{ref_sheet.title}!A{ref_row_number}'
-        else:
-            str_v = str(value)
+            cell_content = f'Set of {len(value)} items'
 
-        cell = sheet.cell(row=row_number, column=column_number, value=str_v)
+        elif isinstance(value, float):
+            cell_content = round(value, 6)
+        elif is_hashable(value) and value in self.object_to_sheet_row:
+            _, _, ref_path = self.object_to_sheet_row[value]
+            cell_content = ref_path
+
+        else:
+            cell_content = str(value)
+
+        cell = sheet.cell(row=row_number, column=column_number, value=cell_content)
+
+        cell_link = self.compute_cell_link(value=value)
         if cell_link:
             cell.hyperlink = cell_link
 
@@ -204,7 +229,6 @@ class XLSXWriter:
 
     def write(self):
         """ Generate the whole file. """
-        # name_column_width = 0
         self.write_object_id(self.main_sheet)
         self.write_class_header_to_row(self.object, self.main_sheet, 3)
         self.write_object_to_row(self.object, self.main_sheet, 4)
@@ -212,12 +236,23 @@ class XLSXWriter:
 
         for class_name, obj_paths in self.paths.items():
             sheet = self.classes_to_sheets[class_name]
+            
+            sheet['A1'] = 'Module'
+            sheet['B1'] = 'Class'
+            obj_info = list(obj_paths.keys())[0]
 
+            if hasattr(obj_info, 'to_dict'):
+                sheet['A2'] = obj_info.__module__
+                sheet['B2'] = obj_info.__class__.__name__
+            else:
+                sheet['A2'] = 'No Module'
+                sheet['B2'] = "No class name"
+
+            obj = ""
             for obj, path in obj_paths.items():
                 _, row_number, path = self.object_to_sheet_row[obj]
-                self.write_object_to_row(obj, sheet, row_number, path)
-            self.write_class_header_to_row(obj, sheet, 1)
-
+                self.write_object_to_row(obj, sheet, row_number+2, path)
+            self.write_class_header_to_row(obj, sheet, 3)
             sheet.auto_filter.ref = f"A1:{openpyxl.utils.cell.get_column_letter(sheet.max_column)}{len(obj_paths) + 1}"
             self.autosize_sheet_columns(sheet, 5, 30)
 

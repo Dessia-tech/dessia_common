@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Module to handle serialization for engineering objects. """
-
+import base64
+import io
 import time
 import warnings
 import operator
@@ -18,9 +19,12 @@ from typing import List, Tuple
 import traceback as tb
 
 from importlib import import_module
+import numpy as npy
 
-from dessia_common.utils.diff import data_eq, diff, choose_hash
-from dessia_common.utils.types import is_sequence, is_bson_valid
+from dessia_common import FLOAT_TOLERANCE
+from dessia_common.utils.diff import diff, choose_hash
+from dessia_common.utils.helpers import full_classname, is_sequence
+from dessia_common.utils.types import is_bson_valid, isinstance_base_types
 from dessia_common.utils.copy import deepcopy_value
 import dessia_common.schemas.core as dcs
 from dessia_common.serialization import SerializableObject, deserialize_argument, serialize
@@ -29,10 +33,12 @@ from dessia_common.typings import JsonSerializable
 from dessia_common import templates
 import dessia_common.checks as dcc
 from dessia_common.displays import DisplayObject, DisplaySetting
-from dessia_common.breakdown import attrmethod_getter, get_in_object_from_path
+from dessia_common.breakdown import attrmethod_getter
 import dessia_common.utils.helpers as dch
 import dessia_common.files as dcf
 from dessia_common.document_generator import DocxWriter
+from dessia_common.decorators import get_decorated_methods, DISPLAY_DECORATORS, EXPORT_DECORATORS
+from dessia_common.excel_reader import ExcelReader
 
 
 def __getattr__(name):
@@ -71,10 +77,7 @@ class DessiaObject(SerializableObject):
         [Advanced] List of instance attributes that should not be part of hash computation with data__hash__ method
         (if _eq_is_data_eq is True).
 
-    :cvar List[str] _export_formats:
-        List of all available export formats. Class must define a export_[format] for each format in _export_formats
-
-    :cvar List[str] _allowed_methods: List of all methods that are runnable from platform.
+    :cvar List[str] _allowed_methods: List of all methods that can be ran from platform.
 
     :param name: Name of object.
     """
@@ -82,21 +85,19 @@ class DessiaObject(SerializableObject):
     _non_editable_attributes = []
     _non_data_eq_attributes = ['name']
     _non_data_hash_attributes = ['name']
-    _titled_attributes = []
     _eq_is_data_eq = True
     _vector_features = None
 
     _init_variables = None
     _allowed_methods = []
 
-    def __init__(self, name: str = '', **kwargs):
+    def __init__(self, name: str = "", **kwargs):
         self.name = name
         if kwargs:
-            warnings.warn(('Providing attributes to DessiaObject __init__ to be stored in self is deprecated\n'
-                           + 'Please store your attributes by yourself in your init'),
-                          DeprecationWarning)
+            warnings.warn("Providing attributes to DessiaObject __init__ to be stored in self is deprecated.\n"
+                          "Please store your attributes by yourself in your init", DeprecationWarning)
 
-        # The code below has shown to be inefficient and should be remove in future version (0.16?)
+        # The code below has shown to be inefficient and will be removed in version 0.20
         for property_name, property_value in kwargs.items():
             setattr(self, property_name, property_value)
 
@@ -152,28 +153,17 @@ class DessiaObject(SerializableObject):
 
     def _get_from_path(self, path: str):
         """ Get object's deep attribute from given path. """
-        return get_in_object_from_path(self, path)
+        return dch.get_in_object_from_path(self, path)
 
     @classmethod
     def raw_schema(cls):
         """ Schema of class: transfer python data structure to web standard. """
-        if hasattr(cls, '_jsonschema'):
-            warnings.warn("Jsonschema is fully deprecated and you may want to use the new generic schema feature."
-                          "Please consider so", DeprecationWarning)
-            return cls._jsonschema
-        schema = dcs.ClassSchema(cls)
-        return schema
+        return dcs.ClassSchema(cls)
 
     @classmethod
     def schema(cls):
         """ Serialized Schema as a dict. """
         return cls.raw_schema().to_dict()
-
-    @classmethod
-    def jsonschema(cls):
-        """ Jsonschema of class: transfer python data structure to web standard. """
-        warnings.warn("'jsonschema' method is deprecated. Use schema instead", DeprecationWarning)
-        return cls.schema()
 
     @property
     def raw_method_schemas(self):
@@ -184,20 +174,13 @@ class DessiaObject(SerializableObject):
         schemas = {}
         for method_name in valid_method_names:
             method = getattr(cls, method_name)
-            schema = dcs.MethodSchema(method)
-            schemas[method_name] = schema
+            schemas[method_name] = dcs.MethodSchema(method)
         return schemas
 
     @property
     def method_schemas(self):
         """ Generate dynamic schemas for methods of class. """
         return {method_name: schema.to_dict() for method_name, schema in self.raw_method_schemas.items()}
-
-    @property
-    def _method_jsonschemas(self):
-        """ Generates dynamic schemas for methods of class. """
-        warnings.warn("method_jsonschema method is deprecated. Use method_schema instead", DeprecationWarning)
-        return self.method_schemas
 
     def method_dict(self, method_name: str):
         """ Return a default dict for the given method name. """
@@ -206,7 +189,7 @@ class DessiaObject(SerializableObject):
 
     def dict_to_arguments(self, dict_, method):
         """ Transform serialized argument of a method to python objects ready to use in method evaluation. """
-        method_full_name = f'{self.full_classname}.{method}'
+        method_full_name = f"{self.full_classname}.{method}"
         if method_full_name in _fullargsspec_cache:
             args_specs = _fullargsspec_cache[method_full_name]
         else:
@@ -224,8 +207,8 @@ class DessiaObject(SerializableObject):
                 try:
                     deserialized_value = deserialize_argument(arg_specs, value)
                 except TypeError as err:
-                    msg = 'Error in deserialisation of value: '
-                    msg += f'{value} of expected type {arg_specs}'
+                    msg = "Error in deserialisation of value: "
+                    msg += f"{value} of expected type {arg_specs}"
                     raise TypeError(msg) from err
                 arguments[arg] = deserialized_value
         return arguments
@@ -296,6 +279,26 @@ class DessiaObject(SerializableObject):
 
         return cls.dict_to_object(dict_)
 
+    @classmethod
+    def from_xlsx_stream(cls, stream: dcf.BinaryFile):
+        """
+        Load object from a xlsx stream.
+
+        :param stream: either a string representing the stream
+        """
+        reader = ExcelReader(stream)
+        return reader.read_workbook()
+
+    @classmethod
+    def from_xlsx(cls, filepath: str):
+        """
+        Load object from a xlsx file.
+
+        :param filepath: either a string representing the filepath
+        """
+        stream = dcf.BinaryFile.from_file(filepath=filepath)
+        return cls.from_xlsx_stream(stream=stream)
+
     def check_list(self, level: str = 'error', check_platform: bool = True) -> dcc.CheckList:
         """ Return a list of potential info, warning and issues on the instance, that might be user custom. """
         check_list = dcc.CheckList([])
@@ -359,14 +362,6 @@ class DessiaObject(SerializableObject):
                 dict_[arg] = deepcopy_value(getattr(self, arg), memo=memo)
         return self.__class__(**dict_)
 
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """
-        Base plot_data method. Overwrite this to display 2D or graphs on platform.
-
-        Should return a list of plot_data's objects.
-        """
-        return []
-
     def plot(self, reference_path: str = "#", **kwargs):
         """ Generic plot getting plot_data function to plot. """
         if hasattr(self, 'plot_data'):
@@ -374,56 +369,87 @@ class DessiaObject(SerializableObject):
             for data in self.plot_data(reference_path, **kwargs):
                 plot_data.plot_canvas(plot_data_object=data,
                                       canvas_id='canvas',
-                                      width=1400, height=900,
-                                      debug_mode=False)
+                                      width=1400, height=900)
         else:
             msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
             raise NotImplementedError(msg)
 
-    def mpl_plot(self, **kwargs):
+    def mpl_plot(self, selector: str):
         """ Plot with matplotlib using plot_data function. """
-        axs = []
-        if hasattr(self, 'plot_data'):
-            try:
-                plot_datas = self.plot_data(**kwargs)
-            except TypeError as error:
-                raise TypeError(f'{self.__class__.__name__}.{error}') from error
-            for data in plot_datas:
-                if hasattr(data, 'mpl_plot'):
-                    ax = data.mpl_plot()
-                    axs.append(ax)
-        else:
-            msg = f"Class '{self.__class__.__name__}' does not implement a plot_data method to define what to plot"
-            raise NotImplementedError(msg)
-        return axs
+        display_setting = self._display_settings_from_selector(selector)
+        if display_setting.type != "plot_data":
+            raise NotImplementedError(f"Selector '{selector}' depicts a display of type '{display_setting.type}'"
+                                      f" which cannot be used to plot with matplotlib."
+                                      f"\nPlease select a 'plot_data' display setting.")
+        display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        if hasattr(display, 'mpl_plot'):
+            return display.mpl_plot()
+        raise NotImplementedError(f"plot_data display of type '{display.__class__.__name__}'"
+                                  f" does not implement a mpl_plot converter."
+                                  f"\nSelector used : '{selector}'.")
 
-    @staticmethod
-    def display_settings() -> List[DisplaySetting]:
+    def picture(self, stream, selector: str):
+        """ Take a stream to generate picture. """
+        ax = self.mpl_plot(selector)
+        ax.set_axis_off()
+        ax.figure.savefig(stream, format="png")
+        stream.seek(0)
+
+    @classmethod
+    def display_settings(cls, **kwargs) -> List[DisplaySetting]:
         """ Return a list of objects describing how to call object displays. """
-        return [DisplaySetting(selector="markdown", type_="markdown", method="to_markdown", load_by_default=True),
-                DisplaySetting(selector="plot_data", type_="plot_data", method="plot_data", serialize_data=True)]
+        decorators_settings = cls._display_settings_from_decorators()
+        has_markdown = any([s.type == "markdown" for s in decorators_settings])
+        settings = decorators_settings
+        if not has_markdown:
+            default_md = DisplaySetting(selector="Markdown", type_="markdown", method="to_markdown",
+                                        load_by_default=True)
+            settings.insert(0, default_md)
+        settings.append(DisplaySetting(selector="Structure Tree", type_="tree", method=""))
+        return settings
+
+    @classmethod
+    def _display_settings_from_decorator_name(cls, decorator_name: str):
+        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
+        settings = []
+        for method in methods:
+            name = method.__name__
+            type_ = getattr(method, "type_", False)
+            serialize_data = getattr(method, "serialize_data", False)
+            load_by_default = getattr(method, "load_by_default", False)
+            selector = getattr(method, "selector", None)
+            if selector is None:
+                selector = name
+            settings.append(DisplaySetting(selector=selector, type_=type_, method=name,
+                                           serialize_data=serialize_data, load_by_default=load_by_default))
+        return settings
+
+    @classmethod
+    def _display_settings_from_decorators(cls) -> List[DisplaySetting]:
+        """ Return a list, computed from decorated functions, of objects describing how to call displays. """
+        return [s for d in DISPLAY_DECORATORS for s in cls._display_settings_from_decorator_name(d)]
 
     def _display_from_selector(self, selector: str) -> DisplayObject:
         """ Generate the display from the selector. """
         display_setting = self._display_settings_from_selector(selector)
         track = ""
         try:
-            data = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
-        except:
-            data = None
+            display = attrmethod_getter(self, display_setting.method)(**display_setting.arguments)
+        except Exception:
+            display = None
             track = tb.format_exc()
 
-        if display_setting.serialize_data:
-            data = serialize(data)
+        data = serialize(display) if display_setting.serialize_data else display
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def _display_settings_from_selector(self, selector: str):
+    @classmethod
+    def _display_settings_from_selector(cls, selector: str):
         """ Get display settings from given selector. """
-        for display_setting in self.display_settings():
-            if display_setting.selector == selector:
-                return display_setting
-        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+        try:
+            return display_settings_from_selector(display_settings=cls.display_settings(), selector=selector)
+        except ValueError:
+            raise ValueError(f"No such selector '{selector}' in display of class '{cls.__name__}'")
 
     def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
@@ -433,7 +459,7 @@ class DessiaObject(SerializableObject):
             displays.append(display_.to_dict())
         return displays
 
-    def to_markdown(self) -> str:
+    def to_markdown(self, **kwargs) -> str:
         """ Render a markdown of the object output type: string. """
         writer = MarkdownWriter(print_limit=25, table_limit=None)
         template = templates.dessia_object_markdown_template
@@ -526,21 +552,18 @@ class DessiaObject(SerializableObject):
             filepath += '.docx'
             print(f'Changing name to {filepath}')
         self.to_docx_stream(filepath)
-        
+
     def zip_settings(self):
-        """
-        Returns a list of streams containing different representations of the object.
-
-        Excel file stream generated by calling 'to_xlsx_stream' method.
-        JSON file stream generated by calling 'save_to_stream' method.
-        """
-        excel_stream = dcf.BinaryFile("excel_export.xlsx")
-        self.to_xlsx_stream(excel_stream)
-
-        json_stream = dcf.JsonFile("json_export.json")
-        self.save_to_stream(json_stream)
-
-        return [excel_stream, json_stream]
+        """ Returns a list of streams that contain different exports of the objects. """
+        streams = []
+        for export_format in self._export_formats():
+            if export_format.extension != "zip":
+                method_name = export_format.method_name
+                stream_class = dcf.StringFile if export_format.text else dcf.BinaryFile
+                stream = stream_class(filename=f"export.{export_format.extension}")
+                getattr(self, method_name)(stream)
+                streams.append(stream)
+        return streams
 
     def to_zip_stream(self, archive: dcf.BinaryFile) -> List[dcf.BinaryFile]:
         """ Generates a zipped archive of the streams returned by 'zip_settings' method. """
@@ -562,12 +585,33 @@ class DessiaObject(SerializableObject):
         with open(filepath, 'wb') as file:
             file.write(archive.getbuffer())
 
+    @classmethod
+    def _export_formats_from_decorator_name(cls, decorator_name: str):
+        methods = get_decorated_methods(class_=cls, decorator_name=decorator_name)
+        settings = []
+        for method in methods:
+            extension = getattr(method, "extension")
+            method_name = getattr(method, "method_name")
+            text = getattr(method, "text")
+            selector = getattr(method, "selector", None)
+            if not selector:
+                selector = extension
+            settings.append(ExportFormat(selector=selector, extension=extension, method_name=method_name, text=text))
+        return settings
+
+    @classmethod
+    def _export_formats_from_decorators(cls):
+        """ Return a list, computed from decorated functions, of objects describing how to call exports. """
+        return [s for d in EXPORT_DECORATORS for s in cls._export_formats_from_decorator_name(d)]
+
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
         formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
                    ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
-                   ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False),
                    ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
+
+        formats.extend(self._export_formats_from_decorators())
+        formats.append(ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False))
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -590,7 +634,7 @@ class DessiaObject(SerializableObject):
         """ Get all values of specified attributes into a list of values (vector). """
         vectored_objects = []
         for feature in self.vector_features():
-            vectored_objects.append(get_in_object_from_path(self, feature.lower()))
+            vectored_objects.append(dch.get_in_object_from_path(self, feature.lower()))
         return vectored_objects
 
     @classmethod
@@ -604,16 +648,12 @@ class DessiaObject(SerializableObject):
 class PhysicalObject(DessiaObject):
     """ Represent an object with CAD capabilities. """
 
-    @staticmethod
-    def display_settings():
-        """ Returns a list of DisplaySettings objects describing how to call sub-displays. """
-        display_settings = DessiaObject.display_settings()
-        display_settings.append(DisplaySetting(selector='cad', type_='babylon_data',
-                                               method='volmdlr_volume_model().babylon_data', serialize_data=True))
-        return display_settings
-
     def volmdlr_primitives(self, **kwargs):
         """ Return a list of volmdlr primitives to build up volume model. """
+        warnings.warn("This method is deprecated and will be removed in a future version. "
+                      "You can continue using this method with the same or a different name, "
+                      "but please ensure it returns 'babylon_data' instead of a list of primitives. ",
+                      DeprecationWarning)
         return []
 
     def volmdlr_volume_model(self, **kwargs):
@@ -627,7 +667,12 @@ class PhysicalObject(DessiaObject):
 
         :param filepath: a str representing a filepath
         """
-        return self.volmdlr_volume_model().to_step(filepath=filepath)
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_step` method of VolumeModel instead.", DeprecationWarning)
+        if not filepath.endswith('.step'):
+            filepath += '.step'
+        with open(filepath, 'w', encoding='utf-8') as file:
+            self.to_step_stream(stream=file)
 
     def to_step_stream(self, stream):
         """
@@ -635,10 +680,14 @@ class PhysicalObject(DessiaObject):
 
         Works if the class define a custom volmdlr model.
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_step_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_step_stream(stream=stream)
 
     def to_html_stream(self, stream: dcf.StringFile):
         """ Exports Object CAD to given stream as HTML. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_html_stream` method of VolumeModel instead.", DeprecationWarning)
         model = self.volmdlr_volume_model()
         babylon_data = model.babylon_data()
         script = model.babylonjs_script(babylon_data)
@@ -648,18 +697,28 @@ class PhysicalObject(DessiaObject):
 
     def to_stl_stream(self, stream):
         """ Export Object CAD to given stream as STL. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_stl_stream` method of VolumeModel instead.", DeprecationWarning)
         return self.volmdlr_volume_model().to_stl_stream(stream=stream)
 
-    def to_stl(self, filepath):
+    def to_stl(self, filepath: str):
         """
         Exports the CAD of the object to STL. Works if the class define a custom volmdlr model.
 
         :param filepath: a str representing a filepath
         """
-        return self.volmdlr_volume_model().to_stl(filepath=filepath)
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `to_stl` method of VolumeModel instead.", DeprecationWarning)
+        if not filepath.endswith('.stl'):
+            filepath += '.stl'
+
+        with open(filepath, 'wb') as file:
+            self.to_stl_stream(stream=file)
 
     def babylonjs(self, use_cdn=True, debug=False, **kwargs):
         """ Show the 3D volmdlr of an object by calling volmdlr_volume_model method and plot in in browser. """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `babylonjs` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).babylonjs(use_cdn=use_cdn, debug=debug)
 
     def save_babylonjs_to_file(self, filename: str = None, use_cdn: bool = True, debug: bool = False, **kwargs):
@@ -673,27 +732,9 @@ class PhysicalObject(DessiaObject):
         :param debug: Activates the debug mode. Default value is False
         :type debug: bool, optional
         """
+        warnings.warn("This method is deprecated and will be removed in a future version."
+                      " Please use the `save_babylonjs_to_file` method of VolumeModel instead.", DeprecationWarning)
         self.volmdlr_volume_model(**kwargs).save_babylonjs_to_file(filename=filename, use_cdn=use_cdn, debug=debug)
-
-    def zip_settings(self):
-        """
-        Returns a list of streams containing different representations of the object.
-
-        Excel file stream generated by calling 'to_xlsx_stream' method.
-        JSON file stream generated by calling 'save_to_stream' method.
-        STEP file stream generated by calling 'to_step_stream' method.
-        HTML file stream generated by calling 'to_html_stream' method.
-        STL file stream generated by calling 'to_stl_stream' method.
-        """
-        streams = DessiaObject.zip_settings(self)
-        step_stream = dcf.StringFile("step_export.stp")
-        self.to_step_stream(step_stream)
-        html_stream = self.to_html_stream(dcf.StringFile(filename="html_export.html"))
-        stl_stream = dcf.BinaryFile("stl_export.stl")
-        self.to_stl_stream(stl_stream)
-
-        streams.extend([step_stream, html_stream, stl_stream])
-        return streams
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call 3D exports. """
@@ -840,12 +881,12 @@ class DessiaFilter(DessiaObject):
         return self._REAL_OPERATORS[self.comparison_operator]
 
     def _to_lambda(self):
-        return lambda x: (self._comparison_operator()(get_in_object_from_path(value, f'#/{self.attribute}'),
+        return lambda x: (self._comparison_operator()(dch.get_in_object_from_path(value, f'#/{self.attribute}'),
                                                       self.bound) for value in x)
 
     def get_booleans_index(self, values: List[DessiaObject]):
         """
-        Get the boolean indexing of a filtered list.
+        Get the Boolean indexing of a filtered list.
 
         :param values: List of DessiaObjects to filter
         :type values: List[DessiaObject]
@@ -983,7 +1024,7 @@ class FiltersList(DessiaObject):
     @staticmethod
     def combine_booleans_lists(booleans_lists: List[List[bool]], logical_operator: str = "and") -> List[bool]:
         """
-        Combine a list of boolean indices with the logical operator into a simple boolean index.
+        Combine a list of Boolean indices with the logical operator into a simple Boolean index.
 
         :param booleans_lists: List of boolean indices
 
@@ -1076,72 +1117,12 @@ def stringify_dict_keys(obj):
     return new_obj
 
 
-def concatenate_attributes(prefix, suffix, type_: str = 'str'):
-    """ Concatenate sequence of attributes to a string. """
-    wrong_prefix_format = "Attribute prefix is wrongly formatted. Is of type {}. Should be str or list."
-    if type_ == 'str':
-        if isinstance(prefix, str):
-            return prefix + '/' + str(suffix)
-        if is_sequence(prefix):
-            return sequence_to_deepattr(prefix) + '/' + str(suffix)
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-
-    if type_ == 'sequence':
-        if isinstance(prefix, str):
-            return [prefix, suffix]
-        if is_sequence(prefix):
-            return prefix + [suffix]
-        raise TypeError(wrong_prefix_format.format(type(prefix)))
-    raise ValueError(f"Type {type_} for concatenation is not supported. Should be 'str' or 'sequence'")
-
-
-def sequence_to_deepattr(sequence):
-    """ Convert a list to the corresponding string pointing to deep_attribute. """
-    healed_sequence = [str(attr) if isinstance(attr, int) else attr for attr in sequence]
-    return '/'.join(healed_sequence)
-
-
 def type_from_annotation(type_, module):
     """ Clean up a proposed type if there are stringified. """
     if isinstance(type_, str):
         # Evaluating types
         type_ = dcs.TYPES_FROM_STRING.get(type_, default=getattr(import_module(module), type_))
     return type_
-
-
-def prettyname(namestr):
-    """ Create a pretty name from as str. """
-    warnings.warn("prettyname function has been moved to 'helpers' module. Use it instead", DeprecationWarning)
-    return dch.prettyname(namestr)
-
-
-def inspect_arguments(method, merge=False):
-    """
-    Find default value and required arguments of class construction.
-
-    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    """
-    warnings.warn("Method 'inspect_arguments' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.inspect_arguments(method=method, merge=merge)
-
-
-def split_default_args(argspecs, merge: bool = False):
-    """
-    Find default value and required arguments of class construction.
-
-    Get method arguments and default arguments as sequences while removing forbidden ones (self, cls...).
-    """
-    warnings.warn("Method 'split_default_args' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.split_default_args(argspecs=argspecs, merge=merge)
-
-
-def split_argspecs(argspecs) -> Tuple[int, int]:
-    """ Get number of regular arguments as well as arguments with default values. """
-    warnings.warn("Method 'split_argspecs' have been moved to dessia_common/schemas."
-                  "Use it instead instead", DeprecationWarning)
-    return dcs.split_argspecs(argspecs=argspecs)
 
 
 def get_attribute_names(object_class):
@@ -1157,3 +1138,79 @@ def get_attribute_names(object_class):
                                           for item in [float, int, bool, complex])]
     attributes += [a for a in subclass_numeric_attributes if a not in dcs.RESERVED_ARGNAMES]
     return attributes
+
+
+def data_eq(value1, value2):
+    """ Returns if two values are equal on data equality. """
+    if is_sequence(value1) and is_sequence(value2):
+        return sequence_data_eq(value1, value2)
+
+    if isinstance(value1, npy.int64) or isinstance(value2, npy.int64):
+        return value1 == value2
+
+    if isinstance(value1, npy.float64) or isinstance(value2, npy.float64):
+        return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+
+    if not isinstance(value2, type(value1)) and not isinstance(value1, type(value2)):
+        return False
+
+    if isinstance_base_types(value1):
+        if isinstance(value1, float):
+            return math.isclose(value1, value2, abs_tol=FLOAT_TOLERANCE)
+        return value1 == value2
+
+    if isinstance(value1, dict):
+        return dict_data_eq(value1, value2)
+
+    if isinstance(value1, (dcf.BinaryFile, dcf.StringFile)):
+        return value1 == value2
+
+    if isinstance(value1, type):
+        return full_classname(value1) == full_classname(value2)
+
+    # Else: its an object
+    if full_classname(value1) != full_classname(value2):
+        return False
+
+    # Test if _data_eq is customized
+    if hasattr(value1, '_data_eq'):
+        custom_method = value1._data_eq.__code__ is not DessiaObject._data_eq.__code__
+        if custom_method:
+            return value1._data_eq(value2)
+
+    # Not custom, use generic implementation
+    eq_dict = value1._data_eq_dict()
+    if 'name' in eq_dict:
+        del eq_dict['name']
+
+    other_eq_dict = value2._data_eq_dict()
+    return dict_data_eq(eq_dict, other_eq_dict)
+
+
+def dict_data_eq(dict1, dict2):
+    """ Returns True if two dictionaries are equal on data equality, False otherwise. """
+    for key, value in dict1.items():
+        if key not in dict2:
+            return False
+        if not data_eq(value, dict2[key]):
+            return False
+    return True
+
+
+def sequence_data_eq(seq1, seq2):
+    """ Returns if two sequences are equal on data equality. """
+    if len(seq1) != len(seq2):
+        return False
+
+    for v1, v2 in zip(seq1, seq2):
+        if not data_eq(v1, v2):
+            return False
+    return True
+
+
+def display_settings_from_selector(display_settings: List[DisplaySetting], selector: str):
+    """ Get display settings from given selector. """
+    for display_setting in display_settings:
+        if display_setting.selector == selector:
+            return display_setting
+    raise ValueError(f"No such selector '{selector}' found.")

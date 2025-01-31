@@ -8,19 +8,19 @@ import inspect
 import collections
 import collections.abc
 from ast import literal_eval
-from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Dict
+from typing import get_origin, get_args, Union, Any, BinaryIO, TextIO, Literal
 from numpy import int64, float64
 import networkx as nx
 from dessia_common import REF_MARKER, OLD_REF_MARKER
 import dessia_common.errors as dc_err
 from dessia_common.files import StringFile, BinaryFile
 import dessia_common.utils.types as dcty
-from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
+from dessia_common.utils.helpers import (full_classname, get_python_class_from_class_name, is_sequence,
+                                         get_in_object_from_path, set_in_object_from_path)
 from dessia_common.abstract import CoreDessiaObject
 from dessia_common.typings import InstanceOf, JsonSerializable
-
+from dessia_common.measures import Measure
 from dessia_common.graph import explore_tree_from_leaves
-from dessia_common.breakdown import get_in_object_from_path, set_in_object_from_path
 from dessia_common.schemas.core import TYPING_EQUIVALENCES, is_typing, serialize_annotation
 
 fullargsspec_cache = {}
@@ -48,7 +48,7 @@ class SerializableObject(CoreDessiaObject):
         return dict_
 
     def to_dict(self, use_pointers: bool = True, memo=None, path: str = '#',
-                id_method=True, id_memo=None) -> JsonSerializable:
+                id_method=True, id_memo=None, **kwargs) -> JsonSerializable:
         """ Generic to_dict method. """
         if memo is None:
             memo = {}
@@ -61,23 +61,15 @@ class SerializableObject(CoreDessiaObject):
                                                                 id_memo=id_memo)[0])
         else:
             serialized_dict.update(serialize_dict(dict_))
-
         return serialized_dict
 
     @classmethod
-    def dict_to_object(cls, dict_: JsonSerializable, force_generic: bool = False, global_dict=None,
-                       pointers_memo: Dict[str, Any] = None, path: str = '#') -> 'SerializableObject':
+    def dict_to_object(cls, dict_: JsonSerializable, **kwargs) -> 'SerializableObject':
         """ Generic dict_to_object method. """
         if 'object_class' in dict_:
-            obj = dict_to_object(dict_=dict_, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, **kwargs)
         if cls is not SerializableObject:
-            obj = dict_to_object(dict_=dict_, class_=cls, force_generic=force_generic, global_dict=global_dict,
-                                 pointers_memo=pointers_memo, path=path)
-            return obj
-
+            return dict_to_object(dict_=dict_, class_=cls, **kwargs)
         raise NotImplementedError("No object_class in dict")
 
     @property
@@ -111,7 +103,7 @@ def serialize(value):
             serialized_value = value.to_dict()
     elif isinstance(value, dict):
         serialized_value = serialize_dict(value)
-    elif dcty.is_sequence(value):
+    elif is_sequence(value):
         serialized_value = serialize_sequence(value)
     elif isinstance(value, (BinaryFile, StringFile)):
         serialized_value = value
@@ -127,10 +119,38 @@ def serialize(value):
             return to_dict_method()
     else:
         if not dcty.is_jsonable(value):
-            msg = f'Element of value {value} is not json serializable'
-            raise dc_err.SerializationError(msg)
+            raise dc_err.SerializationError(f"Element of value '{value}' is not json serializable")
         serialized_value = value
     return serialized_value
+
+
+def _find_in_memo(memo, value, id_memo):
+    """ Browse memo to find other occurrences of given value. """
+    path_to_refs, serialized_value, id_, _ = memo[value]
+    id_memo[id_] = serialized_value
+    return {REF_MARKER: path_to_refs}, memo
+
+
+def _serialize_and_set_in_memo(memo, value, id_memo, id_method, path):
+    """ Serialize object depending on its nature and set it in memo.  """
+    is_dessia_object = isinstance(value, SerializableObject)
+    try:
+        serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
+    except TypeError:
+        if is_dessia_object:
+            warnings.warn('Specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
+        serialized = value.to_dict()
+
+    if id_method:
+        id_ = str(uuid.uuid1())
+        path_to_refs = f"#/_references/{id_}"
+        memo[value] = path_to_refs, serialized, id_, path
+        if is_dessia_object and value._standalone_in_db:
+            id_memo[id_] = serialized
+            serialized = {REF_MARKER: path_to_refs}
+    else:
+        memo[value] = path, serialized, None, path
+    return serialized
 
 
 def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=None):
@@ -140,54 +160,18 @@ def serialize_with_pointers(value, memo=None, path='#', id_method=True, id_memo=
     if id_memo is None:
         id_memo = {}
 
-    if isinstance(value, SerializableObject):
-        if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: path_value}, memo
-        try:
-            serialized = value.to_dict(use_pointers=True, memo=memo, path=path, id_memo=id_memo)
-        except TypeError:
-            warnings.warn('specific to_dict should implement use_pointers, memo, path and id_memo arguments', Warning)
-            serialized = value.to_dict()
-
-        if id_method:
-            id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
-            if value._standalone_in_db:
-                id_memo[id_] = serialized
-                serialized = {REF_MARKER: path_value}
-        else:
-            memo[value] = path, serialized, None, path
-
-    elif isinstance(value, type):
-        # TODO Why do we serialize types with pointers ? These are only just strings.
-        if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: memo[value]}, memo
+    # Objects (DessiaObjects and Regular)
+    if isinstance(value, type):
         serialized = serialize_annotation(value)
-
-    # Regular object
     elif hasattr(value, 'to_dict'):
         if value in memo:
-            path_value, serialized_value, id_, _ = memo[value]
-            id_memo[id_] = serialized_value
-            return {REF_MARKER: path}, memo
-        serialized = value.to_dict()
-
-        if id_method:
-            id_ = str(uuid.uuid1())
-            path_value = f"#/_references/{id_}"
-            memo[value] = path_value, serialized, id_, path
-        else:
-            memo[value] = path, serialized, None, path
+            return _find_in_memo(memo, value, id_memo)
+        serialized = _serialize_and_set_in_memo(memo=memo, value=value, id_memo=id_memo, id_method=id_method, path=path)
 
     elif isinstance(value, dict):
         serialized, memo = serialize_dict_with_pointers(value, memo=memo, path=path, id_method=id_method,
                                                         id_memo=id_memo)
-    elif dcty.is_sequence(value):
+    elif is_sequence(value):
         serialized, memo = serialize_sequence_with_pointers(value, memo=memo, path=path, id_method=id_method,
                                                             id_memo=id_memo)
 
@@ -225,7 +209,7 @@ def serialize_dict_with_pointers(dict_, memo, path, id_method, id_memo):
     for key, value in dict_.items():
         if isinstance(value, dict):
             dict_attrs_keys.append(key)
-        elif dcty.is_sequence(value):
+        elif is_sequence(value):
             seq_attrs_keys.append(key)
         else:
             other_keys.append(key)
@@ -281,7 +265,7 @@ def deserialize(serialized_element, sequence_annotation: str = 'List',
 
     if isinstance(serialized_element, dict):
         return dict_to_object(serialized_element, global_dict=global_dict, pointers_memo=pointers_memo, path=path)
-    if dcty.is_sequence(serialized_element):
+    if is_sequence(serialized_element):
         return deserialize_sequence(sequence=serialized_element, annotation=sequence_annotation,
                                     global_dict=global_dict, pointers_memo=pointers_memo, path=path)
     if isinstance(serialized_element, str):
@@ -366,7 +350,6 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
         obj = class_(**subobjects)
     else:
         obj = subobjects
-
     return obj
 
 
@@ -441,7 +424,8 @@ def deserialize_with_typing(type_, argument, global_dict=None, pointers_memo=Non
 
         deserialized_arg = class_.dict_to_object(argument, global_dict=global_dict,
                                                  pointers_memo=pointers_memo, path=path)
-
+    elif origin is Literal:
+        deserialized_arg = argument
     elif type_ == dcty.Type:
         deserialized_arg = dcty.is_classname_transform(argument)
     else:
@@ -470,9 +454,7 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
         if isinstance(argument, int) and type_ == float:
             # Explicit conversion in this case
             return float(argument)
-        # else ...
-        msg = f"Given built-in type and argument are incompatible: " \
-              f"{type(argument)} and {type_} in {argument}"
+        msg = f"Given built-in type and argument are incompatible: {type(argument)} and {type_} in {argument}"
         raise TypeError(msg)
 
     if type_ is Any:
@@ -485,7 +467,9 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if type_ == dcty.Type:
         return dcty.is_classname_transform(argument)
 
-    raise TypeError(f"Deserialization of ype {type_} is Not Implemented")
+    if issubclass(type_, Measure):
+        return argument
+    raise TypeError(f"Deserialization of type {type_} is Not Implemented")
 
 
 def find_references(value, path='#'):
@@ -498,7 +482,7 @@ def find_references(value, path='#'):
         return find_references_dict(value, path)
     if dcty.isinstance_base_types(value):
         return []
-    if dcty.is_sequence(value):
+    if is_sequence(value):
         return find_references_sequence(value, path)
     if isinstance(value, (BinaryFile, StringFile)):
         return []
@@ -690,7 +674,7 @@ def pointer_graph_elements(value, path='#'):
         return pointer_graph_elements_dict(value, path)
     if dcty.isinstance_base_types(value):
         return [], []
-    if dcty.is_sequence(value):
+    if is_sequence(value):
         return pointer_graph_elements_sequence(value, path)
 
     raise ValueError(value)
@@ -807,7 +791,7 @@ def is_serializable(obj):
             if not is_serializable(key) or not is_serializable(value):
                 return False
         return True
-    if dcty.is_sequence(obj):
+    if is_sequence(obj):
         for element in obj:
             if not is_serializable(element):
                 return False

@@ -1,22 +1,22 @@
 """ Distances operators for metrics on Datasets. """
 
-from typing import List, Union
+from typing import Union
 
 import numpy as npy
 from scipy.spatial.distance import mahalanobis
 
-Vector = List[float]
-Matrix = List[Vector]
+Vector = list[float]
+Matrix = list[Vector]
 
 def diff_list(list_a, list_b):
     """
     Difference between to lists.
 
     :param list_a: First list
-    :type list_a: List[float]
+    :type list_a: list[float]
 
     :param list_b: Second list
-    :type list_b: List[float]
+    :type list_b: list[float]
 
     :return: a generator of the difference between each element
     :rtype: generator
@@ -40,7 +40,7 @@ def l1_norm(vector):
     L1-norm of vector.
 
     :param vector: vector to get norm
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: the l1-norm
     :rtype: float
@@ -53,7 +53,7 @@ def l2_norm(vector):
     L2-norm of vector.
 
     :param vector: vector to get norm
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: the l2-norm
     :rtype: float
@@ -67,7 +67,7 @@ def lp_norm(vector, mink_power=2):
     Minkowski norm of vector.
 
     :param vector: vector to get norm
-    :type vector: List[float]
+    :type vector: list[float]
 
     :param mink_power: the value of exponent in Minkowski norm
     :type mink_power: float
@@ -83,7 +83,7 @@ def inf_norm(vector):
     Infinite norm of vector.
 
     :param vector: vector to get norm
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: maximum value of absolute values in vector
     :rtype: float
@@ -96,10 +96,10 @@ def manhattan_distance(list_a, list_b):
     Compute the l1 distance between list_a and list_b, i.e. the l1-norm of difference between list_a and list_b.
 
     :param list_a: First list
-    :type list_a: List[float]
+    :type list_a: list[float]
 
     :param list_b: Second list
-    :type list_b: List[float]
+    :type list_b: list[float]
 
     :return: the l1 distance between the two list
     :rtype: float
@@ -115,10 +115,10 @@ def euclidean_distance(list_a, list_b):
     It is the natural distance of 3D space.
 
     :param list_a: First list
-    :type list_a: List[float]
+    :type list_a: list[float]
 
     :param list_b: Second list
-    :type list_b: List[float]
+    :type list_b: list[float]
 
     :return: the l2 distance between the two list
     :rtype: float
@@ -132,10 +132,10 @@ def minkowski_distance(list_a, list_b, mink_power= 2):
     Compute the Minkowski distance between list_a and list_b, i.e. the lp-norm of difference between list_a and list_b.
 
     :param list_a: First list
-    :type list_a: List[float]
+    :type list_a: list[float]
 
     :param list_b: Second list
-    :type list_b: List[float]
+    :type list_b: list[float]
 
     :param mink_power: the value of exponent in Minkowski norm
     :type mink_power: float
@@ -152,7 +152,7 @@ def mean(vector):
     Mean of vector.
 
     :param vector: vector to get mean
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: the mean of vector
     :rtype: float
@@ -165,7 +165,7 @@ def variance(vector):
     Variance of vector.
 
     :param vector: vector to get variance
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: the variance of vector
     :rtype: float
@@ -179,10 +179,10 @@ def covariance(vector_x, vector_y):
     Covariance between vector_x and vector_y.
 
     :param vector_x: first vector to get covariance
-    :type vector_x: List[float]
+    :type vector_x: list[float]
 
     :param vector_y: second vector to get covariance
-    :type vector_y: List[float]
+    :type vector_y: list[float]
 
     :return: the covariance between vector_x and vector_y
     :rtype: float
@@ -200,7 +200,7 @@ def covariance_matrix(matrix):
     Compute the covariance matrix of `matrix` of dimension `N x M`.
 
     :return: the covariance matrix of `matrix`
-    :rtype: List[List[float]], `N x N`
+    :rtype: list[list[float]], `N x N`
 
     :Examples:
     >>> from dessia_common.datatools.metrics import covariance_matrix
@@ -219,7 +219,7 @@ def std(vector):
     Standard deviation of vector.
 
     :param vector: vector to get standard deviation
-    :type vector: List[float]
+    :type vector: list[float]
 
     :return: the standard deviation of vector
     :rtype: float
@@ -233,17 +233,17 @@ def mahalanobis_distance(list_a, list_b, cov_matrix):
     Compute the Mahalanobis distance between list_a and list_b.
 
     This method computes distances considering the scale
-    and the data repartition on each dimension (covariance matrix). It is advised to use this method to compute
-    distances in spaces constituted of very different dimensions in terms of scale and data repartition.
+    and the data distribution on each dimension (covariance matrix). It is advised to use this method to compute
+    distances in spaces constituted of very different dimensions in terms of scale and data distribution.
 
     :param list_a: First list
-    :type list_a: List[float]
+    :type list_a: list[float]
 
     :param list_b: Second list
-    :type list_b: List[float]
+    :type list_b: list[float]
 
     :param cov_matrix: the covariance matrix of data
-    :type cov_matrix: List[List[float]]
+    :type cov_matrix: list[list[float]]
 
     :return: the Mahalanobis distance between the two list
     :rtype: float

@@ -1,8 +1,8 @@
 """
 Test for pareto in workflows
 """
+import importlib.resources
 import json
-import pkg_resources
 from dessia_common.files import StringFile
 from dessia_common.typings import ClassMethodType, MethodType
 from dessia_common.tests import Car
@@ -11,25 +11,26 @@ from dessia_common.datatools.dataset import Dataset
 from dessia_common.workflow.core import Workflow, Pipe
 
 # Import data
-csv_cars = pkg_resources.resource_stream('dessia_common', 'models/data/cars.csv')
-stream_file = StringFile.from_stream(csv_cars)
+ref = importlib.resources.files("dessia_common").joinpath("models/data/cars.csv")
+with ref.open('rb') as csv_cars:
+    stream = StringFile.from_stream(csv_cars)
 
-# Workflow
-block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
-block_1 = InstantiateModel(model_class=Dataset, name='Dataset')
-block_2 = ModelMethod(method_type=MethodType(Dataset, 'pareto_points'), name='Pareto Points')
-blocks = [block_0, block_1, block_2]
+    # Workflow
+    block_0 = ClassMethod(method_type=ClassMethodType(Car, 'from_csv'), name='CSV Cars')
+    block_1 = InstantiateModel(model_class=Dataset, name='Dataset')
+    block_2 = ModelMethod(method_type=MethodType(Dataset, 'pareto_points'), name='Pareto Points')
+    blocks = [block_0, block_1, block_2]
 
-pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
-pipe_2 = Pipe(block_1.outputs[0], block_2.inputs[0])
-pipes = [pipe_0, pipe_2]
+    pipe_0 = Pipe(block_0.outputs[0], block_1.inputs[0])
+    pipe_2 = Pipe(block_1.outputs[0], block_2.inputs[0])
+    pipes = [pipe_0, pipe_2]
 
-workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Pick Pareto members')
+    workflow = Workflow(blocks, pipes, output=block_2.outputs[0], name='Pick Pareto members')
 
-# Workflow run
-workflow_run = workflow.run({
-    workflow.index(block_0.inputs[0]): stream_file,
-    workflow.index(block_2.inputs[1]): ['weight', 'mpg']})
+    # Workflow run
+    workflow_run = workflow.run({
+        workflow.index(block_0.inputs[0]): stream,
+        workflow.index(block_2.inputs[1]): ['weight', 'mpg']})
 
 # Workflow tests
 json_dict = json.dumps(workflow.to_dict())

@@ -1,5 +1,5 @@
 """ Library for sampling data. """
-from typing import List, Type
+from typing import Type
 
 import random
 import numpy as npy
@@ -18,10 +18,10 @@ class ClassSampler(DessiaObject):
     :type sampled_class: `type`
 
     :param sampled_attributes: List of varying attributes in the DOE
-    :type sampled_attributes: `List[BoundedAttributeValue]`
+    :type sampled_attributes: `list[BoundedAttributeValue]`
 
     :param constant_attributes: List of fixed attributes in the DOE
-    :type constant_attributes: `List[FixedAttributeValue]`
+    :type constant_attributes: `list[FixedAttributeValue]`
 
     :param name: Name of Sampler
     :type name: `str`, `optional`, defaults to `''`
@@ -30,8 +30,8 @@ class ClassSampler(DessiaObject):
     _standalone_in_db = True
     _vector_features = []
 
-    def __init__(self, sampled_class: Type, sampled_attributes: List[BoundedAttributeValue],
-                 constant_attributes: List[FixedAttributeValue], name: str = ''):
+    def __init__(self, sampled_class: Type, sampled_attributes: list[BoundedAttributeValue],
+                 constant_attributes: list[FixedAttributeValue], name: str = ''):
         self.sampled_class = sampled_class
         self.sampled_attributes = sampled_attributes
         self.constant_attributes = constant_attributes
@@ -44,7 +44,7 @@ class ClassSampler(DessiaObject):
     def _get_instances_numbers(self):
         return [1] * len(self.constant_attributes) + [attr.number for attr in self.sampled_attributes]
 
-    def _build_parameter_grid(self, instances_numbers: List[int]):
+    def _build_parameter_grid(self, instances_numbers: list[int]):
         parameter_grid = []
         for attr, instances_number in zip(self.constant_attributes, instances_numbers[:len(self.constant_attributes)]):
             parameter_grid.append([attr.value])

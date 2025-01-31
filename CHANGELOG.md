@@ -5,7 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.14.0
+
+## 0.19.0
 
 ### Added
 
@@ -25,69 +26,347 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Add Modeler class that allows to initialize, train, validate and use a machine learning model from sklearn
     - Add CrossValidation stuff for these models
     - Link it to Dataset
+- Schemas : Steps have been added to provide a framework for wizard.
+- Workflow : Steps and methods have been added to provide a framework for wizard.
+
+### Changed
+
+- Sequence : Untyped sequence block outputs
+
+## 0.18.2
+
+### Fixed
+
+- Blocks : MultiObject now properly exports to .py
+
+## 0.18.1
+
+### Fixed
+
+- Types : Literals can now be properly deserialized
+
+## 0.18.0
+
+### Added
+
+- Displays : Tree is now a display
+- Files : Method from_file now sets Binary and StringFile filename attribute
+- Schemas : Order entry based on signature order
+
+### Changed
+
+- MultiObject : Now compute object names for sample names
+- Workflow : Remove workflow display from WorkflowRun
+- Displays : CAD/ volmdlr_primitives backward compatibility has been  
+
+
+## 0.17.0
+
+### Added
+
+- Schemas : Add a new type to compute string literals
+- Workflow : Display by default is now tasks only
+
+### Misc
+
+- Coverage : Remove warnings from tracked modules
+
+
+## 0.16.5
+
+### HOTFIX
+
+- Workflow : Reset NBVs type to last downstream one found while regenerating workflow pipes from deserialization 
+
+
+## 0.16.4
+
+### Fix
+
+- Workflow : Stop deserializing and setting block Variable. Instead, reconfigure them based on incoming dict
+- Workflow : Blocks are not generating their to_dict with pointers anymore
+
+
+### Feature
+
+- Workflow : Display by default is now tasks only
+
+
+## 0.16.3
+
+### Fix
+
+- Dataset : Update plot to new decorator paradigm
+- Workflow : Reset variables types for block defined from user code (should not trust frontend json on variable types)
+- Workflow : If type is provided, Variables do not reset their type based on their default value anymore
+
+### Refactor
+
+- Workflow : Use AttributeType to compute variable type for ModelAttribute Blocks
+
+
+## 0.16.2
+
+### Fix
+
+- Export: Add block_index if export blocks
+- PhysicalObject : Remove to_stl encoding element
+- Schema : Take `None` default value into account
+- WorkflowRun : Compute memory usage, subtract before_memory
+
+
+### Build
+
+- Numpy : Restrict version to lower 2.0.0
+
+
+## 0.16.1
+
+### Added
+
+- Export : Define export method with decorator
+
+### Fix
+
+- ModelMethod : Call the right dict_to_object of MethodType
+- MultiPlot : Add selector_name MultiPlot script
+- WorkflowRun : Add markdown to display_settings
+
+### Tests
+
+- Schema : Add new unittest to test get_import_names methods
+
+
+## 0.16.0
+
+###
+
+- Excel Reader
+
+### Build
+
+- Global : remove usage of pkg_resources to use importlib.resources instead
+
+### Fix
+
+- Serialization : Fix wrong path in serialization that result in pointers cycles in some cases
+- Workflow : Fix export workflow in .py script
+
+### Refactor
+
+- Export: Add all export formats in zip file by iterating over _export_formats()
+- Serialization : Mutualize DessiaObject and Regular objects pointer serialization
+
+
+## 0.15.4
+
+### Fix
+
+- Workflow : Add display block class discovery
+
+
+## 0.15.3
+
+### Fix
+
+- Workflow : Add backward compatibility for variables
+
+
+## 0.15.2
+
+
+### Build
+
+- Drone : Use pip install instead of setup.py install
+- Drone : Remove non-working try on failure ignore
+
+
+## 0.15.1
+
+### Removed
+
+- Workflow : remove useless code
+
+### Build
+
+- Drone : Try to ignore pypi upload failure
+
+
+## 0.15.0
+
+
+### Added
+
+- Documentation : Rewrite from scratch
+- Forms : Update with last volmdlr
+- Workflow : Variables now have a pretty type to display on frontend
+- Workflow : add documentation to workflow when export in .py
+- Workflow : Add Label to variables
+- WorkflowState : add memory usage monitoring & markdown
+- Schemas : Property file relevance. Replace 0.13.7 hot with this
+
+### Changed
+
+- PhysicalObject: Pool to_stem and to_step_stream
+- Workflow : Block input and output names have been enhanced
+- Workflow : Inputs now have entries for Imposed Variable Values
+
+### Fixed
+
+- Document generator : Fix add_picture to .docx
+
+### Removed
+
+- Workflow : jointjs plot
+
+
+## 0.14.2
+
+
+###  Fix
+
+- Set right path in pointers for non DessiaObject equal elements
+
+
+## 0.14.1
+
+
+### Changed
+
+- Multiplot block takes selector as a string
+
+### Fixed
+
+- 'reference_path' is now passed on by Display block while evaluating
+
+
+## 0.14.0
+
+
+### Added
+
+- Blocks : GetModelAttribute block which will replace ModelAttribute in a few releases
+- Blocks : Display blocks are now more configurable (Custom selector)
+- DessiaObjegitct : Add type to load_from_file method arguments
+- Displays : Displays can now be defined with decorators
+- Document generator : New module to write in docx file
+- Document generator : New class Table
+- Files : Functions to init StringFile and BinaryFile from local path
+- Files : .doc & .docx files typings
+- MarkdownWriter : New functions (table_of_contents, header)
+- Schemas refactor : Support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor : More Error Checks
+- Schemas refactor : JSON export to method schemas for low-code implementations
+- Schemas refactor : Default value to method types
+- Schemas refactor : Standalone in db property
+- Schemas refactor : Support for Display View Types
+- Schemas refactor : Mutualize Display View Types and Attribute Types
+- Typings : AttributeType, ClassAttributeType and View Types
+- Workflow : Tasks display
 
 
 ### Changed
  
-- Blocks : add the possibility to have TypedValue in SetModelAttribute
-- DessiaObject: rename load_from_file and load_from_stream to from_json and from_json_stream
-- Document generator: add new module to write in docx file
-- Export: export all 3d formats in zip file
-- Files: add functions to init StringFile and BinaryFile from local path
-- MarkdownWriter: add some functions (table_of_contents, header)
+- Blocks : Add the possibility to have TypedValue in SetModelAttribute
+- Blocks : ! Display blocks definition have changed to adapt to new View Decorator paradigm
+- Dataset : Default color of points from blue to grey to make the difference between selected points and the other ones
+- DessiaObject : Rename load_from_file and load_from_stream to from_json and from_json_stream
+- Export : Export all 3d formats in zip file
+- Workflow : WorkflowRun now has smart display by default computation
+  - Documentation is disabled when at least one block is displayed by default, enabled otherwise
+  - Workflow always shows Documentation and its Display by default
+- Workflow : Memorize display pipes from init
 
 
 ### Fixed
 
-- Dataset : allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
+- Dataset : Allow to specify attributes of subojects for creating dataset matrix ('subobject/attr')
 - Exports : Add trailing line at the end of JSON export
-- Schemas refactor : allow incomplete schemas
-- Schemas refactor : old jsonschema with magic Method Type serialized value
+- Schemas refactor : Allow incomplete schemas
+- Schemas refactor : Old jsonschema with magic Method Type serialized value
 - Schemas refactor : Sequence schema uses args_schemas instead of unique items_schemas
+- Workflow : Propagate progress_callback to blocks
+- Workflow Blocks : New display selectors are now correctly deserialized
 
 
 ### Refactored
 
-- Refactor the whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
-- Remove Any support in schemas
-- Use of Schemas to serialize typings
-- Change serialize_typing function name to serialize_annotation
-- Change tests. Unittests are in 'tests' folder. Other tests in scripts
-- Check Platform is now verbose and split into several functions
+- Tests : Change tests. Unittests are in 'tests' folder. Other tests in scripts
+- DessiaObject : Check Platform is now verbose and split into several functions
 - Document generator : Refactor document_generator module
+- Schemas : Whole jsonschema generation process. It now uses Oriented Object algorithms. Most of jsonschema module is now deprecated
+- Schemas : Remove Any support in schemas
+- Schemas : Use of Schemas to serialize typings
+- Schemas : Change serialize_typing function name to serialize_annotation
 - Workflow : to_dict method do not use pointers anymore
 - Workflow : Remove some attributes from serialization
 
 
 ### Removed
 
-- Serialization : remove warning for dict_to_object if class is not inheriting from SerializableObject
+- Serialization : Remove warning for dict_to_object if class is not inheriting from SerializableObject
 
 ### Chore
 
 - Fix Spelling (x2)
+- Pylint : Fix iterator error
+- Object : Add Backward Compatibality over method_dict to cover old frontend calls
+- Workflow : Add Backward Compatibility over ModelMethod, ClassMethod, GetModelAttribute & SetModelAttribute blocks
 
-### Perf
 
-- use ref__ instead of $ref in serialization to avoid overhead during CRUD operation on platform. Retrocompatibility for old marker.
+### Build
+
+- CI : Upload coverage is now optional
 
 
-## 0.13.3
+## 0.13.7
+
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.6
+
+
+### Fix
+
+- Workflow: Ignore Optional File-Like Sequence inputs in WorkflowRun serialization
+
+
+## 0.13.5 [09/25/2023]
+
+
+### Fix
+
+- add python 3.9 minimum requirement to avoid install issues
+
+
+## 0.13.4 [07/31/2023]
+
+
+### Added
+- Add rotational speed to measures
+
+
+## 0.13.3 [05/04/2023]
+
 
 ### Changed
 
+- Add rotation speed in measures
+- License changed from GPL to Lesser GPL
 - package_version is removed from serialization
-- License changed from GPL to Lesser GPL 
 
 ### Fix
+
+- Fixes a bug when generating a script from a workflow : names containing special quote characters are now properly escaped
 - Workflow name correction: correct the name if it contains an apostrophe.
 
 
-## 0.13.2
+## 0.13.2 [03/01/2023]
 
-### Added 
-
-- Display settings now have load_by_default config option
 
 ### Fix
 
@@ -95,7 +374,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handle serialization pointers of non-standalone objects
 - hash fix: calling hash instead of data hash in eq.
 
+### Added
+
+- Display settings now have load_by_default config option
+
+
 ## 0.13.1
+
 
 ### Fix
 
@@ -141,13 +426,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - fix str of Dataset
 
-## 0.12.0 [released 01/20/2023]
+## 0.12.0 [01/20/2023]
 
 
 ### Changed
 
 - Reference path is now given all the way down to plot_data
 - DessiaObject kwargs in init are deprecated
+
+### Added
+- Save WorkflowRun to a python script
 
 ### Fixed
 
@@ -201,7 +489,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - More docs
 
 
-## 0.11.0 [released 12/19/2022]
+## 0.11.0 [12/19/2022]
 
 ### Fixed
 

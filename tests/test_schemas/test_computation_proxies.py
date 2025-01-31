@@ -1,13 +1,16 @@
-from dessia_common.schemas.core import OptionalProperty
+from dessia_common.schemas.core import OptionalProperty,SchemaAttribute
 from typing import List, Optional
 
 import unittest
 from parameterized import parameterized
 
 
+ATTRIBUTE = SchemaAttribute(name="optional_list", default_value=None)
+
+
 class TestFaulty(unittest.TestCase):
     @parameterized.expand([
-        (OptionalProperty(annotation=Optional[List[int]], attribute="optional_list", definition_default=None))
+        (OptionalProperty(annotation=Optional[List[int]], attribute=ATTRIBUTE),)
     ])
     def test_schema_check(self, schema):
         self.assertEqual(schema.args, (int,))

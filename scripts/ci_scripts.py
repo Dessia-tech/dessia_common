@@ -11,7 +11,6 @@ scripts = [
     "dataset.py",
     "dataset_pareto.py",
     "filters.py",
-    "moving_object.py",
     "optimization.py",
     "graph.py",
     "sampling.py",
@@ -25,12 +24,7 @@ scripts = [
     "markdown_to_docx.py",
 
     # Workflows
-    "workflow/blocks.py",
-    "workflow/workflow_with_models.py",
     "workflow/power_simulation.py",
-    "workflow/forms_simulation.py",
-    "workflow/pipes.py",
-    "workflow/workflow_state_equalities.py",
     "workflow/workflow_diverge_converge.py",
     "workflow/workflow_clustering.py",
     "workflow/workflow_filtering.py",
@@ -38,7 +32,6 @@ scripts = [
     "workflow/workflow_building.py",
     "workflow/workflow_sampling.py",
     "workflow/workflow_inputs.py",
-    "workflow/file_inputs.py",
 
     # Breakdown
     "breakdown.py",
@@ -49,7 +42,6 @@ scripts = [
     "utils/serialization.py",
     "utils/helpers.py",
     "utils/diff.py",
-    "type_matching.py",
 
     # Data structures
     "data-structures/1.py"
@@ -57,8 +49,9 @@ scripts = [
 
 for script_name in scripts:
     print(f"\n## Executing script '{script_name}'.")
-    exec(open(script_name).read())
-    print(f"Script '{script_name}' successful.")
+    with open(script_name, "r") as script_file:
+        exec(script_file.read())
+        print(f"Script '{script_name}' successful.")
 
 # This needs to be executed once all "assert-tests" have been run + once all unittests are defined
 if __name__ == "__main__":

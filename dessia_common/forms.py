@@ -1,3 +1,5 @@
+# pylint: skip-file
+
 """
 A module that aims to list all possibilities of data formats offered by Dessia.
 
@@ -20,12 +22,11 @@ Some general rules :
 In addition to types & generics (brought by DessiaObject), this module can also be seen as a template for Dessia
 coding/naming style & convention.
 """
-
 from math import floor, ceil, cos
-from typing import Dict, List, Tuple, Union, Any
+from typing import Dict, List, Tuple, Union, Any, Literal, get_args
 import time
-import random
 from numpy import linspace
+from random import randrange
 
 try:
     import volmdlr as vm
@@ -33,15 +34,17 @@ try:
     from volmdlr import primitives3d as p3d
     import plot_data
     import plot_data.colors
-except ImportError:
-    pass
+except ImportError as err:
+    print("Couldn't import plot_data or volmdlr due to the following exception : ", err)
 
 from dessia_common.core import DessiaObject, PhysicalObject, MovingObject
-from dessia_common.typings import InstanceOf
+from dessia_common.typings import InstanceOf, KeyOf
 from dessia_common.measures import Distance
 from dessia_common.exports import MarkdownWriter
 
 from dessia_common.files import BinaryFile, StringFile
+
+from dessia_common.decorators import plot_data_view, markdown_view, cad_view, picture_view
 
 
 class EmbeddedBuiltinsSubobject(PhysicalObject):
@@ -51,14 +54,14 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     :param distarg: A Distance with units
     :param floatarg: A float
     :param intarg: An integer
-    :param boolarg: A boolean
+    :param boolarg: A Boolean
     :param name: Object's name
     """
 
     _standalone_in_db = False
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
-                 boolarg: bool, name: str = 'Standalone Subobject'):
+                 boolarg: bool, name: str = "Standalone Subobject"):
         self.distarg = distarg
         self.floatarg = floatarg
         self.intarg = intarg
@@ -73,7 +76,7 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         distarg = Distance(1.7 * floatarg * seed)
         intarg = seed
         boolarg = bool(seed % 2)
-        name = 'EmbeddedSubobject' + str(seed)
+        name = f"EmbeddedSubobject{seed}"
         return cls(distarg=distarg, floatarg=floatarg, intarg=intarg, boolarg=boolarg, name=name)
 
     @classmethod
@@ -98,7 +101,8 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
     def voldmlr_primitives(self):
         """ Volmdlr primitives of the squared contour. """
         contour = self.contour()
-        volumes = [p3d.ExtrudedProfile(vm.O3D, vm.X3D, vm.Z3D, contour, [], vm.Y3D)]
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volumes = [p3d.ExtrudedProfile(frame, contour, [], 1)]
         return volumes
 
 
@@ -116,7 +120,7 @@ class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
     _standalone_in_db = True
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int,
-                 boolarg: bool, name: str = 'Standalone Subobject'):
+                 boolarg: bool, name: str = "Standalone Subobject"):
 
         EmbeddedBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg,
                                            intarg=intarg, boolarg=boolarg, name=name)
@@ -134,7 +138,7 @@ DEF_SBS = StandaloneBuiltinsSubobject.generate(1)
 class EnhancedStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
-    def __init__(self, floatarg: Distance, name: str = 'Standalone Subobject'):
+    def __init__(self, floatarg: Distance, name: str = "Standalone Subobject"):
         StandaloneBuiltinsSubobject.__init__(self, distarg=floatarg, floatarg=floatarg, intarg=floor(floatarg),
                                              boolarg=floatarg.is_integer(), name=name)
 
@@ -153,7 +157,7 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
     """ Overwrite StandaloneSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, distarg: Distance, floatarg: float, intarg: int, boolarg: bool,
-                 name: str = 'Inheriting Standalone Subobject'):
+                 name: str = "Inheriting Standalone Subobject"):
         self.strarg = name
 
         StandaloneBuiltinsSubobject.__init__(self, distarg=distarg, floatarg=floatarg, intarg=intarg,
@@ -166,7 +170,7 @@ class InheritingStandaloneSubobject(StandaloneBuiltinsSubobject):
         floatarg = 0.1 * seed
         intarg = seed * 3
         boolarg = bool(intarg % 2)
-        name = 'Inheriting Standalone Subobject' + str(seed)
+        name = "Inheriting Standalone Subobject" + str(seed)
         return cls(floatarg=floatarg, distarg=distarg, intarg=seed * 3, boolarg=boolarg, name=name)
 
 
@@ -176,7 +180,7 @@ DEF_ISS = InheritingStandaloneSubobject.generate(1)
 class EmbeddedSubobject(DessiaObject):
     """ EmbeddedSubobject, in order to test non standalone features. """
 
-    def __init__(self, embedded_list: List[int] = None, name: str = 'Embedded Subobject'):
+    def __init__(self, embedded_list: List[int] = None, name: str = "Embedded Subobject"):
         if embedded_list is None:
             self.embedded_list = [1, 2, 3]
         else:
@@ -191,7 +195,7 @@ class EmbeddedSubobject(DessiaObject):
             embedded_list = list(range(int(seed / 2)))
         else:
             embedded_list = None
-        name = 'Embedded Subobject' + str(seed)
+        name = "Embedded Subobject" + str(seed)
         return cls(embedded_list=embedded_list, name=name)
 
     @classmethod
@@ -204,7 +208,7 @@ class EnhancedEmbeddedSubobject(EmbeddedSubobject):
     """ Overwrite EmbeddedSubobject, principally for InstanceOf and Union typing testing purpose. """
 
     def __init__(self, embedded_list: List[int] = None, embedded_array: List[List[float]] = None,
-                 name: str = 'Enhanced Embedded Subobject'):
+                 name: str = "Enhanced Embedded Subobject"):
         self.embedded_array = embedded_array
 
         EmbeddedSubobject.__init__(self, embedded_list=embedded_list, name=name)
@@ -237,8 +241,9 @@ class StandaloneObject(MovingObject):
 
     _standalone_in_db = True
     _generic_eq = True
-    _allowed_methods = ["add_standalone_object", "add_embedded_object", "count_until", "add_float",
+    _allowed_methods = ["add_standalone_object", "count_until", "add_float",
                         "generate_from_text", "generate_from_bin", "method_without_arg", "ill_defined_method"]
+    _non_serializable_attributes = ["samples"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject, embedded_subobject: EmbeddedSubobject,
                  dynamic_dict: Dict[str, bool], float_dict: Dict[str, float], string_dict: Dict[str, str],
@@ -259,14 +264,16 @@ class StandaloneObject(MovingObject):
         self.subclass_arg = subclass_arg
         self.array_arg = array_arg
 
+        self._samples = None
+
         MovingObject.__init__(self, name=name)
 
     @classmethod
     def generate(cls, seed: int, name: str = "Standalone Object Demo") -> 'StandaloneObject':
         """ Generate an object with default values computed from a seed. """
-        dynamic_dict = {'n' + str(i): bool(seed % 2) for i in range(seed)}
-        float_dict = {'k' + str(i): seed * 1.09 for i in range(seed)}
-        string_dict = {'key' + str(i): 'value' + str(i) for i in range(seed)}
+        dynamic_dict = {f"n{i}": bool(seed % 2) for i in range(seed)}
+        float_dict = {f"k{i}": seed * 1.09 for i in range(seed)}
+        string_dict = {f"key{i}": f"value{i}" for i in range(seed)}
         builtin_list = [seed] * seed
         array_arg = [builtin_list] * 3
         union_arg = [EnhancedEmbeddedSubobject.generate(seed), EmbeddedSubobject.generate(seed)]
@@ -277,7 +284,7 @@ class StandaloneObject(MovingObject):
         return cls(standalone_subobject=StandaloneBuiltinsSubobject.generate(seed),
                    embedded_subobject=EmbeddedSubobject.generate(seed),
                    dynamic_dict=dynamic_dict, float_dict=float_dict, string_dict=string_dict,
-                   tuple_arg=('value', seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
+                   tuple_arg=("value", seed * 3), object_list=StandaloneBuiltinsSubobject.generate_many(seed),
                    subobject_list=EmbeddedSubobject.generate_many(seed), builtin_list=builtin_list, union_arg=union_arg,
                    subclass_arg=subclass_arg, array_arg=array_arg, name=name)
 
@@ -292,8 +299,8 @@ class StandaloneObject(MovingObject):
     @classmethod
     def generate_from_bin(cls, stream: BinaryFile):
         """ Generate an object from bin file in order to test frontend forms and backend streams. """
-        # User need to decode the binary as he see fit
-        my_string = stream.read().decode('utf8')
+        # User need to decode the binary as he sees fit
+        my_string = stream.read().decode("utf8")
         my_file_name = stream.filename
         _, raw_seed = my_string.split(",")
         seed = int(raw_seed.strip())
@@ -315,14 +322,6 @@ class StandaloneObject(MovingObject):
         It doesn't return anything, hence, API will update object when computing from frontend.
         """
         self.object_list.append(object_)
-
-    def add_embedded_object(self, object_: EmbeddedSubobject):
-        """
-        Add an embedded object to subobject_list.
-
-        It doesn't return anything, hence, API will update object when computing from frontend.
-        """
-        self.subobject_list.append(object_)
 
     def add_float(self, value: float = 1) -> StandaloneBuiltinsSubobject:
         """
@@ -354,8 +353,8 @@ class StandaloneObject(MovingObject):
         """ Volmdlr primitives of a cube. """
         subcube = self.standalone_subobject.voldmlr_primitives()[0]
         contour = self.contour()
-        cube = p3d.ExtrudedProfile(plane_origin=vm.Point3D(0, 1, -1), x=vm.X3D, y=vm.Z3D,
-                                   outer_contour2d=contour, inner_contours2d=[], extrusion_vector=vm.Y3D)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         return [subcube, cube]
 
     def volmdlr_primitives_step_frames(self):
@@ -370,64 +369,60 @@ class StandaloneObject(MovingObject):
         frame32 = frame22.translation(offset=vm.X3D)
         return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
 
-    @staticmethod
-    def scatter_plot():
-        """ Test scatter plots. """
-        attributes = ['cx', 'cy']
-        tooltip = plot_data.Tooltip(attributes=attributes, name='Tooltips')
-        return plot_data.Scatter(axis=plot_data.Axis(), tooltip=tooltip, x_variable=attributes[0],
-                                 y_variable=attributes[1], name='Scatter Plot')
+    @cad_view("CAD With Selector")
+    def display_cad(self):
+        """ Volmdlr primitives of 'cubes'. """
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        primitives = [subcube, cube]
+        return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """ Full plot data definition with lots of graphs and 2Ds. For frontend testing purpose. """
-        # Contour
+    @plot_data_view("2D View")
+    def primitives(self):
+        """ Test plot data decorator for primitives. """
         contour = self.standalone_subobject.contour().plot_data()
-        primitives_group = plot_data.PrimitiveGroup(primitives=[contour], name='Contour')
+        return plot_data.PrimitiveGroup(primitives=[contour], name="Contour")
 
-        rand = random.randint
-        samples = [plot_data.Sample(values={"cx": rand(0, 600) / 100, "cy": rand(100, 2000) / 100}, name=f"Point{i}")
-                   for i in range(500)]
+    @plot_data_view("Scatter Plot")
+    def scatter_plot(self, **kwargs):
+        """ Test plot data decorator for scatter plots. """
+        reference_path = kwargs.get("reference_path", "#")
+        attributes = ["cx", "cy"]
+        tooltip = plot_data.Tooltip(attributes=attributes, name="Tooltips")
+        samples = self._random_samples(reference_path)
+        return plot_data.Scatter(elements=samples, tooltip=tooltip, x_variable=attributes[0],
+                                 y_variable=attributes[1], name="Scatter Plot")
 
-        # Scatter Plot
-        scatterplot = self.scatter_plot()
+    @plot_data_view("Parallel Plot")
+    def parallel_plot(self, reference_path: str = "#"):
+        """ Test plot data decorator for parallel plots. """
+        samples = self._random_samples(reference_path)
+        return plot_data.ParallelPlot(elements=samples, axes=["cx", "cy", "label"], name="Parallel Plot")
 
-        # Parallel Plot
-        parallelplot = plot_data.ParallelPlot(elements=samples, axes=['cx', 'cy', 'color_fill', 'color_stroke'],
-                                              name='Parallel Plot')
-
-        # Multi Plot
-        objects = [scatterplot, parallelplot]
+    @plot_data_view("Multiplot", load_by_default=True)
+    def multiplot(self, reference_path: str = "#"):
+        """ Test plot data decorator for multiple plots. """
+        scatter_plot = self.scatter_plot(reference_path=reference_path)
+        parallel_plot = self.parallel_plot(reference_path=reference_path)
+        objects = [scatter_plot, parallel_plot]
         sizes = [plot_data.Window(width=560, height=300), plot_data.Window(width=560, height=300)]
-        multiplot = plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
-                                            coords=[(0, 0), (300, 0)], name='Multiple Plot')
+        samples = self._random_samples(reference_path=reference_path)
+        return plot_data.MultiplePlots(elements=samples, plots=objects, sizes=sizes,
+                                       coords=[(0, 0), (300, 0)], name="Multiple Plot")
 
-        attribute_names = ['timestep', 'electric current']
-        tooltip = plot_data.Tooltip(attributes=attribute_names)
-        timesteps = linspace(0, 20, 20)
-        current1 = [t ** 2 for t in timesteps]
-        elements1 = []
-        for timestep, current in zip(timesteps, current1):
-            elements1.append({'timestep': timestep, 'electric current': current})
-
-        # The previous line instantiates a dataset with limited arguments but several customizations are available
-        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
-        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
-
-        custom_dataset = plot_data.Dataset(elements=elements1, name='I = f(t)', tooltip=tooltip,
-                                           point_style=point_style, edge_style=edge_style)
-
-        # Now let's create another dataset for the purpose of this exercise
-        timesteps = linspace(0, 20, 100)
-        current2 = [100 * (1 + cos(t)) for t in timesteps]
-        elements2 = []
-        for timestep, current in zip(timesteps, current2):
-            elements2.append({'timestep': timestep, 'electric current': current})
-
-        dataset2 = plot_data.Dataset(elements=elements2, name='I2 = f(t)')
-
-        graph2d = plot_data.Graph2D(graphs=[custom_dataset, dataset2],
-                                    x_variable=attribute_names[0], y_variable=attribute_names[1])
-        return [primitives_group, scatterplot, parallelplot, multiplot, graph2d]
+    def _random_samples(self, reference_path: str = "#"):
+        """ A dummy method to generate plot_data Samples for testing purpose. """
+        if self._samples is None:
+            samples = []
+            for i in range(500):
+                abscissa = round((i % 17) / 2.3, 3)
+                values = {"cx": abscissa, "cy": 100 + abscissa * i / 100, "label": f"label{i % 5}"}
+                samples.append(plot_data.Sample(values=values, reference_path=f"{reference_path}/path/to/element/{i}",
+                                                name=f"Point{i}"))
+            self._samples = samples
+        return self._samples
 
     def ill_defined_method(self, arg0, arg1=1, arg2: int = 10, arg3=3):
         """ Define a docstring for testing parsing purpose. """
@@ -437,11 +432,12 @@ class StandaloneObject(MovingObject):
         self.maldefined_attr = nok_string
         self._ok_attribute = ok_string
 
-        computation = nok_string + 'or' + ok_string
+        computation = f"{nok_string} or {ok_string}"
 
         return computation
-        
-    def to_markdown(self):
+
+    @markdown_view(selector="Markdown", load_by_default=True)
+    def to_markdown(self, *args, **kwargs):
         """ Write a standard markdown of StandaloneObject. """
         contents = """
         # Quem Stygios dumque
@@ -518,6 +514,34 @@ class StandaloneObject(MovingObject):
         contents += "\n## Attribute Table\n\n"
         contents += MarkdownWriter(print_limit=25, table_limit=None).object_table(self)
         return contents
+    
+    @plot_data_view("Graph 2D")
+    def graph(self):
+        """
+        Base plot_data method. Overwrite this to display 2D or graphs on platform.
+
+        Should return a list of plot_data's objects.
+        """
+        attributes = ["timestep", "electric current"]
+        tooltip = plot_data.Tooltip(attributes=attributes)
+        timesteps = linspace(0, 20, 20)
+        current1 = [t ** 2 for t in timesteps]
+        elements1 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current1)]
+
+        # The previous line instantiates a dataset with limited arguments but some customization is available
+        point_style = plot_data.PointStyle(color_fill=plot_data.colors.RED, color_stroke=plot_data.colors.BLACK)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE, dashline=[10, 5])
+
+        custom_dataset = plot_data.Dataset(elements=elements1, name="I = f(t)", tooltip=tooltip,
+                                           point_style=point_style, edge_style=edge_style)
+
+        # Now let's create another dataset for the purpose of this exercise
+        timesteps = linspace(0, 20, 100)
+        current2 = [100 * (1 + cos(t)) for t in timesteps]
+        elements2 = [plot_data.Sample({"timestep": t, "electric current": c}) for t, c in zip(timesteps, current2)]
+
+        dataset2 = plot_data.Dataset(elements=elements2, name="I2 = f(t)")
+        return plot_data.Graph2D(graphs=[custom_dataset, dataset2], x_variable=attributes[0], y_variable=attributes[1])
 
     def count_until(self, duration: float, raise_error: bool = False):
         """
@@ -546,7 +570,7 @@ DEF_SO = StandaloneObject.generate(1)
 class StandaloneObjectWithDefaultValues(StandaloneObject):
     """ Overwrite StandaloneObject to set default values to it. For frontend forms testing purpose. """
 
-    _non_editable_attributes = ['intarg', 'strarg']
+    _non_editable_attributes = ["intarg", "strarg"]
 
     def __init__(self, standalone_subobject: StandaloneBuiltinsSubobject = DEF_SBS,
                  embedded_subobject: EmbeddedSubobject = DEF_ES,
@@ -560,7 +584,7 @@ class StandaloneObjectWithDefaultValues(StandaloneObject):
                  union_arg: List[UnionArg] = None,
                  subclass_arg: InstanceOf[StandaloneBuiltinsSubobject] = DEF_ISS,
                  array_arg: List[List[float]] = None,
-                 name: str = 'Standalone Object Demo'):
+                 name: str = "Standalone Object Demo"):
         if dynamic_dict is None:
             dynamic_dict = {}
         if float_dict is None:
@@ -622,8 +646,8 @@ class MovingStandaloneObject(MovingObject):
     def volmdlr_primitives(self, **kwargs):
         """ A cube. """
         contour = self.contour()
-        volume = p3d.ExtrudedProfile(plane_origin=vm.O3D, x=vm.X3D, y=vm.Z3D, outer_contour2d=contour,
-                                     inner_contours2d=[], extrusion_vector=vm.Y3D)
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volume = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         return [volume]
 
     def volmdlr_primitives_step_frames(self):
@@ -646,7 +670,7 @@ class Generator(DessiaObject):
 
     _standalone_in_db = True
 
-    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ''):
+    def __init__(self, parameter: int, nb_solutions: int = 25, models: List[StandaloneObject] = None, name: str = ""):
         self.parameter = parameter
         self.nb_solutions = nb_solutions
         self.models = models
@@ -745,3 +769,193 @@ class MidLevel(DessiaObject):
         object2 = NotStandalone(attribute=1, name="2")
         bottom_level = BottomLevel([object1, object2])
         return cls(bottom_level=bottom_level, name=name)
+
+
+class Beam(DessiaObject):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        self.length = length
+        self.width = length / 10
+
+        super().__init__(name)
+
+
+class HorizontalBeam(Beam):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        super().__init__(length=length, name=name)
+
+    def contour(self, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(0, 0), vm.Point2D(0, self.width),
+                  vm.Point2D(self.length, self.width), vm.Point2D(self.length, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
+
+
+class VerticalBeam(Beam):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, length: float, name: str = ""):
+        super().__init__(length=length, name=name)
+
+    def contour(self, origin: float, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(origin, 0), vm.Point2D(origin, self.length),
+                  vm.Point2D(origin + self.width, self.length), vm.Point2D(origin + self.width, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, origin: float = 0, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+    @cad_view("CAD View")
+    def plot3d(self, origin: float = 0, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
+
+
+class BeamStructure(DessiaObject):
+    """ A dummy class to test 2D/3D form interactions. """
+
+    _standalone_in_db = True
+
+    def __init__(self, horizontal_beam: HorizontalBeam, vertical_beams: List[VerticalBeam], name: str = ""):
+        self.horizontal_beam = horizontal_beam
+        self.vertical_beams = vertical_beams
+        self.n_beams = len(vertical_beams)
+
+        super().__init__(name=name)
+
+    @plot_data_view("2D View")
+    @picture_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        horizontal_contour = self.horizontal_beam.plot2d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_contours = [b.plot2d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                      reference_path=f"{reference_path}/vertical_beams/{i}")
+                             for i, b in enumerate(self.vertical_beams)]
+        labels = [plot_data.Label(c.reference_path, shape=c) for c in [horizontal_contour] + vertical_contours]
+        primitives = [horizontal_contour] + vertical_contours + labels
+        return plot_data.PrimitiveGroup(primitives=primitives, name="Contour")
+
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        horizontal_primitive = self.horizontal_beam.plot3d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_primitives = [b.plot3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                        reference_path=f"{reference_path}/vertical_beams/{i}")
+                               for i, b in enumerate(self.vertical_beams)]
+        primitives = [horizontal_primitive] + vertical_primitives
+        return vm.core.VolumeModel(primitives).babylon_data()
+
+
+class BeamStructureGenerator(DessiaObject):
+    """ A dummy class to generate a lot of BeamStructures. """
+
+    _standalone_in_db = True
+
+    def __init__(self, n_solutions: int = 5, max_beams: int = 5,
+                 max_length: int = 100, min_length: int = 10, name: str = "Beams"):
+        self.n_solutions = n_solutions
+        self.max_beams = max_beams
+        self.max_length = max_length
+        self.min_length = min_length
+
+        super().__init__(name)
+
+    def generate(self) -> List[BeamStructure]:
+        """ A dummy method to generate a certain number of BeamStructures. """
+        beam_structures = []
+        for i in range(self.n_solutions):
+            n_beams = randrange(1, self.max_beams + 1)
+            horizontal_beam = HorizontalBeam(length=(n_beams - 1) * 10, name="H")
+            vertical_beams = []
+            for j in range(n_beams):
+                length = randrange(self.min_length * 10, self.max_length * 10) / 10
+                vertical_beams.append(VerticalBeam(length=length, name=f"V{j + 1}"))
+            beam_structures.append(BeamStructure(horizontal_beam=horizontal_beam, vertical_beams=vertical_beams,
+                                                 name=f"{self.name} {i + 1}"))
+        return beam_structures
+
+
+# Definition 1
+DIRECTIONS = {"both": [-1, 1], "clockwise": [1], "counterclockwise": [-1]}
+
+
+class Literals(DessiaObject):
+    """ A dummy class to test Definition 1 (Literal from Dict). """
+
+    _standalone_in_db = True
+
+    def __init__(self, direction_name: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red",
+                 name: str = ""):
+        self.direction_name = direction_name
+        self.color = color
+        super().__init__(name=name)
+
+    @property
+    def direction(self):
+        return DIRECTIONS[self.direction_name]
+
+
+# Definition 2
+DIRECTION_KEYS = Literal["both", "clockwise", "counterclockwise"]
+DIRECTION_VALUES = [[-1, 1], [1], [-1]]
+DIRECTIONS_FROM_KEYS = dict(zip(get_args(DIRECTION_KEYS), DIRECTION_VALUES))
+
+
+class LiteralsFromType(DessiaObject):
+    """ A dummy class to test Definition 2 (Dict from Literal). """
+
+    _standalone_in_db = True
+
+    def __init__(self, direction: DIRECTION_KEYS, color: Literal["red", "green", "blue"] = "red", name: str = ""):
+        self.direction = DIRECTIONS_FROM_KEYS[direction]
+        self.color = color
+        super().__init__(name=name)
+
+
+class Wrapper(DessiaObject):
+    """ A dummy class to test frontend component for Enums from a Spreadsheet. """
+
+    _standalone_in_db = True
+
+    def __init__(self, object_: Literals):
+        self.object_ = object_
+        super().__init__("")
+
+
+horizontal = HorizontalBeam(10, "H")
+verticals = [VerticalBeam(5, "V1"), VerticalBeam(10, "V2"), VerticalBeam(7.5, "V3")]
+structure = BeamStructure(horizontal_beam=horizontal, vertical_beams=verticals, name="Structure")

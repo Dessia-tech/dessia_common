@@ -137,10 +137,10 @@ empty_list.sort("weight")
 assert(empty_list == Dataset())
 
 try:
-    empty_list.plot_data()
+    empty_list.plot_scatter_matrix()
     raise ValueError("plot_data should not work on empty Datasets")
 except Exception as e:
-    assert(e.__class__.__name__ == "IndexError")
+    assert(e.__class__.__name__ == "ValueError")
 
 try:
     empty_list.singular_values()

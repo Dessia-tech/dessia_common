@@ -14,22 +14,20 @@ class TestWorkflowDisplays(unittest.TestCase):
         self.display_settings = self.workflow_run.display_settings()
 
     @parameterized.expand([
-        (0, "documentation"),
-        (1, "workflow"),
-        (2, "3D (1)"),
-        (3, "2D (2)"),
-        (4, "MD (3)"),
+        (0, "Documentation"),
+        (1, "Workflow"),
+        (2, "Scatter Plot"),
+        (3, "Markdown")
     ])
     def test_selectors(self, index, expected_selector):
         setting = self.display_settings[index]
         self.assertEqual(setting.selector, expected_selector)
 
     @parameterized.expand([
-        ("documentation", "markdown"),
-        ("workflow", "workflow"),
-        ("3D (1)", "babylon_data"),
-        ("2D (2)", "plot_data"),
-        ("MD (3)", "markdown"),
+        ("Documentation", "markdown"),
+        ("Workflow", "workflow"),
+        ("Scatter Plot", "plot_data"),
+        ("Markdown", "markdown")
     ])
     def test_types(self, selector, expected_type):
         setting = self.workflow_run._display_settings_from_selector(selector)
@@ -41,27 +39,32 @@ class TestWorkflowDisplays(unittest.TestCase):
             self.assertTrue(is_jsonable(display.data))
 
     @parameterized.expand([
-        ("documentation", str),
-        ("workflow", dict),
-        ("3D (1)", dict),
-        ("2D (2)", list),
-        ("MD (3)", str),
+        ("Documentation", str),
+        ("Workflow", dict),
+        ("Scatter Plot", dict),
+        ("Markdown", str)
     ])
     def test_data_types(self, selector, expected_type):
         display = self.workflow_run._display_from_selector(selector)
         self.assertIsInstance(display.data, expected_type)
 
     def test_workflow(self):
-        display = self.workflow_run._display_from_selector("workflow")
+        display = self.workflow_run._display_from_selector("Workflow")
         self.assertSetEqual(set(display.data.keys()), WORKFLOW_KEYS)
 
-    def test_cad(self):
-        display = self.workflow_run._display_from_selector("3D (1)")
-        self.assertEqual(len(display.data["meshes"]), 2)
+    @parameterized.expand([
+        (True,),
+        (False,)
+    ])
+    def test_default_displays(self, block_by_default: bool):
+        self.assertFalse(workflow._display_settings_from_selector("Documentation").load_by_default)
+        self.assertFalse(workflow._display_settings_from_selector("Workflow").load_by_default)
+        self.assertTrue(workflow._display_settings_from_selector("Tasks").load_by_default)
 
-    def test_plot_data(self):
-        display = self.workflow_run._display_from_selector("2D (2)")
-        self.assertEqual(len(display.data), 5)
+        workflow.blocks[1].load_by_default = block_by_default
+        settings = self.workflow_run._display_settings_from_selector("Documentation")
+        self.assertEqual(settings.load_by_default, not block_by_default)
+        self.assertFalse(self.workflow_run._display_settings_from_selector("Workflow").load_by_default)
 
 
 if __name__ == '__main__':

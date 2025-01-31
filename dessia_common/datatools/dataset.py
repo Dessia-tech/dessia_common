@@ -1,23 +1,28 @@
 """ Library for building Dataset. """
-from typing import List, Tuple, Dict, Any
-from copy import copy
 import itertools
+from copy import copy
+from typing import Any
 
-from scipy.spatial.distance import pdist, squareform
 import numpy as npy
+from scipy.spatial.distance import pdist, squareform
 from sklearn import preprocessing
 
 try:
     from plot_data.core import Scatter, Histogram, MultiplePlots, Tooltip, ParallelPlot, PointFamily, EdgeStyle, Axis, \
         PointStyle, Sample
-    from plot_data.colors import BLUE, GREY
+    from plot_data.colors import BLUE, GREY, Color
 except ImportError:
     pass
-from dessia_common.core import DessiaObject, DessiaFilter, FiltersList
-from dessia_common.exports import MarkdownWriter
 from dessia_common import templates
+from dessia_common.core import DessiaFilter, DessiaObject, FiltersList
+from dessia_common.decorators import plot_data_view
+from dessia_common.exports import MarkdownWriter
+
 from dessia_common.datatools.math import mean, std, variance, covariance_matrix, Vector, Matrix, maximums, minimums
 from dessia_common.datatools import learning_models as models
+
+
+
 
 class Dataset(DessiaObject):
     """
@@ -26,7 +31,7 @@ class Dataset(DessiaObject):
     :param dessia_objects:
         --------
         List of DessiaObjects to store in Dataset
-    :type dessia_objects: List[DessiaObject], `optional`, defaults to `None`
+    :type dessia_objects: list[DessiaObject], `optional`, defaults to `None`
 
     :param name:
         --------
@@ -34,11 +39,11 @@ class Dataset(DessiaObject):
     :type name: str, `optional`, defaults to `''`
 
     :Properties:
-        * **common_attributes:** (`List[str]`)
+        * **common_attributes:** (`list[str]`)
             --------
             Common attributes of DessiaObjects contained in the current `Dataset`
 
-        * **matrix:** (`List[List[float]]`, `n_samples x n_features`)
+        * **matrix:** (`list[list[float]]`, `n_samples x n_features`)
             --------
             Matrix of data computed by calling the `to_vector` method of all `dessia_objects`
 
@@ -85,7 +90,7 @@ class Dataset(DessiaObject):
     _vector_features = ["name", "common_attributes"]
     _non_data_eq_attributes = ["name", "_common_attributes", "_matrix"]
 
-    def __init__(self, dessia_objects: List[DessiaObject] = None, name: str = ''):
+    def __init__(self, dessia_objects: list[DessiaObject] = None, name: str = ''):
         """ See class docstring. """
         if dessia_objects is None:
             dessia_objects = []
@@ -167,13 +172,13 @@ class Dataset(DessiaObject):
         # new_dataset.name += f"_{key.start if key.start is not None else 0}_{key.stop}")
         return new_dataset
 
-    def _indexlist_to_booleanlist(self, index_list: List[int]):
+    def _indexlist_to_booleanlist(self, index_list: list[int]):
         boolean_list = [False] * len(self)
         for idx in index_list:
             boolean_list[idx] = True
         return boolean_list
 
-    def _pick_from_boolist(self, key: List[bool]):
+    def _pick_from_boolist(self, key: list[bool]):
         new_dataset = self.__class__(dessia_objects=DessiaFilter.apply(self.dessia_objects, key), name=self.name)
         new_dataset._common_attributes = copy(self._common_attributes)
         if self._matrix is not None:
@@ -208,7 +213,7 @@ class Dataset(DessiaObject):
             return self.common_attributes
         return ['name'] + self.common_attributes
 
-    def _print_objects_slice(self, key: slice, attr_space: List[int]):
+    def _print_objects_slice(self, key: slice, attr_space: list[int]):
         string = ""
         for index in range(key.start, key.stop, key.step):
             string += "\n"
@@ -220,7 +225,7 @@ class Dataset(DessiaObject):
         prefix += f"{len(self)} samples, {len(self.common_attributes)} features"
         return prefix
 
-    def _print_titles(self, attr_space: List[int]):
+    def _print_titles(self, attr_space: list[int]):
         min_col_length = 16
         printed_attributes = self._printed_attributes()
         string = ""
@@ -241,7 +246,7 @@ class Dataset(DessiaObject):
             string += "|" + name_attr + end_bar
         return string
 
-    def _print_object(self, index: int, attr_space: List[int]):
+    def _print_object(self, index: int, attr_space: list[int]):
         printed_attributes = self._printed_attributes()
         string = ""
         for idx, attr in enumerate(printed_attributes):
@@ -262,8 +267,8 @@ class Dataset(DessiaObject):
             string += end_bar
         return string
 
-    def to_markdown(self) -> str:
-        """ Render a markdown of the object output type: string. """
+    def to_markdown(self, *args, **kwargs) -> str:
+        """Render a markdown of the object output type: string."""
         md_writer = MarkdownWriter(print_limit=25, table_limit=12)
         name = md_writer.print_name(self)
         class_ = md_writer.print_class(self)
@@ -333,7 +338,7 @@ class Dataset(DessiaObject):
         :type attribute: str
 
         :return: A list of all values of the specified attribute of dessia_objects
-        :rtype: List[Any]
+        :rtype: list[Any]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -355,7 +360,7 @@ class Dataset(DessiaObject):
         :type index: int
 
         :return: A list of all values of the specified attribute of dessia_objects
-        :rtype: List[float]
+        :rtype: list[float]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -365,17 +370,17 @@ class Dataset(DessiaObject):
         """
         return [row[index] for row in self.matrix]
 
-    def sub_matrix(self, columns_names: List[str]):
+    def sub_matrix(self, columns_names: list[str]):
         """
         Build a sub matrix of the current Dataset taking column numbers in indexes or attribute values in attributes.
 
         Warning: Only one of `indexes` or `attributes` has to be specified.
 
-        :param columns_names: List of columns' names to create a sub matrix
-        :type columns_names: List[str]
+        :param columns_names: list of columns' names to create a sub matrix
+        :type columns_names: list[str]
 
         :return: Data stored in matrix reduced to the specified `indexes` or `attributes`
-        :rtype: List[List[float]]
+        :rtype: list[list[float]]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -387,11 +392,11 @@ class Dataset(DessiaObject):
         transposed_submatrix = [self.attribute_values(column_name) for column_name in columns_names]
         return list(map(list, zip(*transposed_submatrix)))
 
-    def to_input_output(self, input_names: List[str], output_names: List[str]) -> List[Matrix]:
+    def to_input_output(self, input_names: list[str], output_names: list[str]) -> list[Matrix]:
         """ Split matrix of Dataset in two matrices inputs and outputs according to input_names and output_names. """
         return self.sub_matrix(input_names), self.sub_matrix(output_names)
 
-    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> Tuple[Matrix, Matrix]:
+    def train_test_split(self, ratio: float = 0.8, shuffled: bool = True) -> tuple[Matrix, Matrix]:
         """ Generate train and test Datasets from current Dataset."""
         index_train, index_test = models.get_split_indexes(len_matrix=len(self), ratio=ratio, shuffled=shuffled)
         return (Dataset(self[index_train], name=self.name + '_train'),
@@ -459,7 +464,7 @@ class Dataset(DessiaObject):
         Compute means along each `common_attribute`.
 
         :return: A list of means along each dimension
-        :rtype: List[float]
+        :rtype: list[float]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -475,7 +480,7 @@ class Dataset(DessiaObject):
         Compute standard deviations along each `common_attribute`.
 
         :return: A list of standard deviations along each dimension
-        :rtype: List[float]
+        :rtype: list[float]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -491,7 +496,7 @@ class Dataset(DessiaObject):
         Compute variances along each `common_attribute`.
 
         :return: A list of variances along each dimension
-        :rtype: List[float]
+        :rtype: list[float]
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -507,7 +512,7 @@ class Dataset(DessiaObject):
         Compute the covariance matrix of `self.matrix`.
 
         :return: the covariance matrix of all stored data in self
-        :rtype: List[List[float]], `n_features x n_features`
+        :rtype: list[list[float]], `n_features x n_features`
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -549,7 +554,7 @@ class Dataset(DessiaObject):
         :type **kwargs: dict, `optional`
 
         :return: the distance matrix of all stored data in self
-        :rtype: List[List[float]], `n_samples x n_samples`
+        :rtype: list[list[float]], `n_samples x n_samples`
 
         :Examples:
         >>> from dessia_common.datatools.dataset import Dataset
@@ -567,7 +572,7 @@ class Dataset(DessiaObject):
         return distances.tolist()
 
     @staticmethod
-    def _set_distance_kwargs(method: str, kwargs: Dict[str, Any]):
+    def _set_distance_kwargs(method: str, kwargs: dict[str, Any]):
         if 'p' not in kwargs and method == 'minkowski':
             kwargs['p'] = 2
         return kwargs
@@ -623,7 +628,7 @@ class Dataset(DessiaObject):
         :return:
             **normalized_singular_values**: list of normalized singular values
             **singular_points**: list of points to plot in dimensionality plot. Does not add any information.
-        :rtype: Tuple[List[float], List[Dict[str, float]]]
+        :rtype: tuple[list[float], list[dict[str, float]]]
         """
         scaled_data = Dataset._scale_data(npy.array(self.matrix) - npy.mean(self.matrix, axis=0))
         _, singular_values, _ = npy.linalg.svd(npy.array(scaled_data).T, full_matrices=False)
@@ -641,26 +646,34 @@ class Dataset(DessiaObject):
         scaled_matrix = preprocessing.StandardScaler().fit_transform(data_matrix)
         return [list(map(float, row.tolist())) for row in scaled_matrix]
 
-    def plot_data(self, reference_path: str = "#", **kwargs):
-        """ Plot a standard scatter matrix of all attributes in common_attributes and a dimensionality plot. """
+    @plot_data_view(selector='DataSet scatter matrix')
+    def plot_scatter_matrix(self, reference_path: str = "#", **kwargs):
+        """ Plot a scatter matrix for attributes in common_attributes. """
         data_list = self._to_samples(reference_path=reference_path)
         if len(self.common_attributes) > 1:
-            # Plot a correlation matrix : To develop
-            # correlation_matrix = []
-            # Dimensionality plot
-            dimensionality_plot = self._plot_dimensionality()
-            # Scatter Matrix
-            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes(), axis=dimensionality_plot.axis,
-                                                   point_style=dimensionality_plot.point_style)
-            # Parallel plot
-            parallel_plot = self._parallel_plot(data_list)
-            return [parallel_plot, scatter_matrix]  # , dimensionality_plot]
+            scatter_matrix = self._build_multiplot(data_list, self._tooltip_attributes())
+            return scatter_matrix
+        raise ValueError("Scatter matrix can only be plotted with more than one common attribute.")
 
+    @plot_data_view(selector='DataSet parallel plot')
+    def plot_parallel_plot(self, reference_path: str = "#", **kwargs):
+        """ Plot a parallel plot for attributes in common_attributes. """
+        data_list = self._to_samples(reference_path=reference_path)
+        if len(self.common_attributes) > 1:
+            parallel_plot = self._parallel_plot(data_list)
+            return parallel_plot
+        if len(self.common_attributes) == 1:
+            return self.plot_histogram(reference_path=reference_path)
+        raise ValueError("No common attributes found for plotting a parallel plot.")
+
+    def plot_histogram(self, reference_path: str = "#", **kwargs):
+        """ Plot a histogram when there's only one common attribute. """
+        data_list = self._to_samples(reference_path=reference_path)
         plot_mono_attr = self._histogram_unic_value(0, name_attr=self.common_attributes[0])
         plot_mono_attr.elements = data_list
-        return [plot_mono_attr]
+        return plot_mono_attr
 
-    def _build_multiplot(self, data_list: List[Dict[str, float]], tooltip: List[str], **kwargs: Dict[str, Any]):
+    def _build_multiplot(self, data_list: list[dict[str, float]], tooltip: list[str], **kwargs: dict[str, Any]):
         subplots = []
         for line in self.common_attributes:
             for idx_col, col in enumerate(self.common_attributes):
@@ -695,9 +708,9 @@ class Dataset(DessiaObject):
                 for row, dessia_object in enumerate(self.dessia_objects)]
 
     def _point_families(self):
-        return [PointFamily(BLUE, list(range(len(self))))]
+        return [PointFamily(Color(182/255, 225/255, 251/255), list(range(len(self))))]
 
-    def _parallel_plot(self, data_list: List[Dict[str, float]]):
+    def _parallel_plot(self, data_list: list[dict[str, float]]):
         return ParallelPlot(elements=data_list, axes=self._parallel_plot_attr(), disposition='vertical')
 
     def _parallel_plot_attr(self):
@@ -812,7 +825,7 @@ class Dataset(DessiaObject):
         return costs
 
     @staticmethod
-    def pareto_indexes(costs: Matrix) -> List[bool]:
+    def pareto_indexes(costs: Matrix) -> list[bool]:
         """
         Find the Pareto-efficient points.
 
@@ -829,7 +842,7 @@ class Dataset(DessiaObject):
         return is_efficient.tolist()
 
     @staticmethod
-    def pareto_frontiers(len_data: int, costs: List[List[float]]):
+    def pareto_frontiers(len_data: int, costs: list[list[float]]):
         """ Experimental method to draw the borders of Pareto domain. """
         checked_costs = Dataset._check_costs(len_data, costs)
         pareto_indexes = Dataset.pareto_indexes(checked_costs)
@@ -866,17 +879,17 @@ class Dataset(DessiaObject):
                                                                   dir_coeffs[chosen_line] + offsets[chosen_line]]]).T
         return frontier_2d
 
-    def _compute_costs(self, costs_attributes: List[str]):
+    def _compute_costs(self, costs_attributes: list[str]):
         costs = self.sub_matrix(costs_attributes)
         return Dataset._check_costs(len(self), costs)
 
-    def pareto_points(self, costs_attributes: List[str]):
+    def pareto_points(self, costs_attributes: list[str]):
         """
         Find the Pareto-efficient points.
 
         :param costs_attributes:
             List of columns' attributes on which costs are stored in current Dataset
-        :type costs_attributes: List[str]
+        :type costs_attributes: list[str]
 
         :return: a Dataset containing the selected points
         :rtype: Dataset
@@ -884,18 +897,18 @@ class Dataset(DessiaObject):
         checked_costs = self._compute_costs(costs_attributes)
         return self[self.__class__.pareto_indexes(checked_costs)]
 
-    def pareto_sheets(self, costs_attributes: List[str], nb_sheets: int = 1):
+    def pareto_sheets(self, costs_attributes: list[str], nb_sheets: int = 1):
         """
         Get successive Pareto sheets (i.e. optimal points in a DOE for already computed costs).
 
         :param costs_attributes: List of columns' attributes on which costs are stored in current Dataset
-        :type costs_attributes: List[str]
+        :type costs_attributes: list[str]
 
         :param nb_sheets: Number of Pareto sheets to pick
         :type nb_sheets: int, `optional`, default to `1`
 
         :return: The successive Pareto sheets and not selected elements
-        :rtype: List[Dataset], Dataset
+        :rtype: list[Dataset], Dataset
         """
         checked_costs = self._compute_costs(costs_attributes)
         non_optimal_costs = checked_costs[:]

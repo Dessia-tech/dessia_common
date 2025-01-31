@@ -1,5 +1,5 @@
 """ Tools and base classes for machine learning methods. """
-from typing import List, Dict, Any, Tuple, Union
+from typing import Any, Union
 import random
 
 import numpy as npy
@@ -8,8 +8,8 @@ from sklearn import preprocessing, linear_model, ensemble, tree, svm, neural_net
 from dessia_common.core import DessiaObject
 from dessia_common.utils.types import is_sequence
 
-Vector = List[float]
-Matrix = List[Vector]
+Vector = list[float]
+Matrix = list[Vector]
 
 # ======================================================================================================================
 #                                                     S C A L E R S
@@ -43,7 +43,7 @@ class Scaler(DessiaObject):
         return name + (f"{in_out}_scaler" if is_scaled else "identity_scaler")
 
     @classmethod
-    def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> Tuple['Scaler', str]:
+    def set_in_modeler(cls, modeler_name: str, in_out: str, is_scaled: bool) -> tuple['Scaler', str]:
         """ Set scaler in modeler. """
         class_ = cls._set_class(is_scaled)
         name = cls._set_name(modeler_name, in_out, is_scaled)
@@ -81,7 +81,7 @@ class Scaler(DessiaObject):
         scaler.fit(reshaped_matrix)
         return cls.instantiate_dessia(scaler, name)
 
-    def _prepare_transform(self, matrix: Matrix) -> Tuple['Scaler', Matrix]:
+    def _prepare_transform(self, matrix: Matrix) -> tuple['Scaler', Matrix]:
         return self.instantiate_skl(), vector_to_2d_matrix(matrix)
 
     def transform(self, matrix: Matrix) -> Matrix:
@@ -110,17 +110,17 @@ class Scaler(DessiaObject):
         return scaler.inverse_transform(reshaped_matrix).tolist()
 
     @classmethod
-    def fit_transform(cls, matrix: Matrix, name: str = '') -> Tuple['Scaler', Matrix]:
+    def fit_transform(cls, matrix: Matrix, name: str = '') -> tuple['Scaler', Matrix]:
         """ Fit scaler with data of matrix and transform it. It is the succession of fit and transform methods. """
         reshaped_matrix = vector_to_2d_matrix(matrix)
         scaler = cls.fit(reshaped_matrix, name)
         return scaler, scaler.transform(reshaped_matrix)
 
-    def transform_matrices(self, *matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+    def transform_matrices(self, *matrices: tuple[Matrix]) -> tuple[Matrix]:
         """ Iteratively scale all matrices. """
         return tuple(self.transform(m) for m in matrices)
 
-    def inverse_transform_matrices(self, *scaled_matrices: Tuple[Matrix]) -> Tuple[Matrix]:
+    def inverse_transform_matrices(self, *scaled_matrices: tuple[Matrix]) -> tuple[Matrix]:
         """ Iteratively invert scaler for all matrices. """
         return tuple(self.inverse_transform(m) for m in scaled_matrices)
 
@@ -179,7 +179,7 @@ class LabelBinarizer(Scaler):
 
     _rebuild_attributes = ['classes_', 'y_type_', 'sparse_input_']
 
-    def __init__(self, classes_: List[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
+    def __init__(self, classes_: list[int] = None, y_type_: str = 'multiclass', sparse_input_: bool = False,
                  name: str = ''):
         self.classes_ = classes_
         self.y_type_ = y_type_
@@ -207,7 +207,7 @@ class Model(DessiaObject):
 
     _allowed_methods = DessiaObject._allowed_methods + ["predict", "score"]
 
-    def __init__(self, parameters: Dict[str, Any], name: str = ''):
+    def __init__(self, parameters: dict[str, Any], name: str = ''):
         self.parameters = parameters
         DessiaObject.__init__(self, name=name)
 
@@ -222,7 +222,7 @@ class Model(DessiaObject):
         raise NotImplementedError(f'Method _instantiate_skl not implemented for {type(self).__name__}.')
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         raise NotImplementedError(f'Method _instantiate_dessia not implemented for {cls.__name__}.')
 
     @classmethod
@@ -234,7 +234,7 @@ class Model(DessiaObject):
         return outputs
 
     @classmethod
-    def init_for_modeler_(cls, **parameters: Dict[str, Any]) -> Tuple['Model', Dict[str, Any], str]:
+    def init_for_modeler_(cls, **parameters: dict[str, Any]) -> tuple['Model', dict[str, Any], str]:
         """ Initialize class of Model with its name and hyperparameters to fit in Modeler. """
         return cls(parameters=parameters)
 
@@ -260,7 +260,7 @@ class Model(DessiaObject):
 
     @classmethod
     def fit_predict_(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, name: str = '',
-                     **hyperparameters) -> Tuple['Model', Union[Vector, Matrix]]:
+                     **hyperparameters) -> tuple['Model', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         model = cls.fit_(inputs, outputs, name, **hyperparameters)
         return model, model.predict(predicted_inputs)
@@ -288,7 +288,7 @@ class Model(DessiaObject):
 class LinearModel(Model):
     """ Abstract class for linear models. """
 
-    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         self.coef_ = coef_
         self.intercept_ = intercept_
         Model.__init__(self, parameters=parameters, name=name)
@@ -305,7 +305,7 @@ class LinearModel(Model):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         return cls(coef_=model.coef_.tolist(), intercept_=model.intercept_.tolist(), parameters=parameters, name=name)
 
 
@@ -339,7 +339,7 @@ class Ridge(LinearModel):
     _standalone_in_db = True
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
-    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
 
     @classmethod
@@ -348,7 +348,7 @@ class Ridge(LinearModel):
 
     @classmethod
     def init_for_modeler(cls, alpha: float = 1., fit_intercept: bool = True,
-                         tol: float = 0.001) -> Tuple['Ridge', Dict[str, Any], str]:
+                         tol: float = 0.001) -> tuple['Ridge', dict[str, Any], str]:
         """
         Initialize class `Ridge` with its name and hyperparameters to fit in Modeler.
 
@@ -408,7 +408,7 @@ class Ridge(LinearModel):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, alpha: float = 1.,
                     fit_intercept: bool = True, tol: float = 0.001,
-                    name: str = '') -> Tuple['Ridge', Union[Vector, Matrix]]:
+                    name: str = '') -> tuple['Ridge', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 alpha=alpha, fit_intercept=fit_intercept, tol=tol)
@@ -443,7 +443,7 @@ class LinearRegression(LinearModel):
     _standalone_in_db = True
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
-    def __init__(self, parameters: Dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], coef_: Matrix = None, intercept_: Matrix = None, name: str = ''):
         LinearModel.__init__(self, coef_=coef_, intercept_=intercept_, parameters=parameters, name=name)
 
     @classmethod
@@ -452,7 +452,7 @@ class LinearRegression(LinearModel):
 
     @classmethod
     def init_for_modeler(cls, fit_intercept: bool = True,
-                         positive: bool = False) -> Tuple['LinearRegression', Dict[str, Any], str]:
+                         positive: bool = False) -> tuple['LinearRegression', dict[str, Any], str]:
         """
         Initialize class `LinearRegression` with its name and hyperparameters to fit in Modeler.
 
@@ -497,7 +497,7 @@ class LinearRegression(LinearModel):
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, fit_intercept: bool = True,
-                    positive: bool = False, name: str = '') -> Tuple['LinearRegression', Union[Vector, Matrix]]:
+                    positive: bool = False, name: str = '') -> tuple['LinearRegression', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name,
                                 fit_intercept=fit_intercept, positive=positive)
@@ -526,8 +526,8 @@ class Tree(Model):
         Name of Tree
     """
 
-    def __init__(self, n_classes: List[int] = None, n_features: int = None, n_outputs: int = None,
-                 tree_state: Dict[str, Any] = None, parameters: Dict[str, Any] = None, name: str = ''):
+    def __init__(self, n_classes: list[int] = None, n_features: int = None, n_outputs: int = None,
+                 tree_state: dict[str, Any] = None, parameters: dict[str, Any] = None, name: str = ''):
         self.n_classes = n_classes
         self.n_features = n_features
         self.n_outputs = n_outputs
@@ -572,7 +572,7 @@ class Tree(Model):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = {'name': name,
                   'tree_state': cls._getstate(model),
                   'n_classes': model.n_classes.tolist(),
@@ -605,7 +605,7 @@ class DecisionTreeRegressor(Model):
     _standalone_in_db = True
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_outputs_ = n_outputs_
         self.tree_ = tree_
         Model.__init__(self, parameters=parameters, name=name)
@@ -622,7 +622,7 @@ class DecisionTreeRegressor(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def generic_dessia_attributes(cls, model, parameters: dict[str, Any], name: str = ''):
         """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'tree_': Tree._instantiate_dessia(model.tree_, None),
@@ -633,12 +633,12 @@ class DecisionTreeRegressor(Model):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
     @classmethod
     def init_for_modeler(cls, criterion: str = 'squared_error',
-                         max_depth: int = None) -> Tuple['DecisionTreeRegressor', Dict[str, Any], str]:
+                         max_depth: int = None) -> tuple['DecisionTreeRegressor', dict[str, Any], str]:
         """
         Initialize class `DecisionTreeRegressor` with its name and hyperparameters to fit in Modeler.
 
@@ -695,7 +695,7 @@ class DecisionTreeRegressor(Model):
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, criterion: str = 'squared_error',
-                    max_depth: int = None, name: str = '') -> Tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
+                    max_depth: int = None, name: str = '') -> tuple['DecisionTreeRegressor', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, criterion=criterion, max_depth=max_depth)
@@ -729,7 +729,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         Name of `DecisionTreeClassifier`
     """
 
-    def __init__(self, parameters: Dict[str, Any], n_classes_: Union[int, List[int]] = None, classes_: List[int] = None,
+    def __init__(self, parameters: dict[str, Any], n_classes_: Union[int, list[int]] = None, classes_: list[int] = None,
                  n_outputs_: int = None, tree_: Tree = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
@@ -765,7 +765,7 @@ class DecisionTreeClassifier(DecisionTreeRegressor):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'n_classes_': (model.n_classes_ if isinstance(model.n_classes_, (int, list))
                                       else model.n_classes_.tolist()),
@@ -802,8 +802,8 @@ class RandomForest(Model):
 
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict"]
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None,
-                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], n_outputs_: int = None,
+                 estimators_: list[DecisionTreeRegressor] = None, name: str = ''):
         self.estimators_ = estimators_
         self.n_outputs_ = n_outputs_
         Model.__init__(self, parameters=parameters, name=name)
@@ -821,7 +821,7 @@ class RandomForest(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def generic_dessia_attributes(cls, model, parameters: dict[str, Any], name: str = ''):
         """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'n_outputs_': model.n_outputs_,
@@ -829,7 +829,7 @@ class RandomForest(Model):
 
     @classmethod
     def init_for_modeler(cls, n_estimators: int = 100, criterion: str = 'squared_error',
-                         max_depth: int = None) -> Tuple['RandomForest', Dict[str, Any], str]:
+                         max_depth: int = None) -> tuple['RandomForest', dict[str, Any], str]:
         """
         Initialize class `RandomForest` with its name and hyperparameters to fit in `Modeler`.
 
@@ -904,7 +904,7 @@ class RandomForest(Model):
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Matrix, predicted_inputs: Matrix, n_estimators: int = 100,
                     criterion: str = 'squared_error', max_depth: int = None,
-                    name: str = '') -> Tuple['RandomForest', Union[Vector, Matrix]]:
+                    name: str = '') -> tuple['RandomForest', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         criterion = cls._check_criterion(criterion)
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, n_estimators=n_estimators,
@@ -933,8 +933,8 @@ class RandomForestRegressor(RandomForest):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], n_outputs_: int = None,
-                 estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], n_outputs_: int = None,
+                 estimators_: list[DecisionTreeRegressor] = None, name: str = ''):
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, parameters=parameters, name=name)
 
     @classmethod
@@ -945,7 +945,7 @@ class RandomForestRegressor(RandomForest):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'estimators_': [DecisionTreeRegressor._instantiate_dessia(tree, {})
                                        for tree in model.estimators_]})
@@ -981,8 +981,8 @@ class RandomForestClassifier(RandomForest):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], n_classes_: int = None, classes_: List[int] = None,
-                 n_outputs_: int = None, estimators_: List[DecisionTreeRegressor] = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], n_classes_: int = None, classes_: list[int] = None,
+                 n_outputs_: int = None, estimators_: list[DecisionTreeRegressor] = None, name: str = ''):
         self.n_classes_ = n_classes_
         self.classes_ = classes_
         RandomForest.__init__(self, estimators_=estimators_, n_outputs_=n_outputs_, parameters=parameters, name=name)
@@ -1017,7 +1017,7 @@ class RandomForestClassifier(RandomForest):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'estimators_': [DecisionTreeClassifier._instantiate_dessia(tree, {})
                                        for tree in model.estimators_],
@@ -1038,9 +1038,9 @@ class SupportVectorMachine(Model):
 
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict"]
 
-    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
-                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
-                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+    def __init__(self, parameters: dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: list[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: list[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
                  _sparse: bool = False, name: str = ''):
         self.raw_coef_ = raw_coef_
         self._dual_coef_ = _dual_coef_
@@ -1075,7 +1075,7 @@ class SupportVectorMachine(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def generic_dessia_attributes(cls, model, parameters: dict[str, Any], name: str = ''):
         """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'parameters': parameters,
@@ -1091,7 +1091,7 @@ class SupportVectorMachine(Model):
                 '_sparse': model._sparse}
 
     @classmethod
-    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> Tuple['SupportVectorMachine', Dict[str, Any], str]:
+    def init_for_modeler(cls, C: float = 1., kernel: str = 'rbf') -> tuple['SupportVectorMachine', dict[str, Any], str]:
         """
         Initialize class `SupportVectorMachine` with its name and hyperparameters to fit in Modeler.
 
@@ -1147,7 +1147,7 @@ class SupportVectorMachine(Model):
 
     @classmethod
     def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, C: float = 1., kernel: str = 'rbf',
-                    name: str = '') -> Tuple['SupportVectorMachine', Union[Vector, Matrix]]:
+                    name: str = '') -> tuple['SupportVectorMachine', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, npy.array(outputs).ravel(), predicted_inputs, name=name, C=C, kernel=kernel)
 
@@ -1200,9 +1200,9 @@ class SupportVectorRegressor(SupportVectorMachine):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
-                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
-                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+    def __init__(self, parameters: dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: list[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: list[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
                  _sparse: bool = False, name: str = ''):
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
                                       support_vectors_=support_vectors_, _sparse=_sparse,
@@ -1217,7 +1217,7 @@ class SupportVectorRegressor(SupportVectorMachine):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
 
@@ -1272,10 +1272,10 @@ class SupportVectorClassifier(SupportVectorMachine):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
-                 _intercept_: Vector = None, support_: List[int] = 1, support_vectors_: Matrix = None,
-                 _n_support: List[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
-                 _sparse: bool = False, classes_: List[int] = None, name: str = ''):
+    def __init__(self, parameters: dict[str, Any], raw_coef_: Matrix = None, _dual_coef_: Matrix = None,
+                 _intercept_: Vector = None, support_: list[int] = 1, support_vectors_: Matrix = None,
+                 _n_support: list[int] = None, _probA: Vector = None, _probB: Vector = None, _gamma: float = 1.,
+                 _sparse: bool = False, classes_: list[int] = None, name: str = ''):
         self.classes_ = classes_
         SupportVectorMachine.__init__(self, raw_coef_=raw_coef_, _dual_coef_=_dual_coef_,
                                       support_vectors_=support_vectors_, _sparse=_sparse,
@@ -1292,7 +1292,7 @@ class SupportVectorClassifier(SupportVectorMachine):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs['classes_'] = model.classes_.tolist()
         return cls(**kwargs)
@@ -1308,7 +1308,7 @@ class MultiLayerPerceptron(Model):
 
     _allowed_methods = Model._allowed_methods + ["fit", "fit_predict", "init_for_modeler"]
 
-    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: dict[str, Any], coefs_: list[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
         self.coefs_ = coefs_
         self.intercepts_ = intercepts_
@@ -1333,7 +1333,7 @@ class MultiLayerPerceptron(Model):
         return model
 
     @classmethod
-    def generic_dessia_attributes(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def generic_dessia_attributes(cls, model, parameters: dict[str, Any], name: str = ''):
         """ Generic method to set self attributes from scikit-learn model attributes. """
         return {'name': name,
                 'parameters': parameters,
@@ -1344,9 +1344,9 @@ class MultiLayerPerceptron(Model):
                 'out_activation_': model.out_activation_}
 
     @classmethod
-    def init_for_modeler(cls, hidden_layer_sizes: List[int], activation: str = 'relu', alpha: float = 0.0001,
+    def init_for_modeler(cls, hidden_layer_sizes: list[int], activation: str = 'relu', alpha: float = 0.0001,
                          solver: str = 'adam', max_iter: int = 200,
-                         tol: float = 0.0001) -> Tuple['MultiLayerPerceptron', Dict[str, Any], str]:
+                         tol: float = 0.0001) -> tuple['MultiLayerPerceptron', dict[str, Any], str]:
         """
         Initialize class `MultiLayerPerceptron` with its name and hyperparameters to fit in `Modeler`.
 
@@ -1390,7 +1390,7 @@ class MultiLayerPerceptron(Model):
                                      solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
-    def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: List[int], activation: str = 'relu',
+    def fit(cls, inputs: Matrix, outputs: Vector, hidden_layer_sizes: list[int], activation: str = 'relu',
             alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200, tol: float = 0.0001,
             name: str = '') -> 'MultiLayerPerceptron':
         """
@@ -1447,9 +1447,9 @@ class MultiLayerPerceptron(Model):
                             alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
 
     @classmethod
-    def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: List[int],
+    def fit_predict(cls, inputs: Matrix, outputs: Vector, predicted_inputs: Matrix, hidden_layer_sizes: list[int],
                     activation: str = 'relu', alpha: float = 0.0001, solver: str = 'adam', max_iter: int = 200,
-                    tol: float = 0.0001, name: str = '') -> Tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
+                    tol: float = 0.0001, name: str = '') -> tuple['MultiLayerPerceptron', Union[Vector, Matrix]]:
         """ Fit outputs to inputs and predict outputs for `predicted_inputs`: succession of fit and predict. """
         return cls.fit_predict_(inputs, outputs, predicted_inputs, name=name, hidden_layer_sizes=hidden_layer_sizes,
                                 activation=activation, alpha=alpha, solver=solver, max_iter=max_iter, tol=tol)
@@ -1486,7 +1486,7 @@ class MLPRegressor(MultiLayerPerceptron):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: dict[str, Any], coefs_: list[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity', name: str = ''):
         MultiLayerPerceptron.__init__(self, coefs_=coefs_, intercepts_=intercepts_, n_layers_=n_layers_,
                                       activation=activation, out_activation_=out_activation_, parameters=parameters,
@@ -1500,7 +1500,7 @@ class MLPRegressor(MultiLayerPerceptron):
         return self.generic_skl_attributes()
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         return cls(**cls.generic_dessia_attributes(model, parameters=parameters, name=name))
 
 
@@ -1541,7 +1541,7 @@ class MLPClassifier(MultiLayerPerceptron):
 
     _standalone_in_db = True
 
-    def __init__(self, parameters: Dict[str, Any], coefs_: List[Matrix] = None, intercepts_: Matrix = None,
+    def __init__(self, parameters: dict[str, Any], coefs_: list[Matrix] = None, intercepts_: Matrix = None,
                  n_layers_: int = None, activation: str = 'relu', out_activation_: str = 'identity',
                  n_outputs_: int = None, _label_binarizer: LabelBinarizer = None, name: str = ''):
         self.n_outputs_ = n_outputs_
@@ -1561,7 +1561,7 @@ class MLPClassifier(MultiLayerPerceptron):
         return model
 
     @classmethod
-    def _instantiate_dessia(cls, model, parameters: Dict[str, Any], name: str = ''):
+    def _instantiate_dessia(cls, model, parameters: dict[str, Any], name: str = ''):
         kwargs = cls.generic_dessia_attributes(model, parameters=parameters, name=name)
         kwargs.update({'n_outputs_': model.n_outputs_,
                        '_label_binarizer': LabelBinarizer.instantiate_dessia(model._label_binarizer)})
@@ -1575,7 +1575,7 @@ def get_scaler_attribute(scaler, attr: str):
         return scaler_attr.tolist()
     return scaler_attr
 
-def get_split_indexes(len_matrix: int, ratio: float = 0.8, shuffled: bool = True) -> Tuple[Vector, Vector]:
+def get_split_indexes(len_matrix: int, ratio: float = 0.8, shuffled: bool = True) -> tuple[Vector, Vector]:
     """ Get two lists of indexes to split randomly a matrix in two matrices. """
     if ratio > 1:
         len_train = int(ratio)
@@ -1591,7 +1591,7 @@ def get_split_indexes(len_matrix: int, ratio: float = 0.8, shuffled: bool = True
         ind_test.sort()
     return ind_train, ind_test
 
-def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool = True) -> List[Matrix]:
+def train_test_split(*matrices: list[Matrix], ratio: float = 0.8, shuffled: bool = True) -> list[Matrix]:
     """
     Split a list of matrices of the same length into a list of train and test split matrices.
 
@@ -1621,14 +1621,14 @@ def train_test_split(*matrices: List[Matrix], ratio: float = 0.8, shuffled: bool
     return sum(train_test_split_matrices, [])
 
 def matrix_1d_to_vector(matrix: Matrix) -> Union[Vector, Matrix]:
-    """ Transform a `List[List[float]]` of shape `(n, 1)` into a `List[float]` of shape `(n,)`. """
+    """ Transform a `list[list[float]]` of shape `(n, 1)` into a `list[float]` of shape `(n,)`. """
     if isinstance(matrix[0], list):
         if len(matrix[0]) == 1:
             return sum(matrix, [])
     return matrix
 
 def vector_to_2d_matrix(matrix: Union[Vector, Matrix]) -> Matrix:
-    """ Transform a `List[float]` of shape `(n,)` into a `List[List[float]]` of shape `(n, 1)`. """
+    """ Transform a `list[float]` of shape `(n,)` into a `list[list[float]]` of shape `(n, 1)`. """
     if not isinstance(matrix[0], list):
         return [[x] for x in matrix]
     return matrix
