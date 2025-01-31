@@ -21,9 +21,6 @@ RESULT_NAME = variable_0
 SUFFIX = variable_1
 
 
-generator_block = InstantiateModel(model_class=Generator, name="Generator")
-
-
 class TestUpstreamVariables(unittest.TestCase):
     @parameterized.expand([
         (generator_block.outputs[0], [PARAMETER, NB_SOLUTIONS, MODELS, RESULT_NAME]),

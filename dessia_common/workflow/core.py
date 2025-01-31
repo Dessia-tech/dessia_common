@@ -1060,12 +1060,12 @@ class Workflow(Block):
         """
         if variable is None:
             return None
+
         for iblock, block in enumerate(self.blocks):
             if variable in block.inputs:
                 return iblock, 0, block.inputs.index(variable)
             if variable in block.outputs:
                 return iblock, 1, block.outputs.index(variable)
-
         upstream_variable = self.get_upstream_nbv(variable)
         if upstream_variable in self.nonblock_variables:
             # Free variable not attached to block
