@@ -1203,9 +1203,7 @@ def sequence_data_eq(seq1, seq2):
 
 def display_settings_from_selector(display_settings: List[DisplaySetting], selector: str):
     """ Get display settings from given selector. """
-    print("Here", display_settings)
     for display_setting in display_settings:
-        print(display_setting.selector)
         if display_setting.selector == selector:
             return display_setting
     raise ValueError(f"No such selector '{selector}' found.")

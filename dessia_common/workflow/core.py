@@ -342,12 +342,6 @@ class Step:
         self.group_inputs = []
         self.display_variable_index = None
 
-    def log_inputs(self):
-        log = self.label + "\n"
-        for i in self.inputs:
-            log += f"  Name : {i.name}\n"
-        return log
-
 
 class Workflow(Block):
     """
@@ -1587,17 +1581,6 @@ class Workflow(Block):
 
     def reset_input_default(self, input_index: int):
         return self.set_input_default(input_index=input_index, value=UNDEFINED)
-
-    def log_steps(self, title: str = ""):
-        print(f"{title} =============================")
-        for step in self.steps:
-            print(step.label)
-            for input_ in step.inputs:
-                print(f"  {self.input_index(input_)} | {input_.name}")
-        print(f"=====================================")
-
-    def debug(self):
-        return f"Steps {len(self.steps)} =============================\n{[s.log_inputs() for s in self.steps]}\n"
 
 
 class ExecutionInfo(DessiaObject):
