@@ -46,7 +46,7 @@ class TestBuiltins(unittest.TestCase):
         self.assertEqual(computed_schema["title"], schema.attribute.title)
         self.assertEqual(computed_schema["editable"], schema.attribute.editable)
         self.assertEqual(computed_schema["description"], schema.attribute.documentation["desc"])
-        self.assertEqual(computed_schema["si_unit"], expected_units)
+        self.assertEqual(computed_schema["siUnit"], expected_units)
 
     @parameterized.expand([
         (EnumProperty(annotation=KeyOf[KEYOF_DUMMY], attribute=KEYOF_ATTRIBUTE),

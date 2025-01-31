@@ -26,8 +26,7 @@ class TestStructures(unittest.TestCase):
     def test_classes(self, schema, expected_typing):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["is_class"], True)
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
         self.assertEqual(computed_schema["properties"], {'name': {'type': 'string'}})
 
     @parameterized.expand([
@@ -55,11 +54,10 @@ class TestStructures(unittest.TestCase):
     def test_attributes(self, schema, expected_type, expected_typing, expected_class):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["is_attribute"], True)
-        self.assertEqual(computed_schema["attribute_type"], expected_type)
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
+        self.assertEqual(computed_schema["attributeType"], expected_type)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
         self.assertEqual(computed_schema["properties"]["class_"]["type"], "object")
-        self.assertEqual(computed_schema["properties"]["class_"]["python_typing"], expected_class)
+        self.assertEqual(computed_schema["properties"]["class_"]["pythonTyping"], expected_class)
 
     @parameterized.expand([
         (CustomClass(annotation=DessiaObject, attribute=CUSTOM_CLASS_DEFAULT),
@@ -70,7 +68,7 @@ class TestStructures(unittest.TestCase):
     def test_custom_classes(self, schema, expected_type, expected_python_typing):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], expected_type)
-        self.assertEqual(computed_schema["python_typing"], expected_python_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_python_typing)
         self.assertEqual(computed_schema["title"], schema.attribute.title)
         self.assertEqual(computed_schema["editable"], schema.attribute.editable)
 
