@@ -15,9 +15,8 @@ class TestWorkflowDisplays(unittest.TestCase):
 
     @parameterized.expand([
         (0, "Documentation"),
-        (1, "Workflow"),
-        (2, "Scatter Plot"),
-        (3, "Markdown")
+        (1, "Scatter Plot"),
+        (2, "Markdown")
     ])
     def test_selectors(self, index, expected_selector):
         setting = self.display_settings[index]

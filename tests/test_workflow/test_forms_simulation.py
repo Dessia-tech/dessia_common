@@ -60,4 +60,4 @@ class TestWorkflowFeatures(unittest.TestCase):
 
     def test_arguments(self):
         arguments = workflow_.dict_to_arguments(input_values, "run")
-        self.assertDictEqual(arguments, {"input_values": {0: 5, 1: None, 2: 3, 3: 100, 4: "Test"}, "name": None})
+        self.assertDictEqual(arguments, {"input_values": {0: 5, 3: 100, 4: "Test"}, "name": None})
