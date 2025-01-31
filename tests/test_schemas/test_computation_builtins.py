@@ -30,7 +30,7 @@ class TestBuiltins(unittest.TestCase):
     def test_computation(self, schema, expected_type, expected_typing):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], expected_type)
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
         self.assertEqual(computed_schema["title"], schema.attribute.title)
         self.assertEqual(computed_schema["editable"], schema.attribute.editable)
         self.assertEqual(computed_schema["description"], schema.attribute.documentation["desc"])
@@ -42,7 +42,7 @@ class TestBuiltins(unittest.TestCase):
     def test_measures(self, schema, expected_type, expected_python_typing, expected_units):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], expected_type)
-        self.assertEqual(computed_schema["python_typing"], expected_python_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_python_typing)
         self.assertEqual(computed_schema["title"], schema.attribute.title)
         self.assertEqual(computed_schema["editable"], schema.attribute.editable)
         self.assertEqual(computed_schema["description"], schema.attribute.documentation["desc"])
@@ -61,8 +61,8 @@ class TestBuiltins(unittest.TestCase):
     def test_enums(self, schema, expected_type, expected_typing, expected_values):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], expected_type)
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
-        self.assertEqual(computed_schema["allowed_values"], expected_values)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
+        self.assertEqual(computed_schema["allowedValues"], expected_values)
 
 
 if __name__ == '__main__':

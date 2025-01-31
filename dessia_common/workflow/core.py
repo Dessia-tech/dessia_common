@@ -1060,7 +1060,6 @@ class Workflow(Block):
         """
         if variable is None:
             return None
-
         for iblock, block in enumerate(self.blocks):
             if variable in block.inputs:
                 return iblock, 0, block.inputs.index(variable)
