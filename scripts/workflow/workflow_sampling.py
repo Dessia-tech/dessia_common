@@ -18,10 +18,10 @@ sampled_attributes = [BoundedAttributeValue('p_1', 0.1, 0.5, 250)]
 constant_attributes = [FixedAttributeValue('p_2', 25)]
 
 # Workflow run
-workflow_run = workflow.run({workflow.index(block_0.inputs[0]): RandDataD2,
-                             workflow.index(block_0.inputs[1]): sampled_attributes,
-                             workflow.index(block_0.inputs[2]): constant_attributes,
-                             workflow.index(block_1.inputs[1]): 400})
+workflow_run = workflow.run({workflow.inputs.index(block_0.inputs[0]): RandDataD2,
+                             workflow.inputs.index(block_0.inputs[1]): sampled_attributes,
+                             workflow.inputs.index(block_0.inputs[2]): constant_attributes,
+                             workflow.inputs.index(block_1.inputs[1]): 400})
 
 # Workflow tests
 workflow._check_platform()
