@@ -29,9 +29,9 @@ from numpy import linspace
 from random import randrange
 
 try:
-    # import volmdlr as vm
-    # from volmdlr import primitives2d as p2d
-    # from volmdlr import primitives3d as p3d
+    import volmdlr as vm
+    from volmdlr import primitives2d as p2d
+    from volmdlr import primitives3d as p3d
     import plot_data
     import plot_data.colors
 except ImportError as err:
@@ -84,12 +84,12 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         """ Generate many embedded subobjects with default values computed from a seed. """
         return [cls.generate((i + 1) * 1000) for i in range(seed)]
 
-    # def contour(self):
-    #     """ Square contour of an embedded sub-object, for testing purpose. """
-    #     origin = self.floatarg
-    #     points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
-    #               vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
-    #     return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+    def contour(self):
+        """ Square contour of an embedded sub-object, for testing purpose. """
+        origin = self.floatarg
+        points = [vm.Point2D(origin, origin), vm.Point2D(origin, origin + 1),
+                  vm.Point2D(origin + 1, origin + 1), vm.Point2D(origin + 1, origin)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={})
 
     def plot_data(self, reference_path: str = "#", **kwargs):
         """ Bare text, for testing purpose. """
@@ -98,12 +98,12 @@ class EmbeddedBuiltinsSubobject(PhysicalObject):
         primitives_group = plot_data.PrimitiveGroup(primitives=primitives)
         return [primitives_group]
 
-    # def voldmlr_primitives(self):
-    #     """ Volmdlr primitives of the squared contour. """
-    #     contour = self.contour()
-    #     frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
-    #     volumes = [p3d.ExtrudedProfile(frame, contour, [], 1)]
-    #     return volumes
+    def voldmlr_primitives(self):
+        """ Volmdlr primitives of the squared contour. """
+        contour = self.contour()
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volumes = [p3d.ExtrudedProfile(frame, contour, [], 1)]
+        return volumes
 
 
 class StandaloneBuiltinsSubobject(EmbeddedBuiltinsSubobject):
@@ -340,44 +340,44 @@ class StandaloneObject(MovingObject):
         """ It should be OK and be in method_schema. """
         return self
 
-    # def contour(self):
-    #     """ Squared contour. """
-    #     intarg = self.standalone_subobject.intarg
-    #     points = [vm.Point2D(intarg, intarg), vm.Point2D(intarg, intarg + 1),
-    #               vm.Point2D(intarg + 1, intarg + 1), vm.Point2D(intarg + 1, 0)]
-    #
-    #     crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-    #     return crls
-    #
-    # def volmdlr_primitives(self, **kwargs):
-    #     """ Volmdlr primitives of a cube. """
-    #     subcube = self.standalone_subobject.voldmlr_primitives()[0]
-    #     contour = self.contour()
-    #     frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
-    #     cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
-    #     return [subcube, cube]
+    def contour(self):
+        """ Squared contour. """
+        intarg = self.standalone_subobject.intarg
+        points = [vm.Point2D(intarg, intarg), vm.Point2D(intarg, intarg + 1),
+                  vm.Point2D(intarg + 1, intarg + 1), vm.Point2D(intarg + 1, 0)]
 
-    # def volmdlr_primitives_step_frames(self):
-    #     """ Steps to show the cube moving on frontend. """
-    #     frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
-    #     frame11 = frame0.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
-    #     frame21 = frame11.translation(offset=vm.Y3D)
-    #     frame31 = frame21.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
-    #
-    #     frame12 = frame0.translation(offset=vm.Z3D)
-    #     frame22 = frame12.translation(offset=vm.X3D)
-    #     frame32 = frame22.translation(offset=vm.X3D)
-    #     return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
-    #
-    # @cad_view("CAD With Selector")
-    # def display_cad(self):
-    #     """ Volmdlr primitives of 'cubes'. """
-    #     subcube = self.standalone_subobject.voldmlr_primitives()[0]
-    #     contour = self.contour()
-    #     frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
-    #     cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
-    #     primitives = [subcube, cube]
-    #     return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
+    def volmdlr_primitives(self, **kwargs):
+        """ Volmdlr primitives of a cube. """
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return [subcube, cube]
+
+    def volmdlr_primitives_step_frames(self):
+        """ Steps to show the cube moving on frontend. """
+        frame0 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame11 = frame0.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame21 = frame11.translation(offset=vm.Y3D)
+        frame31 = frame21.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+
+        frame12 = frame0.translation(offset=vm.Z3D)
+        frame22 = frame12.translation(offset=vm.X3D)
+        frame32 = frame22.translation(offset=vm.X3D)
+        return [[frame0, frame0], [frame11, frame12], [frame21, frame22], [frame31, frame32]]
+
+    @cad_view("CAD With Selector")
+    def display_cad(self):
+        """ Volmdlr primitives of 'cubes'. """
+        subcube = self.standalone_subobject.voldmlr_primitives()[0]
+        contour = self.contour()
+        frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        primitives = [subcube, cube]
+        return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
     @plot_data_view("2D View")
     def primitives(self):
@@ -635,28 +635,28 @@ class MovingStandaloneObject(MovingObject):
         """ Generate an object with default values from seed. """
         return cls(origin=1.3 * seed, name=f"moving_{seed}")
 
-    # def contour(self):
-    #     """ Squared contour. """
-    #     points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
-    #               vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
-    #
-    #     crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
-    #     return crls
-    #
-    # def volmdlr_primitives(self, **kwargs):
-    #     """ A cube. """
-    #     contour = self.contour()
-    #     frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
-    #     volume = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
-    #     return [volume]
-    #
-    # def volmdlr_primitives_step_frames(self):
-    #     """ A moving cube. """
-    #     frame1 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
-    #     frame2 = frame1.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
-    #     frame3 = frame2.translation(offset=vm.Y3D)
-    #     frame4 = frame3.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
-    #     return [[frame1], [frame2], [frame3], [frame4]]
+    def contour(self):
+        """ Squared contour. """
+        points = [vm.Point2D(self.origin, self.origin), vm.Point2D(self.origin, self.origin + 1),
+                  vm.Point2D(self.origin + 1, self.origin + 1), vm.Point2D(self.origin + 1, 0)]
+
+        crls = p2d.ClosedRoundedLineSegments2D(points=points, radius={})
+        return crls
+
+    def volmdlr_primitives(self, **kwargs):
+        """ A cube. """
+        contour = self.contour()
+        frame = vm.Frame3D(origin=vm.O3D, u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
+        volume = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return [volume]
+
+    def volmdlr_primitives_step_frames(self):
+        """ A moving cube. """
+        frame1 = vm.Frame3D(vm.O3D.copy(), vm.X3D.copy(), vm.Y3D.copy(), vm.Z3D.copy())
+        frame2 = frame1.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        frame3 = frame2.translation(offset=vm.Y3D)
+        frame4 = frame3.rotation(center=vm.O3D, axis=vm.Y3D, angle=0.7)
+        return [[frame1], [frame2], [frame3], [frame4]]
 
 
 class Generator(DessiaObject):
@@ -791,27 +791,27 @@ class HorizontalBeam(Beam):
     def __init__(self, length: float, name: str = ""):
         super().__init__(length=length, name=name)
 
-    # def contour(self, reference_path: str = "#"):
-    #     """ A dummy contour method to test form interactions. """
-    #     points = [vm.Point2D(0, 0), vm.Point2D(0, self.width),
-    #               vm.Point2D(self.length, self.width), vm.Point2D(self.length, 0)]
-    #     return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+    def contour(self, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(0, 0), vm.Point2D(0, self.width),
+                  vm.Point2D(self.length, self.width), vm.Point2D(self.length, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
 
-    # @plot_data_view("2D View")
-    # def plot2d(self, reference_path: str = "#"):
-    #     """ A dummy 2D method to test form interactions. """
-    #     contour = self.contour(reference_path)
-    #     edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED)
-    #     fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
-    #     return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
-    #
-    # @cad_view("CAD View")
-    # def plot3d(self, reference_path: str = "#"):
-    #     """ A dummy 3D method to test form interactions. """
-    #     contour = self.contour(reference_path)
-    #     frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
-    #     primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
-    #     return vm.core.VolumeModel([primitive]).babylon_data()
+    @plot_data_view("2D View")
+    def plot2d(self, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.RED)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
 
 
 class VerticalBeam(Beam):
@@ -822,27 +822,27 @@ class VerticalBeam(Beam):
     def __init__(self, length: float, name: str = ""):
         super().__init__(length=length, name=name)
 
-    # def contour(self, origin: float, reference_path: str = "#"):
-    #     """ A dummy contour method to test form interactions. """
-    #     points = [vm.Point2D(origin, 0), vm.Point2D(origin, self.length),
-    #               vm.Point2D(origin + self.width, self.length), vm.Point2D(origin + self.width, 0)]
-    #     return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
-    #
-    # @plot_data_view("2D View")
-    # def plot2d(self, origin: float = 0, reference_path: str = "#"):
-    #     """ A dummy 2D method to test form interactions. """
-    #     contour = self.contour(origin=origin, reference_path=reference_path)
-    #     edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
-    #     fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
-    #     return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
-    #
-    # @cad_view("CAD View")
-    # def plot3d(self, origin: float = 0, reference_path: str = "#"):
-    #     """ A dummy 3D method to test form interactions. """
-    #     contour = self.contour(origin=origin, reference_path=reference_path)
-    #     frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
-    #     primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
-    #     return vm.core.VolumeModel([primitive]).babylon_data()
+    def contour(self, origin: float, reference_path: str = "#"):
+        """ A dummy contour method to test form interactions. """
+        points = [vm.Point2D(origin, 0), vm.Point2D(origin, self.length),
+                  vm.Point2D(origin + self.width, self.length), vm.Point2D(origin + self.width, 0)]
+        return p2d.ClosedRoundedLineSegments2D(points=points, radius={}, reference_path=reference_path)
+
+    @plot_data_view("2D View")
+    def plot2d(self, origin: float = 0, reference_path: str = "#"):
+        """ A dummy 2D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        edge_style = plot_data.EdgeStyle(color_stroke=plot_data.colors.BLUE)
+        fill_style = plot_data.SurfaceStyle(color_fill=plot_data.colors.WHITE)
+        return contour.plot_data(edge_style=edge_style, surface_style=fill_style)
+
+    @cad_view("CAD View")
+    def plot3d(self, origin: float = 0, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        contour = self.contour(origin=origin, reference_path=reference_path)
+        frame = vm.Frame3D(origin=vm.Point3D(0, 0, 0), u=vm.X3D, v=vm.Y3D, w=vm.Z3D)
+        primitive = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
+        return vm.core.VolumeModel([primitive]).babylon_data()
 
 
 class BeamStructure(DessiaObject):
@@ -869,15 +869,15 @@ class BeamStructure(DessiaObject):
         primitives = [horizontal_contour] + vertical_contours + labels
         return plot_data.PrimitiveGroup(primitives=primitives, name="Contour")
 
-    # @cad_view("CAD View")
-    # def plot3d(self, reference_path: str = "#"):
-    #     """ A dummy 3D method to test form interactions. """
-    #     horizontal_primitive = self.horizontal_beam.plot3d(reference_path=f"{reference_path}/horizontal_beam")
-    #     vertical_primitives = [b.plot3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
-    #                                     reference_path=f"{reference_path}/vertical_beams/{i}")
-    #                            for i, b in enumerate(self.vertical_beams)]
-    #     primitives = [horizontal_primitive] + vertical_primitives
-    #     return vm.core.VolumeModel(primitives).babylon_data()
+    @cad_view("CAD View")
+    def plot3d(self, reference_path: str = "#"):
+        """ A dummy 3D method to test form interactions. """
+        horizontal_primitive = self.horizontal_beam.plot3d(reference_path=f"{reference_path}/horizontal_beam")
+        vertical_primitives = [b.plot3d(origin=self.horizontal_beam.length * i / len(self.vertical_beams),
+                                        reference_path=f"{reference_path}/vertical_beams/{i}")
+                               for i, b in enumerate(self.vertical_beams)]
+        primitives = [horizontal_primitive] + vertical_primitives
+        return vm.core.VolumeModel(primitives).babylon_data()
 
 
 class BeamStructureGenerator(DessiaObject):

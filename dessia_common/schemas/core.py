@@ -20,8 +20,7 @@ from dessia_common.utils.helpers import prettyname
 from dessia_common.schemas.interfaces import Annotations, T, PropertySchema
 from dessia_common.checks import CheckList, FailedCheck, PassedCheck, CheckWarning
 
-SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#",
-                 "type": "object", "required": [], "properties": {}}
+SCHEMA_HEADER = {"definitions": {}, "$schema": "http://json-schema.org/draft-07/schema#", "type": "object"}
 RESERVED_ARGNAMES = ["self", "cls", "progress_callback", "return"]
 TYPING_EQUIVALENCES = {int: "number", float: "number", bool: "boolean", str: "string"}
 TYPES_FROM_STRING = {"unicode": str, "str": str, "float": float, "int": int, "bool": bool}
@@ -124,37 +123,14 @@ class SchemaAttribute:
 
     def to_dict(self):
         """ Base attribute dict. """
-        return {"key": self.name, "isGroup": False, "title": self.title, "editable": self.editable,
-                "description": self.description}
+        return {"key": self.name, "title": self.title, "editable": self.editable, "description": self.description}
 
 
-class SchemaAttributeGroup(SchemaAttribute):
-    """ Enable to handle group of attribute and behave like one. """
-
-    def __init__(self, attributes: List[SchemaAttribute], name: str, default_value: T = UNDEFINED, title: str = "",
-                 editable: bool = True, documentation: ParsedAttribute = None):
-        self.attributes = attributes
-        super().__init__(name=name, default_value=default_value, title=title, editable=editable,
-                         documentation=documentation)
-
-    def to_dict(self):
-        dict_ = super().to_dict()
-        dict_.update({"attributes": [a.to_dict() for a in self.attributes], "isGroup": True})
-        return dict_
-
-
-class SchemaStep:
-    """ Schema representation of a step. """
-
-    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
-                 display_setting: DisplaySetting = None, label: str = "", documentation: str = ""):
+class SchemaAttributeCollection:
+    
+    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute]):
         self.annotations = annotations
-        self.attributes = attributes
-        self.display_setting = display_setting
-        self.label = label
-        self.documentation = documentation
-
-        self.required = [a for a in attributes if not a.has_default_value]
+        self._attributes = attributes
 
         self.property_schemas = {}
         for attribute in self.attributes:
@@ -162,35 +138,36 @@ class SchemaStep:
                 annotation = self.annotations[attribute.name]
                 schema = get_schema(annotation=annotation, attribute=attribute)
                 self.property_schemas[attribute.name] = schema
+            else:
+                raise ValueError(f"No annotation provided for attribute '{attribute.name}'")
+    
+    @property
+    def attributes(self) -> List[SchemaAttribute]:
+        return [a for a in self._attributes]
 
     @property
     def editable_attributes(self) -> List[str]:
         """ Attributes that are not in RESERVED_ARGNAMES. """
         return [a.name for a in self.attributes if a.name not in RESERVED_ARGNAMES]
 
-    def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
-        """ Extract and compute a schema from one of the attributes. """
-        schema = self.property_schemas.get(attribute.name, None)
-        if schema is not None:
-            return schema.to_dict()
-
-    @property
-    def chunks(self) -> List[Dict[str, Any]]:
-        """ Concatenate schema chunks into a List. """
-        return [self.chunk(a) for a in self.attributes]
-
     @property
     def standalone_properties(self) -> List[str]:
         """ Return all properties that are standalone. """
         return [a.name for a in self.attributes if self.property_schemas[a.name].standalone_in_db]
 
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """ Base Schema. kwargs are added to result as well. """
-        properties = [self.chunk(a) for a in self.attributes]
-        required = [a.name for a in self.required]
-        display_setting = self.display_setting.to_dict() if self.display_setting else None
-        return {"required": required, "properties": properties, "displaySetting": display_setting,
-                "documentation": self.documentation, "label": self.label, **kwargs}
+    def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
+        """ Extract and compute a schema from one of the attributes. """
+        if isinstance(attribute, SchemaAttributeGroup):
+            return attribute.to_dict()
+        schema = self.property_schemas.get(attribute.name, None)
+        if schema is not None:
+            return schema.to_dict()
+        raise ValueError(f"No schema defined for attribute '{attribute.name}'")
+
+    @property
+    def chunks(self) -> List[Dict[str, Any]]:
+        """ Concatenate schema chunks into a List. """
+        return [self.chunk(a) for a in self.attributes]
 
     def check_list(self, issues: CheckList):
         for attribute in self.attributes:
@@ -208,6 +185,53 @@ class SchemaStep:
         if attribute_name not in self.annotations:
             return UntypedArgument(attribute_name)
         return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
+
+    def to_dict(self):
+        return {"properties": [self.chunk(a) for a in self._attributes]}
+
+
+class SchemaAttributeGroup(SchemaAttribute, SchemaAttributeCollection):
+    """ Enable to handle group of attribute and behave like one. """
+
+    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute], name: str,
+                 default_value: T = UNDEFINED, title: str = "", editable: bool = True,
+                 documentation: ParsedAttribute = None):
+        super().__init__(name=name, default_value=default_value, title=title,
+                         editable=editable, documentation=documentation)
+        super(SchemaAttribute, self).__init__(annotations=annotations, attributes=attributes)
+
+    def to_dict(self):
+        dict_ = super().to_dict()
+        collection_dict = super(SchemaAttribute, self).to_dict()
+        dict_.update(collection_dict)
+        dict_["formType"] = "group"
+        return dict_
+
+
+class SchemaStep(SchemaAttributeCollection):
+    """ Schema representation of a step. """
+
+    def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
+                 display_setting: DisplaySetting = None, label: str = "", documentation: str = "",
+                 is_fallback: bool = False, display_variable: int = None):
+        super().__init__(annotations=annotations, attributes=attributes)
+        self.display_setting = display_setting
+        self.label = label
+        self.documentation = documentation
+        self.is_fallback = is_fallback
+        self.display_variable = display_variable #  TODO Meh. Weird to have a workflow specific element, here.
+
+    @property
+    def attributes(self):
+        return [a for a in self._attributes if not isinstance(a, SchemaAttributeGroup)]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """ Base Schema. """
+        dict_ = super().to_dict()
+        display_setting = self.display_setting.to_dict() if self.display_setting else None
+        dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label,
+                      "isFallback": self.is_fallback, "displayVariable": self.display_variable})
+        return dict_
 
 
 class Schema:
@@ -228,25 +252,6 @@ class Schema:
         self.name = name
         self.steps = steps
 
-    def chunk(self, attribute: SchemaAttribute) -> Dict[str, Any]:
-        """ Extract and compute a schema from one of the attributes. """
-        # schema = self.property_schemas.get(attribute.name, None)
-        #
-        # if schema is not None:
-        #     return schema.to_dict()
-
-        # if attribute in self.default_arguments:
-        #     # TODO Could use this and Optional proxy in order to inject real default values for mutable
-        #     default = self.default_arguments.get(attribute, None)
-        #     print("Default", default)
-        #     chunk["default_value"] = schema.default_value(definition_default=default)
-        return {}
-
-    # @property
-    # def chunks(self) -> List[Dict[str, Any]]:
-    #     """ Concatenate schema chunks into a List. """
-    #     return [self.chunk(a) for a in self.attributes]
-
     @property
     def standalone_properties(self) -> List[str]:
         """ Return all properties that are standalone. """
@@ -261,9 +266,9 @@ class Schema:
         return property_schemas
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
-        """ Base Schema. kwargs are added to result as well. """
+        """ Base Schema. """
         schema = deepcopy(SCHEMA_HEADER)
-        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation})
+        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation}, **kwargs)
         return schema
 
     def default_dict(self) -> Dict[str, Any]:
@@ -356,18 +361,9 @@ class MemberSchema(Schema):
 
         _, default_arguments = split_default_args(argspecs=argspec, merge=False)
 
-        attributes = []
-        required = []
-        for attribute_name in attribute_names:
-            attribute_documentation = descriptions.get(attribute_name, EMPTY_PARSED_ATTRIBUTE)
-            attribute = SchemaAttribute(name=attribute_name, documentation=attribute_documentation)
-            if attribute_name in default_arguments:
-                attribute.default_value = default_arguments[attribute_name]
-            else:
-                required.append(attribute)
-            attributes.append(attribute)
-
-        step = SchemaStep(annotations=annotations, attributes=attributes) #, required=required)
+        attributes = [SchemaAttribute(name=n, documentation=descriptions.get(n, EMPTY_PARSED_ATTRIBUTE),
+                                      default_value=default_arguments.get(n, UNDEFINED)) for n in attribute_names]
+        step = SchemaStep(annotations=annotations, attributes=attributes)
 
         super().__init__(steps=[step], documentation=documentation, name=name)
 
@@ -405,9 +401,9 @@ class ClassSchema(MemberSchema):
         """ Return True if class is standalone. """
         return self.class_._standalone_in_db
 
-    def to_dict(self, **kwargs) -> Dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """ Write the whole schema. """
-        schema = super().to_dict(**kwargs)
+        schema = super().to_dict()
         classname = full_classname(object_=self.class_, compute_for="class")
         schema.update({"classes": [classname], "standaloneInDb": self.standalone_in_db})
         # TODO Check if we can get rid of this and use Property schema to simplify frontend
@@ -438,8 +434,6 @@ class MethodSchema(MemberSchema):
         docstring = method.__doc__
         super().__init__(annotations=annotations, argspec=members, docstring=docstring, name=method.__name__)
 
-        # self.required_indices = [str(self.attributes.index(a)) for a in self.required]
-
     # @property
     # def serialized(self) -> Dict[str, str]:
     #     """ Get a dictionary with serialized annotations of method arguments. """
@@ -459,7 +453,7 @@ class MethodSchema(MemberSchema):
     #     except NotImplementedError:
     #         return None
     #
-    # def to_dict(self, **kwargs):
+    # def to_dict(self):
     #     """ Write the whole schema. """
     #     schema = deepcopy(SCHEMA_HEADER)
     #     order = [str(i) for i in range(len(self.attributes))]

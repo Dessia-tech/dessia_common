@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.19.0
+
+### Added
+
+- Schemas : Steps have been added to provide a framework for wizard.
+- Workflow : Steps and methods have been added to provide a framework for wizard.
+
+### Changed
+
+- Sequence : Untyped sequence block outputs
+
 ## 0.18.2
 
 ### Fixed

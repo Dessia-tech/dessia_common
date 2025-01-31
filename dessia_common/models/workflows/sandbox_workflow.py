@@ -52,7 +52,7 @@ blocks = [generator_block, generate_block, models_block, mp_block, unpacker_bloc
 
 variable_0 = Variable(name='_result_name_', label='Result Name', type_=str)
 variable_1 = Variable(name='Substring 2', label='XLSX Filename Suffix', type_=str)
-variable_1.lock("My Locked NBV")
+# variable_1.lock("My Locked NBV")
 
 pipe_0 = Pipe(variable_0, generator_block.inputs[3])
 pipe_1 = Pipe(generator_block.outputs[0], generate_block.inputs[0])
@@ -77,21 +77,11 @@ pipes = [pipe_0, pipe_1, pipe_2, pipe_3, pipe_4, pipe_5, pipe_6, pipe_7, pipe_8,
          pipe_13, pipe_14, pipe_15, pipe_16, pipe_17, pipe_18]
 
 workflow = Workflow(blocks=blocks, pipes=pipes, output=generate_block.outputs[1], documentation=documentation,
-                    name="Generator 2024.02")
+                    name="Sandbox")
 
 
-workflow.insert_step(None, "A")
-workflow.insert_step(1, "B")
-workflow.insert_step(1, "C")
-
-for i, input_ in enumerate(workflow.inputs):
-    step = workflow._steps[i % len(workflow._steps)]
-    workflow.change_input_step(input_=input_, step=step)
-
-# workflow.log_steps("Before Setting Display")
-#
 output = unpacker_block.outputs[0]
-workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
+# workflow.add_step_display(output, workflow.steps[0], StandaloneObject.display_settings()[0])
 
 # workflow.remove_step(workflow.steps[1])
 

@@ -91,8 +91,15 @@ class DessiaObject(SerializableObject):
     _init_variables = None
     _allowed_methods = []
 
-    def __init__(self, name: str = ''):
+    def __init__(self, name: str = "", **kwargs):
         self.name = name
+        if kwargs:
+            warnings.warn("Providing attributes to DessiaObject __init__ to be stored in self is deprecated.\n"
+                          "Please store your attributes by yourself in your init", DeprecationWarning)
+
+        # The code below has shown to be inefficient and will be removed in version 0.20
+        for property_name, property_value in kwargs.items():
+            setattr(self, property_name, property_value)
 
     def base_dict(self):
         """ Base dict of the object, with just its name. """
@@ -436,12 +443,13 @@ class DessiaObject(SerializableObject):
         reference_path = display_setting.reference_path  # Trying this
         return DisplayObject(type_=display_setting.type, data=data, reference_path=reference_path, traceback=track)
 
-    def _display_settings_from_selector(self, selector: str):
+    @classmethod
+    def _display_settings_from_selector(cls, selector: str):
         """ Get display settings from given selector. """
-        for display_setting in self.display_settings():
-            if display_setting.selector == selector:
-                return display_setting
-        raise ValueError(f"No such selector '{selector}' in display of class '{self.__class__.__name__}'")
+        try:
+            return display_settings_from_selector(display_settings=cls.display_settings(), selector=selector)
+        except ValueError:
+            raise ValueError(f"No such selector '{selector}' in display of class '{cls.__name__}'")
 
     def _displays(self) -> List[JsonSerializable]:
         """ Generate displays of the object to be plot in the DessiA Platform. """
@@ -1198,3 +1206,11 @@ def sequence_data_eq(seq1, seq2):
         if not data_eq(v1, v2):
             return False
     return True
+
+
+def display_settings_from_selector(display_settings: List[DisplaySetting], selector: str):
+    """ Get display settings from given selector. """
+    for display_setting in display_settings:
+        if display_setting.selector == selector:
+            return display_setting
+    raise ValueError(f"No such selector '{selector}' found.")
