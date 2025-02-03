@@ -42,9 +42,9 @@ class TestInheritance(unittest.TestCase):
     def test_unions(self, schema, expected_typing, expected_standalone, expected_classes):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
         self.assertEqual(computed_schema["classes"], expected_classes)
-        self.assertEqual(computed_schema["standalone_in_db"], expected_standalone)
+        self.assertEqual(computed_schema["standaloneInDb"], expected_standalone)
 
 
 if __name__ == '__main__':

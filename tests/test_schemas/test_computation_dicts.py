@@ -33,7 +33,7 @@ class TestDicts(unittest.TestCase):
         computed_schema = schema.to_dict()
         self.assertEqual(computed_schema["type"], "object")
         self.assertEqual(computed_schema["title"], "Dictionary")
-        self.assertEqual(computed_schema["python_typing"], expected_typing)
+        self.assertEqual(computed_schema["pythonTyping"], expected_typing)
         self.assertEqual(computed_schema["patternProperties"][".*"]["type"], "number")
 
         checked_schema = schema.check_list()

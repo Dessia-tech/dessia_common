@@ -1066,7 +1066,6 @@ class Workflow(Block):
                 return iblock, 0, block.inputs.index(variable)
             if variable in block.outputs:
                 return iblock, 1, block.outputs.index(variable)
-
         upstream_variable = self.get_upstream_nbv(variable)
         if upstream_variable in self.nonblock_variables:
             # Free variable not attached to block

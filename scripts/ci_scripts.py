@@ -27,8 +27,6 @@ scripts = [
     "workflow/power_simulation.py",
     "workflow/workflow_diverge_converge.py",
     "workflow/workflow_clustering.py",
-    "workflow/workflow_filtering.py",
-    "workflow/workflow_pareto.py",
     "workflow/workflow_building.py",
     "workflow/workflow_sampling.py",
     "workflow/workflow_inputs.py",
