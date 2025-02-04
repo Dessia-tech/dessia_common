@@ -631,7 +631,7 @@ class DessiaObject(SerializableObject):
         raise ValueError(f'Export selector not found: {selector}')
 
     def to_vector(self):
-        """ Compute vector from object. """
+        """ Get all values of specified attributes into a list of values (vector). """
         vectored_objects = []
         for feature in self.vector_features():
             vectored_objects.append(dch.get_in_object_from_path(self, feature.lower()))
@@ -639,7 +639,7 @@ class DessiaObject(SerializableObject):
 
     @classmethod
     def vector_features(cls):
-        """ Get a list of vector features, or generate a default one. """
+        """ Get the list of attributes specified in _vector_features attribute (in order to build a Dataset). """
         if cls._vector_features is None:
             return list(set(get_attribute_names(cls)).difference(get_attribute_names(DessiaObject)))
         return cls._vector_features
@@ -1055,7 +1055,7 @@ class FiltersList(DessiaObject):
         :param dobject_list: List of data to filter
         :type dobject_list: List[DessiaObject]
 
-        :return: A `booleans index` of `dobjects_list` of the list of data to filter (`dobjects_list`)
+        :return: A boolean index of `dobjects_list` of the list of data to filter (`dobjects_list`)
         :rtype: List[bool]
 
         :Examples:

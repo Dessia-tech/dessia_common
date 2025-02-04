@@ -44,12 +44,15 @@ assert(clustered_cars_with.cluster_real_centroids('minkowski')[0].to_vector()[1]
 clustered_cars_without.labels[0] = 15000
 clustered_cars_without.labels[1] = -1
 clustered_cars_without.labels[2:100] = [999999] * len(clustered_cars_without[2:100])
-print(clustered_cars_without)
-hlist = Dataset(all_cars_wi_feat, name="cars")
-clist = ClusteredDataset.from_agglomerative_clustering(hlist, n_clusters=10, name="cars")
-split_clist = clist.clustered_sublists()
-split_clist[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
-print(split_clist)
+ref_strs = ["15000 | Chevrolet C... |", "+ 396 undisplayed", "0 |     Chevy S-10 |", "|         999999 |    F"]
+assert(all(string in clustered_cars_without.__str__() for string in ref_strs))
+
+dataset = Dataset(all_cars_wi_feat, name="cars")
+clustered_dataset = ClusteredDataset.from_agglomerative_clustering(dataset, n_clusters=10, name="cars")
+split_clustered_dataset = clustered_dataset.clustered_sublists()
+split_clustered_dataset[0].name = "15g6e4rg84reh56rt4h56j458hrt56gb41rth674r68jr6"
+ref_strs = ["0 | 15g6e4rg84r... | ['mp", "9 |         cars_9 | ['m", "0 samples, 2 features, 10 clusters"]
+assert(all(string in split_clustered_dataset.__str__() for string in ref_strs))
 
 # Test ClusterResults instances on platform
 clustered_cars_without._check_platform()

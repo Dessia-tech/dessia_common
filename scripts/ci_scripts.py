@@ -16,6 +16,10 @@ scripts = [
     "sampling.py",
     "markdowns.py",
     "checks.py",
+    "datatools_models.py",
+    "datatools_modeler.py",
+    "datatools_math.py",
+    "unit_tests.py",
     "docx_writer.py",
     "markdown_to_docx.py",
 

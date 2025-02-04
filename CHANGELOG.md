@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Blocks : add GetModelAttribute which will replace ModelAttribute in few release
+- Blocks : display blocks are now more configurable (custom selector and type)
+- DessiaObject: add type to load_from_file method
+- Document generator: add new class Table
+- Files: .doc & .docx files typings
+- Schemas refactor: add support of Ellipsed tuple (Tuple[T, ...])
+- Schemas refactor: add more Error Checks
+- Schemas refactor: add a json export to method schemas for low-code implementations
+- Schemas refactor: add default value to method types
+- Schemas refactor: add standalone in db property
+- Typings : add AttributeType and ClassAttributeType
+- Datatools : 
+    - Add the possibility to use scikit-learn principal machine learning algorithms as DessiaObjects
+    - Add Modeler class that allows to initialize, train, validate and use a machine learning model from sklearn
+    - Add CrossValidation stuff for these models
+    - Link it to Dataset
 - Schemas : Steps have been added to provide a framework for wizard.
 - Workflow : Steps and methods have been added to provide a framework for wizard.
 
@@ -440,6 +456,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - code_pydocstyle.py checks daily instead of weekly
 - Add a time decrease effect for pylint
 
+### Added
+- modeling.py file in datatools which contains:
+    * StandardScaler, IdentityScaler
+    * Regressions: SVR, RandomForest, MLP, Ridge, DecisionTree
+    * Classifications: SVC, RandomForest, MLP, DecisionTree
+- modeler.py file in datatools which allows to :
+    * Handle full machine learning modelization process (scale data, train model and validate), with plots
+
 ### Performance
 
 - Conform doc for many parts of dessia_common
@@ -474,6 +498,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix path deepth when dict misses keys
 
 ### Changed
+
 - Refactor copy_pipes and nbv checking
 
 ### Performance

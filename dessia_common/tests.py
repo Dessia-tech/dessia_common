@@ -174,6 +174,7 @@ class Car(DessiaObject):
 
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
+    _allowed_methods = ["from_csv"]
 
     def __init__(self, name: str, mpg: float, cylinders: int, displacement: dcm.Distance, horsepower: float,
                  weight: dcm.Mass, acceleration: dcm.Time, model: int, origin: str):
@@ -236,6 +237,7 @@ class RandDataD1(DessiaObject):
 
     _standalone_in_db = True
     _non_data_hash_attributes = ['name']
+    _allowed_methods = ["create_dataset"]
     _nb_dims = 1
     _vector_features = [f'p_{i+1}' for i in range(_nb_dims)]
 

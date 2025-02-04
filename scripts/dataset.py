@@ -1,15 +1,14 @@
 """
-Tests for dessia_common.Dataset class (loadings, check_platform and plots)
+Tests for dessia_common.Dataset class (loadings, check_platform and plots).
 """
 import random
 from dessia_common.core import DessiaObject
 from dessia_common.models import all_cars_no_feat, all_cars_wi_feat, rand_data_middl
-from dessia_common.datatools.metrics import covariance, manhattan_distance, euclidian_distance, minkowski_distance,\
+from dessia_common.datatools.math import covariance, manhattan_distance, euclidean_distance, minkowski_distance,\
     inf_norm, mahalanobis_distance
 from dessia_common.datatools.dataset import Dataset
 
 # Tests on common_attributes
-
 class SubObject(DessiaObject):
     def __init__(self, sub_attr: float = 1.5, name: str = ''):
         self.sub_attr = sub_attr
@@ -72,6 +71,10 @@ RandData_heterogeneous = Dataset(rand_data_middl)
 # Compute one common_attributes
 all_cars_without_features.common_attributes
 
+# Compute features importances from RandomForest algorithm
+input_attributes = ['displacement', 'horsepower', 'model', 'acceleration', 'cylinders']
+output_attributes = ['weight']
+
 # Check platform for datasets
 all_cars_with_features._check_platform()
 all_cars_without_features._check_platform()
@@ -107,12 +110,14 @@ assert(int(all_cars_with_features.variances()[2]) == 1637)
 assert(int(manhattan_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1361)
 assert(int(minkowski_distance(all_cars_with_features.matrix[3],
        all_cars_with_features.matrix[125], mink_power=7.2)) == 1275)
-assert(int(euclidian_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1277)
+assert(int(euclidean_distance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1277)
 assert(int(covariance(all_cars_with_features.matrix[3], all_cars_with_features.matrix[125])) == 1155762)
 assert(int(inf_norm([1, 2, 3, 45, 4., 4.21515, -12, -0, 0, -25214.1511])) == 25214)
 assert(int(mahalanobis_distance(all_cars_with_features.matrix[3],
                                 all_cars_with_features.matrix[125],
                                 all_cars_with_features.covariance_matrix())) == 2)
+assert(all_cars_with_features.maximums == [46.6, 0.455, 230.0, 24.8, 5140.0])
+assert(all_cars_with_features.minimums == [0.0, 0.068, 0.0, 8.0, 1613.0])
 
 # Tests for empty Dataset
 empty_list = Dataset()
@@ -167,8 +172,7 @@ try:
     all_cars_without_features[[float]]
     raise ValueError("float should not work as __getitem__ object for Dataset")
 except Exception as e:
-    assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing " +
-           "Datasets")
+    assert(e.args[0] == "key of type <class 'list'> with <class 'type'> elements not implemented for indexing Datasets")
 
 try:
     covariance([1, 2], [1])

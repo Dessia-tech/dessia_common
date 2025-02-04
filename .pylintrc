@@ -352,7 +352,7 @@ function-naming-style=snake_case
 
 # Good variable names which should always be accepted, separated by a comma.
 good-names=i,j,k,n,ie,x,xi,x0,v1,v2,
-	   ax,
+	   ax,_probA,_probB,C,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
