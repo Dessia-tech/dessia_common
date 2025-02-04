@@ -755,8 +755,8 @@ class MovingObject(PhysicalObject):
 
     def volmdlr_volume_model(self, **kwargs):
         """ Volume model of Moving Object. """
-        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
+        from volmdlr.model import MovingVolumeModel  # !!! Avoid circular imports, is this OK ?
+        return MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
 
 
 class Parameter(DessiaObject):
