@@ -445,7 +445,10 @@ def deserialize_argument(type_, argument, global_dict=None, pointers_memo=None, 
     if is_typing(type_):
         return deserialize_with_typing(type_, argument)
 
-    if issubclass(type_, (BinaryFile, StringFile)) and isinstance(argument, list) and len(argument) == 1:
+    if (inspect.isclass(type_)
+            and issubclass(type_, (BinaryFile, StringFile))
+            and isinstance(argument, list)
+            and len(argument) == 1):
         # Flatten the single file that comes from frontend as a List of only one element
         return argument[0]
 
