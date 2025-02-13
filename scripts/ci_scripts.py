@@ -5,23 +5,16 @@ scripts = [
     # Framework
     "displays.py",
     "generation.py",
-    "models_test.py",
     "files.py",
-    "clustering.py",
-    "dataset.py",
-    "dataset_pareto.py",
-    "filters.py",
     "optimization.py",
     "graph.py",
     "sampling.py",
-    "markdowns.py",
     "checks.py",
     "datatools_models.py",
     "datatools_modeler.py",
     "datatools_math.py",
     "unit_tests.py",
     "docx_writer.py",
-    "markdown_to_docx.py",
 
     # Workflows
     "workflow/power_simulation.py",
