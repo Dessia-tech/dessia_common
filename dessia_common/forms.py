@@ -377,7 +377,7 @@ class StandaloneObject(MovingObject):
         frame = vm.Frame3D(origin=vm.Point3D(0, 1, -1), u=vm.X3D, v=vm.Z3D, w=vm.Y3D)
         cube = p3d.ExtrudedProfile(frame, outer_contour2d=contour, inner_contours2d=[], extrusion_length=1)
         primitives = [subcube, cube]
-        return vm.core.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
+        return vm.model.MovingVolumeModel(primitives, self.volmdlr_primitives_step_frames()).babylon_data()
 
     @plot_data_view("2D View")
     def primitives(self):
@@ -918,10 +918,15 @@ class Literals(DessiaObject):
 
     _standalone_in_db = True
 
-    def __init__(self, direction: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red", name: str = ""):
-        self.direction = DIRECTIONS[direction]
+    def __init__(self, direction_name: KeyOf[DIRECTIONS], color: Literal["red", "green", "blue"] = "red",
+                 name: str = ""):
+        self.direction_name = direction_name
         self.color = color
         super().__init__(name=name)
+
+    @property
+    def direction(self):
+        return DIRECTIONS[self.direction_name]
 
 
 # Definition 2

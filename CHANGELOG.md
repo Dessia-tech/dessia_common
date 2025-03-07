@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## 0.19.2
+
+### Changed
+
+- DessiaObject : remove XLSX, DOCX & ZIP default exports
+
+## 0.19.1
+
+### Changed
+
+- Workflow : Incoming files now come as an array (even if single)
+
+## 0.19.0
+
+### Added
+
+- Schemas : Steps have been added to provide a framework for wizard.
+- Workflow : Steps and methods have been added to provide a framework for wizard.
+
+### Changed
+
+- Sequence : Untyped sequence block outputs
+
+## 0.18.2
+
+### Fixed
+
+- Blocks : MultiObject now properly exports to .py
+
+## 0.18.1
+
+### Fixed
+
+- Types : Literals can now be properly deserialized
+
 ## 0.18.0
 
 ### Added

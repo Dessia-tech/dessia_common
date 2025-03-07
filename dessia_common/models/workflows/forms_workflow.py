@@ -1,7 +1,7 @@
 """ Tools for forms of workflows. """
 from dessia_common.workflow.core import Variable, Pipe, Workflow
-from dessia_common.workflow.blocks import InstantiateModel, ModelMethod, GetModelAttribute, ForEach,\
-    MultiPlot, Unpacker, WorkflowBlock
+from dessia_common.workflow.blocks import (InstantiateModel, ModelMethod, GetModelAttribute, ForEach,
+                                           MultiPlot, Unpacker, WorkflowBlock)
 from dessia_common.forms import Generator, Optimizer
 from dessia_common.typings import MethodType, AttributeType
 
