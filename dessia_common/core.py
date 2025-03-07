@@ -606,12 +606,8 @@ class DessiaObject(SerializableObject):
 
     def _export_formats(self) -> List[ExportFormat]:
         """ Return a list of objects describing how to call generic exports (.json, .xlsx). """
-        formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True),
-                   ExportFormat(selector="xlsx", extension="xlsx", method_name="to_xlsx_stream", text=False),
-                   ExportFormat(selector="docx", extension="docx", method_name="to_docx_stream", text=False)]
-
+        formats = [ExportFormat(selector="json", extension="json", method_name="save_to_stream", text=True)]
         formats.extend(self._export_formats_from_decorators())
-        formats.append(ExportFormat(selector="zip", extension="zip", method_name="to_zip_stream", text=False))
         return formats
 
     def save_export_to_file(self, selector: str, filepath: str):
@@ -755,8 +751,8 @@ class MovingObject(PhysicalObject):
 
     def volmdlr_volume_model(self, **kwargs):
         """ Volume model of Moving Object. """
-        import volmdlr as vm  # !!! Avoid circular imports, is this OK ?
-        return vm.core.MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
+        from volmdlr.model import MovingVolumeModel  # !!! Avoid circular imports, is this OK ?
+        return MovingVolumeModel(self.volmdlr_primitives(**kwargs), self.volmdlr_primitives_step_frames())
 
 
 class Parameter(DessiaObject):
