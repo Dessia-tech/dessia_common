@@ -282,8 +282,8 @@ class WorkflowError(Exception):
 class Step:
     """ Step. """
 
-    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, is_fallback: bool = False,
-                 documentation: str = "", display_variable_index: int = None):
+    def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, documentation: str = "",
+                 display_variable_index: int = None):
         self.label = label
         if inputs is None:
             inputs = []
@@ -293,37 +293,33 @@ class Step:
         self.group_id = group_id
         self.group_inputs = []
         self.display_setting = None
-        self.is_fallback = is_fallback
         self.documentation = documentation
         self.display_variable_index = display_variable_index
 
     def __hash__(self):
         return (hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
-                + len(self.documentation) + int(self.is_fallback) + self.display_variable_index)
+                + len(self.documentation) + self.display_variable_index)
 
     def __eq__(self, other: 'Step'):
         same_label = self.label == other.label
         same_inputs = all(i.equivalent(other_i) for i, other_i in zip(self.inputs, other.inputs))
         same_group = all(i.equivalent(other_i) for i, other_i in zip(self.group_inputs, other.group_inputs))
-        same_display_setting = self.display_setting == other.display_setting
+        same_display = self.display_setting == other.display_setting
         same_documentation = len(self.documentation) == len(other.documentation)
         same_variable = self.display_variable_index == other.display_variable_index
-        same_fallback = self.is_fallback is other.is_fallback
-        return (same_label and same_inputs and same_group and same_display_setting and same_documentation
-                and same_variable and same_fallback)
+        return same_label and same_inputs and same_group and same_display and same_documentation and same_variable
 
     def to_dict(self):
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
                 "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id,
-                "is_fallback": self.is_fallback, "documentation": self.documentation,
-                "display_variable_index": self.display_variable_index}
+                "documentation": self.documentation, "display_variable_index": self.display_variable_index}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
         step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None),
-                   is_fallback=dict_.get("is_fallback", False), documentation=dict_.get("documentation", ""))
+                   documentation=dict_.get("documentation", ""))
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
@@ -570,8 +566,8 @@ class Workflow(Block):
             inputs.append(copied_input)
             if input_ in step.group_inputs:
                 group_inputs.append(copied_input)
-        copied_step = Step(label=step.label, inputs=inputs, is_fallback=step.is_fallback,
-                           documentation=step.documentation, display_variable_index=step.display_variable_index)
+        copied_step = Step(label=step.label, inputs=inputs, documentation=step.documentation,
+                           display_variable_index=step.display_variable_index)
         copied_step.group_inputs = group_inputs
         copied_step.display_setting = step.display_setting
         return copied_step
@@ -749,8 +745,7 @@ class Workflow(Block):
         if self.spare_inputs:
             spare_annotations = {}
             spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
-            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step",
-                                    is_fallback=True))
+            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step"))
 
         schema = Schema(steps=steps, documentation=self.description)
         return {"run": schema.to_dict(method=True)} # TODO Remove the dictionary to simplify i/o
@@ -1404,17 +1399,16 @@ class Workflow(Block):
         }
         outputs_labels = {}
         for step in reversed(self.steps):
-            if not step.is_fallback:
-                step_display_settings = {}
-                for output, indexes in ds_inputs.items():
-                    if all(index not in missing_inputs for index in indexes):
-                        output_index = self.variables.index(output)
-                        step_display_settings[output_index] = [
-                            ds.to_dict() for ds in output.available_display_settings
-                        ]
-                        outputs_labels[output_index] = output.label
-                available_display_settings.append(step_display_settings)
-                missing_inputs.extend(self.inputs.index(step_input) for step_input in step.inputs)
+            step_display_settings = {}
+            for output, indexes in ds_inputs.items():
+                if all(index not in missing_inputs for index in indexes):
+                    output_index = self.variables.index(output)
+                    step_display_settings[output_index] = [
+                        ds.to_dict() for ds in output.available_display_settings
+                    ]
+                    outputs_labels[output_index] = output.label
+            available_display_settings.append(step_display_settings)
+            missing_inputs.extend(self.inputs.index(step_input) for step_input in step.inputs)
         return {"available_display_settings": available_display_settings[::-1],"outputs_labels": outputs_labels}
 
     def change_input_step(self, input_index: int, new_step_index: int):
