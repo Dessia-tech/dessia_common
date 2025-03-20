@@ -700,10 +700,12 @@ class Workflow(Block):
         """ Compute documentation of all blocks. """
         return [b._docstring() for b in self.blocks]
 
-    def input_schema(self, input_: Variable, annotations: Dict[str, type]):
+    def input_annotations(self, inputs: List[Variable]):
+        return {str(self.input_index(i)): i.type_ for i in inputs}
+
+    def input_schema(self, input_: Variable):
         input_index = self.input_index(input_)
         input_address = str(input_index)
-        annotations[input_address] = input_.type_
 
         # Title & Description
         description = EMPTY_PARSED_ATTRIBUTE
@@ -726,9 +728,9 @@ class Workflow(Block):
         for step in self.steps:
             attributes = []
             group_attributes = []
-            annotations = {}
+            annotations = self.input_annotations(step.inputs)
             for input_ in step.inputs:
-                attribute = self.input_schema(input_=input_, annotations=annotations)
+                attribute = self.input_schema(input_=input_)
                 if input_ in step.group_inputs:
                     group_attributes.append(attribute)
                 else:
@@ -742,12 +744,11 @@ class Workflow(Block):
             steps.append(SchemaStep(annotations=annotations, attributes=attributes, label=step.label,
                                     display_setting=step.display_setting, documentation=step.documentation,
                                     display_variable=step.display_variable_index))
-        if self.spare_inputs:
-            spare_annotations = {}
-            spare_attributes = [self.input_schema(input_=i, annotations=spare_annotations) for i in self.spare_inputs]
-            steps.append(SchemaStep(annotations=spare_annotations, attributes=spare_attributes, label="Default Step"))
 
-        schema = Schema(steps=steps, documentation=self.description)
+        spare_annotations = self.input_annotations(self.spare_inputs)
+        spare_attributes = [self.input_schema(input_=i) for i in self.spare_inputs]
+        spare_properties = [get_schema(annotation=spare_annotations[a.name], attribute=a) for a in spare_attributes]
+        schema = Schema(steps=steps, spare_properties=spare_properties, documentation=self.description)
         return {"run": schema.to_dict(method=True)} # TODO Remove the dictionary to simplify i/o
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
