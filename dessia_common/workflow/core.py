@@ -358,7 +358,7 @@ class Workflow(Block):
 
     _standalone_in_db = True
     _eq_is_data_eq = True
-    _allowed_methods = ["run", "start_run"]
+    _allowed_methods = ["run"]
     _non_serializable_attributes = ["branch_by_display_selector", "branch_by_export_format",
                                     "memorized_pipes", "coordinates", "detached_variables", "variables"]
 
@@ -753,7 +753,7 @@ class Workflow(Block):
                                     is_fallback=True))
 
         schema = Schema(steps=steps, documentation=self.description)
-        return {"run": schema.to_dict(method=True), "start_run": schema.to_dict(method=True, required=[])}
+        return {"run": schema.to_dict(method=True)} # TODO Remove the dictionary to simplify i/o
 
     def to_dict(self, use_pointers=False, memo=None, path="#", id_method=True, id_memo=None, **kwargs):
         """ Compute a dict from the object content. """
@@ -828,7 +828,7 @@ class Workflow(Block):
                 # Hot fixing name not attached
                 name = dict_[len(self.inputs)]
             return {"input_values": arguments_values, "name": name}
-        raise NotImplementedError(f"Method '{method}' is not allowed for Workflow. Expected 'run' or 'start_run'.")
+        raise NotImplementedError(f"Method '{method}' is not allowed for Workflow. Expected 'run'.")
 
     @property
     def default_values(self):
@@ -837,15 +837,10 @@ class Workflow(Block):
     def _run_dict(self) -> JsonSerializable:
         return {str(self.variables.index(i)): serialize(v) for i, v in self.default_values.items()}
 
-    def _start_run_dict(self) -> Dict:
-        return {}
-
     def method_dict(self, method_name: str = None) -> Dict:
-        """ Wrapper method to get dictionaries of run and start_run methods. """
+        """ Wrapper method to get dictionaries of run method. """
         if method_name == 'run':
             return self._run_dict()
-        if method_name == 'start_run':
-            return self._start_run_dict()
         raise WorkflowError(f"Calling method_dict with unknown method_name '{method_name}'")
 
     def variable_from_index(self, index: VariableAddress):
