@@ -6,7 +6,7 @@ from dessia_common.models.workflows.forms_workflow import workflow_
 class TestRunSchema(unittest.TestCase):
     def setUp(self) -> None:
         self.schema = workflow_.method_schemas["run"]
-        self.properties = self.schema["steps"][0]["properties"]
+        self.properties = self.schema["spareProperties"]
 
     def test_properties(self):
         self.assertEqual(len(self.properties), 5)
