@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Workflow : Deprecate start_run method availability from frontend
+- Workflow : Default step is not a core concept anymore
 
 
 ## 0.19.1

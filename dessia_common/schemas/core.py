@@ -129,13 +129,12 @@ class SchemaAttribute:
 class SchemaAttributeCollection:
     
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute]):
-        self.annotations = annotations
         self._attributes = attributes
 
         self.property_schemas = {}
         for attribute in self.attributes:
-            if attribute.name in self.annotations:
-                annotation = self.annotations[attribute.name]
+            if attribute.name in annotations:
+                annotation = annotations[attribute.name]
                 schema = get_schema(annotation=annotation, attribute=attribute)
                 self.property_schemas[attribute.name] = schema
             else:
@@ -171,20 +170,8 @@ class SchemaAttributeCollection:
 
     def check_list(self, issues: CheckList):
         for attribute in self.attributes:
-            # Is typed
-            is_typed_check = self.attribute_is_annotated(attribute.name)
-            issues += CheckList([is_typed_check])
-
-            if is_typed_check.level != "error":
-                # Specific check
-                schema = self.property_schemas[attribute.name]
-                issues += schema.check_list()
-
-    def attribute_is_annotated(self, attribute_name: str) -> PassedCheck:
-        """ Check whether given attribute is annotated in function definition or not. """
-        if attribute_name not in self.annotations:
-            return UntypedArgument(attribute_name)
-        return PassedCheck(f"Attribute '{attribute_name}' : is annotated")
+            schema = self.property_schemas[attribute.name]
+            issues += schema.check_list()
 
     def to_dict(self):
         return {"properties": [self.chunk(a) for a in self._attributes]}
@@ -213,12 +200,11 @@ class SchemaStep(SchemaAttributeCollection):
 
     def __init__(self, annotations: Annotations, attributes: List[SchemaAttribute],
                  display_setting: DisplaySetting = None, label: str = "", documentation: str = "",
-                 is_fallback: bool = False, display_variable: int = None):
+                 display_variable: int = None):
         super().__init__(annotations=annotations, attributes=attributes)
         self.display_setting = display_setting
         self.label = label
         self.documentation = documentation
-        self.is_fallback = is_fallback
         self.display_variable = display_variable #  TODO Meh. Weird to have a workflow specific element, here.
 
     @property
@@ -230,7 +216,7 @@ class SchemaStep(SchemaAttributeCollection):
         dict_ = super().to_dict()
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         dict_.update({"displaySetting": display_setting, "documentation": self.documentation, "label": self.label,
-                      "isFallback": self.is_fallback, "displayVariable": self.display_variable})
+                      "displayVariable": self.display_variable})
         return dict_
 
 
@@ -247,10 +233,14 @@ class Schema:
     That is why it implements methods with the same name.
     """
 
-    def __init__(self, steps=None, documentation: str = "", name: str = ""):
+    def __init__(self, steps: List[SchemaStep] = None, spare_properties: List['Property'] = None,
+                 documentation: str = "", name: str = ""):
+        self.steps = steps
+        if spare_properties is None:
+            spare_properties = []
+        self.spare_properties = spare_properties
         self.documentation = documentation
         self.name = name
-        self.steps = steps
 
     @property
     def standalone_properties(self) -> List[str]:
@@ -268,7 +258,8 @@ class Schema:
     def to_dict(self, **kwargs) -> Dict[str, Any]:
         """ Base Schema. """
         schema = deepcopy(SCHEMA_HEADER)
-        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation}, **kwargs)
+        schema.update({"steps": [s.to_dict() for s in self.steps], "description": self.documentation,
+                      "spareProperties": [p.to_dict() for p in self.spare_properties], **kwargs})
         return schema
 
     def default_dict(self) -> Dict[str, Any]:
