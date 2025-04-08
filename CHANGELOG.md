@@ -8,9 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 0.19.3
 
+
 ### Fixed
 
 - Serialization : Strings that start with "." are now deserialized as strings and not as class anymore
+
+
+### Changed
+
+- Wizard : add ids to steps
+
 
 ## 0.19.2
 

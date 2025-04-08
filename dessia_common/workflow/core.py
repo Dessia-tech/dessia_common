@@ -283,7 +283,7 @@ class Step:
     """ Step. """
 
     def __init__(self, label: str = "", inputs: List[Variable] = None, group_id: str = None, documentation: str = "",
-                 display_variable_index: int = None):
+                 display_variable_index: int = None, id_: str = None):
         self.label = label
         if inputs is None:
             inputs = []
@@ -295,6 +295,9 @@ class Step:
         self.display_setting = None
         self.documentation = documentation
         self.display_variable_index = display_variable_index
+        if id_ is None:
+            id_ = str(uuid.uuid4())
+        self.id_ = id_
 
     def __hash__(self):
         return (hash(self.label) + 43 * len(self.inputs) + 19 * len(self.group_inputs) + hash(self.display_setting)
@@ -313,13 +316,13 @@ class Step:
         """ Partial implementation of step dict. Inputs indices need to be added by parent workflow. """
         display_setting = self.display_setting.to_dict() if self.display_setting else None
         return {"label": self.label, "display_setting": display_setting, "inputs": [i.to_dict() for i in self.inputs],
-                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id,
+                "group_inputs": [i.to_dict() for i in self.group_inputs], "group_id": self.group_id, "id": self.id_,
                 "documentation": self.documentation, "display_variable_index": self.display_variable_index}
 
     @classmethod
     def dict_to_object(cls, dict_, inputs: List[Variable], group_inputs: List[Variable]):
         step = cls(label=dict_["label"], inputs=inputs, group_id=dict_.get("group_id", None),
-                   documentation=dict_.get("documentation", ""))
+                   documentation=dict_.get("documentation", ""), id_=dict_.get("id", None))
         step.group_inputs = group_inputs
         if dict_["display_setting"]:
             display_setting = DisplaySetting.dict_to_object(dict_["display_setting"])
@@ -566,8 +569,8 @@ class Workflow(Block):
             inputs.append(copied_input)
             if input_ in step.group_inputs:
                 group_inputs.append(copied_input)
-        copied_step = Step(label=step.label, inputs=inputs, documentation=step.documentation,
-                           display_variable_index=step.display_variable_index)
+        copied_step = Step(label=step.label, inputs=inputs, group_id=step.group_id, documentation=step.documentation,
+                           display_variable_index=step.display_variable_index, id_=step.id_)
         copied_step.group_inputs = group_inputs
         copied_step.display_setting = step.display_setting
         return copied_step
@@ -797,7 +800,7 @@ class Workflow(Block):
             for step_dict in dict_["steps"]:
                 inputs = [init_workflow.variable_from_index(i) for i in step_dict["inputs"]]
                 group_inputs = [init_workflow.variable_from_index(i) for i in step_dict["group_inputs"]]
-                step = Step.dict_to_object(step_dict, inputs, group_inputs)
+                step = Step.dict_to_object(dict_=step_dict, inputs=inputs, group_inputs=group_inputs)
                 steps.append(step)
         else:
             steps = None
