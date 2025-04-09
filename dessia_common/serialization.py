@@ -559,8 +559,8 @@ def pointer_graph(value):
             previous_node = node
 
         # For reference
-        reference_segments = reference.split('/')
-        nodes.add(reference_segments[0])
+        reference_segments = reference
+        nodes.add(str(reference_segments[0]))
         previous_node = reference_segments[0]
         for segment in reference_segments[1:]:
             node = f'{previous_node}/{segment}'
