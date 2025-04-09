@@ -5,7 +5,7 @@
 import inspect
 import warnings
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional, Callable
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -121,10 +121,8 @@ class InstantiateModel(Block):
 
     def _docstring(self):
         """ Parse given class' docstring. """
-        docstring = self.model_class.__doc__
-        annotations = get_type_hints(self.model_class.__init__)
-        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
-        parsed_attributes = parsed_docstring["attributes"]
+        parsed_attributes = parse_function_attributes_from_docstring(method=self.model_class.__init__,
+                                                                     docstring=self.model_class.__doc__)
         return {i: parsed_attributes[i.name] if i.name in parsed_attributes
                 else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
@@ -269,10 +267,15 @@ class ModelMethod(Block):
 
     def _docstring(self):
         """ Parse given method's docstring. """
-        docstring = self.method.__doc__
-        annotations = get_type_hints(self.method)
-        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
-        parsed_attributes = parsed_docstring["attributes"]
+        parsed_attributes = parse_function_attributes_from_docstring(method=self.method)
+
+        model_class = self.method_type.class_
+        model_docstring = model_class.__doc__
+        model_annotations = get_type_hints(model_class.__init__)
+        parsed_model_docstring = parse_docstring(docstring=model_docstring, annotations=model_annotations)
+        classname = full_classname(object_=model_class, compute_for="class")
+        parsed_attributes[self.inputs[0].name] = {"desc": parsed_model_docstring["description"], "type": classname,
+                                                  "annotation": classname}
         return {i: parsed_attributes[i.name] if i.name in parsed_attributes
                 else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
 
@@ -1577,3 +1580,11 @@ class ParallelView(PlotDataView):
     def _to_script(self) -> str:
         attributes = "', '".join(self.attributes)
         return f"{self.__class__.__name__}(attributes=['{attributes}'], name='{self.name}')"
+
+def parse_function_attributes_from_docstring(method: Callable, docstring: str = None):
+    if docstring is None:
+        docstring = method.__doc__
+    annotations = get_type_hints(method)
+    parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+    return parsed_docstring["attributes"]
+
