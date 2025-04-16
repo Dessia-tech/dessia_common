@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Schemas : Implement Annotated Schemas for type constraints
+- Workflow : Parallel and Scatter view now have default names so that it is clear when added in frontend form
 
 ### Changed
 
