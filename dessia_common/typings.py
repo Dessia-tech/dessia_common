@@ -14,14 +14,12 @@ class KeyOf:
     def __class_getitem__(cls, item: Dict[str, Any]):
         return Literal[tuple(item.keys())]
 
-
 class Subclass(Generic[T]):
     """ Typing that denotes a Subclass of T. """
 
 
 class InstanceOf(Generic[T]):
-    """ Typing that denotes a Instance of T. """
-
+    """ Typing that denotes an Instance of T. """
 
 class MethodType(Generic[T]):
     """ Typing that denotes a method of class T. """

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ Module to define Blocks for workflows. """
-
+from __future__ import annotations
 import inspect
 import warnings
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional, Annotated
 import itertools
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
@@ -36,8 +36,8 @@ def _method_inputs(method):
     for iarg, argument in enumerate(args_specs.args):
         if argument not in ["self", "cls", "progress_callback"]:
             try:
-                annotations = get_type_hints(method)
-                type_ = type_from_annotation(type_=annotations[argument], module=method.__module__)
+                type_hints = get_type_hints(method)
+                type_ = type_from_annotation(type_=type_hints[argument], module=method.__module__)
             except KeyError as error:
                 message = f"Argument {argument} of method/function {method.__name__} has no typing"
                 raise UntypedArgumentError(message) from error
@@ -51,9 +51,9 @@ def _method_inputs(method):
 
 def output_from_function(function, name: str = "result output"):
     """ Inspect given function argspecs and compute block output from it. """
-    annotations = get_type_hints(function)
-    if "return" in annotations:
-        type_ = type_from_annotation(annotations['return'], function.__module__)
+    type_hints = get_type_hints(function)
+    if "return" in type_hints:
+        type_ = type_from_annotation(type_hints['return'], function.__module__)
         return Variable(type_=type_, name=name)
     return Variable(name=name)
 
@@ -122,8 +122,8 @@ class InstantiateModel(Block):
     def _docstring(self):
         """ Parse given class' docstring. """
         docstring = self.model_class.__doc__
-        annotations = get_type_hints(self.model_class.__init__)
-        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        type_hints = get_type_hints(self.model_class.__init__)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=type_hints)
         parsed_attributes = parsed_docstring["attributes"]
         return {i: parsed_attributes[i.name] if i.name in parsed_attributes
                 else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
@@ -188,8 +188,8 @@ class ClassMethod(Block):
     def _docstring(self):
         """ Parse given method's docstring. """
         docstring = self.method.__doc__
-        annotations = get_type_hints(self.method)
-        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        type_hints = get_type_hints(self.method)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=type_hints)
         parsed_attributes = parsed_docstring["attributes"]
         return {i: parsed_attributes[i.name] if i.name in parsed_attributes
                 else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
@@ -270,8 +270,8 @@ class ModelMethod(Block):
     def _docstring(self):
         """ Parse given method's docstring. """
         docstring = self.method.__doc__
-        annotations = get_type_hints(self.method)
-        parsed_docstring = parse_docstring(docstring=docstring, annotations=annotations)
+        type_hints = get_type_hints(self.method)
+        parsed_docstring = parse_docstring(docstring=docstring, annotations=type_hints)
         parsed_attributes = parsed_docstring["attributes"]
         return {i: parsed_attributes[i.name] if i.name in parsed_attributes
                 else EMPTY_PARSED_ATTRIBUTE for i in self.inputs}
@@ -941,7 +941,7 @@ class MultiObject(Display):
     _type = "plot_data"
     serialize = True
 
-    def __init__(self, selector_name: str, configurations: List[InstanceOf['PlotDataView']],
+    def __init__(self, selector_name: str, configurations: List[Annotated[InstanceOf[PlotDataView], True]],
                  load_by_default: bool = True, name: str = "Multi Object View", position:  Position = (0, 0)):
         self.configurations = configurations
         Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,

@@ -7,7 +7,7 @@ from copy import deepcopy
 import inspect
 import collections.abc
 from typing import Tuple, Dict, List, Type, get_args, get_origin, get_type_hints, Callable, Union, \
-    TypeVar, TypedDict, Optional, Any, Literal
+    TypeVar, TypedDict, Optional, Any, Literal, Annotated, ParamSpec
 from functools import cached_property
 from dessia_common.utils.helpers import full_classname, get_python_class_from_class_name
 from dessia_common.abstract import CoreDessiaObject
@@ -382,7 +382,7 @@ class ClassSchema(MemberSchema):
     def __init__(self, class_: Type[CoreDessiaObject]):
         self.class_ = class_
         self.python_typing = full_classname(class_, compute_for="class")
-        annotations = get_type_hints(class_.__init__)
+        annotations = get_type_hints(class_.__init__, include_extras=True)
 
         members = inspect.getfullargspec(self.class_.__init__)
         docstring = class_.__doc__
@@ -499,9 +499,10 @@ class Property:
 
     FORM_TYPE = "not_implemented"
 
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
+    def __init__(self, annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None):
         self.annotation = annotation
         self.attribute = attribute
+        self.metadata = metadata
 
     @property
     def schema(self):
@@ -535,6 +536,11 @@ class Property:
     def has_default_value(self):
         """ Helper property that indicates if default value should be trusted as such or is undefined. """
         return self.attribute.default_value != UNDEFINED
+
+    @property
+    def has_metadata(self):
+        """ Helper property that indicates if property. """
+        return self.metadata is not None
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str):
@@ -586,8 +592,8 @@ class TypingProperty(Property):
 
     SERIALIZED_REGEXP = r"([^\[\]]*)\[(.*)\]"
 
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @property
     def args(self) -> Tuple[Type[T], ...]:
@@ -698,8 +704,8 @@ class ProxyProperty(TypingProperty):
     Proxies are just intermediary types with actual schemas in its arguments. For example OptionalProperty proxy.
     """
 
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
         self.annotation = self.args[0]
 
@@ -736,8 +742,8 @@ class OptionalProperty(ProxyProperty):
     Arguments with default values other than None are not considered Optional.
     """
 
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[T]:
@@ -750,44 +756,6 @@ class OptionalProperty(ProxyProperty):
         return self.schema.get_import_names([])[0]
 
 
-class AnnotatedProperty(ProxyProperty):
-    """
-    Proxy Schema class for annotated type hints.
-
-    AnnotatedProperty annotations are type hints with more arguments passed, such as value ranges,
-    or probably enumerations, precision,...
-
-    This could enable quite effective type checking on frontend form.
-
-    Only available with python >= 3.11
-    """
-
-    _not_implemented_msg = "AnnotatedProperty type hints are not implemented yet. This needs python 3.11 at least. " \
-                           "Dessia only supports python 3.9 at the moment."
-
-    # TODO Whenever Dessia decides to upgrade to python 3.11
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
-        raise NotImplementedError(self._not_implemented_msg)
-
-    @classmethod
-    def annotation_from_serialized(cls, serialized: str) -> Type[T]:
-        """ Deserialize Annotated annotation. """
-        raise NotImplementedError(cls._not_implemented_msg)
-
-    def to_dict(self) -> Dict[str, Any]:
-        """ Write Annotated as a Dict. """
-        raise NotImplementedError(self._not_implemented_msg)
-
-    def check_list(self) -> CheckList:
-        """
-        Check validity of DynamicDict Type Hint.
-
-        Checks performed : None. TODO : Argument validity
-        """
-        raise NotImplementedError(self._not_implemented_msg)
-
-
 Builtin = Union[str, bool, float, int]
 
 
@@ -796,8 +764,8 @@ class BuiltinProperty(Property):
 
     FORM_TYPE = "builtin"
 
-    def __init__(self, annotation: Type[Builtin], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Builtin], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @cached_property
     def serialized(self) -> str:
@@ -832,8 +800,8 @@ class MeasureProperty(BuiltinProperty):
 
     FORM_TYPE = "measure"
 
-    def __init__(self, annotation: Type[Measure], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Measure], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @cached_property
     def serialized(self) -> str:
@@ -883,8 +851,8 @@ class FileProperty(Property):
 
     FORM_TYPE = "file"
 
-    def __init__(self, annotation: Type[File], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[File], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @cached_property
     def is_file_related(self) -> bool:
@@ -932,8 +900,8 @@ class CustomClass(Property):
 
     FORM_TYPE = "custom_instance"
 
-    def __init__(self, annotation: Type[CoreDessiaObject], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[CoreDessiaObject], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @property
     def schema(self) -> ClassSchema:
@@ -989,8 +957,8 @@ class UnionProperty(TypingProperty):
 
     FORM_TYPE = "custom_instance"
 
-    def __init__(self, annotation: Type[Union[T]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Union[T]], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @cached_property
     def serialized(self) -> str:
@@ -1072,8 +1040,8 @@ class HeterogeneousSequence(TypingProperty):
 
     FORM_TYPE = "heterogeneous_sequence"
 
-    def __init__(self, annotation: Type[Tuple], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Tuple], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
         self.additional_items = Ellipsis in self.args
 
@@ -1176,8 +1144,8 @@ class HomogeneousSequence(TypingProperty):
 
     FORM_TYPE = "homogeneous_sequence"
 
-    def __init__(self, annotation: Type[List[T]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[List[T]], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[List]:
@@ -1234,8 +1202,8 @@ class DynamicDict(TypingProperty):
 
     FORM_TYPE = "dynamic_dict"
 
-    def __init__(self, annotation: Type[Dict[str, Builtin]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Dict[str, Builtin]], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[Dict]:
@@ -1319,8 +1287,9 @@ class InstanceOfProperty(TypingProperty):
 
     FORM_TYPE = "custom_instance"
 
-    def __init__(self, annotation: Type[InstanceOf[BaseClass]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[InstanceOf[BaseClass]], attribute: SchemaAttribute,
+                 metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[InstanceOf[BaseClass]]:
@@ -1342,11 +1311,25 @@ class InstanceOfProperty(TypingProperty):
         """ Compute all possible classes for this annotation. Return base class. """
         return [full_classname(object_=self.args[0], compute_for="class")]
 
+    @property
+    def abstract_base(self) -> bool:
+        """
+        Whether the base class is abstract or not, and therefore, if an instance of it can be created.
+
+        Return True if the base class is abstract. In this case, the frontend will only propose children classes.
+        Return False if not. In this case, frontend will propose children classes AND base class.
+
+        False by default.
+        """
+        if self.has_metadata:
+            return self.metadata[0]
+        return False
+
     def to_dict(self) -> Dict[str, Any]:
         """ Write InstanceOf as a Dict. """
         chunk = super().to_dict()
         chunk.update({"type": "object", "instanceOf": self.classes[0], "classes": self.classes,
-                      "standaloneInDb": self.standalone_in_db})
+                      "standaloneInDb": self.standalone_in_db, "allowBase": not self.abstract_base})
         return chunk
 
     def default_value(self) -> Dict[str, Any]:
@@ -1375,8 +1358,8 @@ class SubclassProperty(TypingProperty):
 
     FORM_TYPE = "not_implemented"
 
-    def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Subclass[BaseClass]], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[Subclass[BaseClass]]:
@@ -1413,8 +1396,8 @@ class AttributeTypeProperty(TypingProperty):
 
     FORM_TYPE = "attribute"
 
-    def __init__(self, annotation: Type[AttributeType], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[AttributeType], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
         self.class_ = self.args[0]
         default = UNDEFINED if self.class_ is Type else self.class_
@@ -1479,8 +1462,8 @@ class MethodTypeProperty(AttributeTypeProperty):
     A specifically instantiated MethodType validated against this type.
     """
 
-    def __init__(self, annotation: Type[MethodType], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[MethodType], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[MethodType]:
@@ -1504,8 +1487,8 @@ class SelectorProperty(AttributeTypeProperty):
     A specifically instantiated AttributeType validated against this type.
     """
 
-    def __init__(self, annotation: Type[ViewType], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[ViewType], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[ViewType]:
@@ -1538,8 +1521,8 @@ class ClassProperty(TypingProperty):
 
     FORM_TYPE = "class"
 
-    def __init__(self, annotation: Type[Class], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Class], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
         if annotation is Type:
             self.class_ = Type
@@ -1584,8 +1567,8 @@ class ClassProperty(TypingProperty):
 class GenericTypeProperty(Property):
     """ Meta Property for Types. """
 
-    def __init__(self, annotation: Type[TypeVar], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[TypeVar], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @classmethod
     def annotation_from_serialized(cls, serialized: str) -> Type[TypeVar]:
@@ -1609,8 +1592,8 @@ class GenericTypeProperty(Property):
 class AnyProperty(Property):
     """ Handle Any typed (cannot be form inputs). """
 
-    def __init__(self, annotation: Type[T], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     def to_dict(self) -> Dict[str, Any]:
         """ Write chunk of Any property. Useful for low-code features. """
@@ -1624,8 +1607,8 @@ class EnumProperty(TypingProperty):
 
     FORM_TYPE = "string"
 
-    def __init__(self, annotation: Type[Literal[""]], attribute: SchemaAttribute):
-        super().__init__(annotation=annotation, attribute=attribute)
+    def __init__(self, annotation: Type[Literal[""]], attribute: SchemaAttribute, metadata: tuple[Any] = None):
+        super().__init__(annotation=annotation, attribute=attribute, metadata=metadata)
 
     @cached_property
     def serialized(self) -> str:
@@ -1698,21 +1681,18 @@ def split_default_args(argspecs: inspect.FullArgSpec, merge: bool = False) -> Tu
 def split_argspecs(argspecs: inspect.FullArgSpec) -> Tuple[int, int]:
     """ Get number of regular arguments as well as arguments with default values. """
     nargs = len(argspecs.args) - 1
-    if argspecs.defaults is not None:
-        ndefault_args = len(argspecs.defaults)
-    else:
-        ndefault_args = 0
-    return nargs, ndefault_args
+    ndefaults = len(argspecs.defaults) if argspecs.defaults is not None else 0
+    return nargs, ndefaults
 
 
-def get_schema(annotation: Type[T], attribute: SchemaAttribute) -> Property:
+def get_schema(annotation: Type[T], attribute: SchemaAttribute, metadata: tuple[Any] = None) -> Property:
     """ Get schema Property object from given annotation. """
     if annotation is None or inspect.isclass(annotation) and issubclass(annotation, type(None)):
         schema_type = GenericTypeProperty
     elif annotation in TYPING_EQUIVALENCES:
         schema_type = BuiltinProperty
     elif is_typing(annotation):
-        return typing_schema(typing_=annotation, attribute=attribute)
+        return typing_schema(typing_=annotation, attribute=attribute, metadata=metadata)
     elif hasattr(annotation, "__origin__") and annotation.__origin__ is type:
         # Type is not considered a Typing as it has no arguments
         schema_type = ClassProperty
@@ -1724,7 +1704,7 @@ def get_schema(annotation: Type[T], attribute: SchemaAttribute) -> Property:
         schema_type = GenericTypeProperty
     else:
         raise NotImplementedError(f"No schema defined for attribute '{attribute}' annotated '{annotation}'.")
-    return schema_type(annotation=annotation, attribute=attribute)
+    return schema_type(annotation=annotation, attribute=attribute, metadata=metadata)
 
 
 ORIGIN_TO_SCHEMA_CLASS = {
@@ -1780,18 +1760,22 @@ def is_typing(object_) -> bool:
     return has_module and has_origin and has_args
 
 
-def typing_schema(typing_: Type[T], attribute: SchemaAttribute) -> Property:
+def typing_schema(typing_: Type[T], attribute: SchemaAttribute, metadata: ParamSpec = None) -> Property:
     """ Get schema Property for typing annotations. """
     origin = get_origin(typing_)
     if origin is Union and union_is_default_value(typing_):
         # This is a false UnionProperty => Is a default value set to None
         schema_type = OptionalProperty
+    elif origin is Annotated:
+        annotation = get_args(typing_)[0]
+        metadata = typing_.__metadata__
+        return get_schema(annotation=annotation, attribute=attribute, metadata=metadata)
     else:
         try:
             schema_type = ORIGIN_TO_SCHEMA_CLASS[origin]
         except KeyError as exc:
             raise NotImplementedError(f"No Schema defined for typing '{typing_}'.") from exc
-    return schema_type(annotation=typing_, attribute=attribute)
+    return schema_type(annotation=typing_, attribute=attribute, metadata=metadata)
 
 
 def custom_class_schema(annotation: Type[T], attribute: SchemaAttribute) -> Property:
