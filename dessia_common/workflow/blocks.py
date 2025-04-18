@@ -1550,7 +1550,7 @@ class PlotDataView(DessiaObject):
 class ScatterView(PlotDataView):
     """ Scatter View Framework. """
 
-    def __init__(self, attributes: Tuple[str, str], name: str = "Scatter Plot"):
+    def __init__(self, attributes: List[str], name: str = "Scatter Plot"):
         super().__init__(attributes=list(attributes), name=name)
 
     def plot_data_object(self, objects, reference_path: str = "#") -> pd.Scatter:
