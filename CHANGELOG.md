@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.19.4
+
+### Added
+
+- Wizard : Model input of ModelMethod blocks now have the description of their class' docstring
+
+
 ## 0.19.3
 
 ### Added
@@ -13,15 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schemas : Implement Annotated Schemas for type constraints
 - Workflow : Parallel and Scatter view now have default names so that it is clear when added in frontend form
 
+### Fixed
+
+- Serialization : Strings that start with "." are now deserialized as strings and not as class anymore
+
+
 ### Changed
 
+- Wizard : add ids to steps
 - Workflow : Block MultiObject configurations type does not allow base to be instantiated anymore
+- 
 
 ## 0.19.2
 
 ### Changed
 
 - DessiaObject : remove XLSX, DOCX & ZIP default exports
+- Workflow : Deprecate start_run method availability from frontend
+- Workflow : Default step is not a core concept anymore
 
 ## 0.19.1
 

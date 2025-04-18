@@ -347,10 +347,8 @@ def dict_to_object(dict_, class_=None, force_generic: bool = False, global_dict=
             subobjects[key] = deserialize(value, annotation, global_dict=global_dict,
                                           pointers_memo=pointers_memo, path=key_path)  # , enforce_pointers=False)
     if class_ is not None:
-        obj = class_(**subobjects)
-    else:
-        obj = subobjects
-    return obj
+        return class_(**subobjects)
+    return subobjects
 
 
 def deserialize_with_type(type_, value):

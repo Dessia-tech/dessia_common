@@ -21,11 +21,20 @@ SEQUENCE_TYPINGS = ['List', 'Sequence', 'Iterable']
 SERIALIZED_BUILTINS = ['float', 'builtins.float', 'int', 'builtins.int', 'str', 'builtins.str', 'bool', 'builtins.bool']
 
 
-def is_classname_transform(string: str):
-    """ Check if string is class name and return class if yes. """
-    if '.' in string:
-        split_string = string.split('.')
+def is_classname_transform(string: str) -> Union[type, bool]:
+    """
+    Check if string is class name and return class if yes.
+
+    TODO We should stop serializing classes as str. This is too dangerous.
+        If some user wants to keep a classname stored in a variable, then he we will never be able to deserialize it.
+        Plus, this is probably only useful for workflows.
+        Finally, returning Union[type, bool] is a poor implementation
+    """
+    if "." in string and string[0] != ".":
+        # If string starts with a ".", it is not a class
+        split_string = string.split(".")
         if len(split_string) >= 2:
+            # If len < 2, there is no module to import from
             try:
                 class_ = get_python_class_from_class_name(string)
                 return class_
