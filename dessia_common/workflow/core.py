@@ -727,6 +727,11 @@ class Workflow(Block):
     @property
     def method_schemas(self):
         """ New support of method schemas. """
+        for step in self.steps:
+            for input_ in step.inputs:
+                if input_ not in self.inputs:
+                    # TODO Terrible hotfix. This should be done in a removeBlock after a proper refactor
+                    step.inputs.remove(input_)
         steps = []
         for step in self.steps:
             attributes = []
@@ -793,13 +798,26 @@ class Workflow(Block):
                 variable.default_value = value
                 variable.lock()
 
-        # Following code is meh.
+        # Following code was meh. Since the horrible hotfix it is now unsafe.
+        # TODO This urgently needs a Workflow revamp (2025-04-23) and has been needing it for over a year and a half now
         if "steps" in dict_:
             steps = []
             # Backwards compatibility for steps
             for step_dict in dict_["steps"]:
-                inputs = [init_workflow.variable_from_index(i) for i in step_dict["inputs"]]
-                group_inputs = [init_workflow.variable_from_index(i) for i in step_dict["group_inputs"]]
+                inputs = []
+                group_inputs = []
+                for input_address in step_dict["inputs"]:
+                    try:
+                        # Horrible hotfix to avoid removing block on frontend from corrupting the workflow
+                        # if inputs have been set in wizard steps.
+                        # This is probably wrong if the input address exists (so it doesn't fail),
+                        # but does not correspond to the actual
+                        input_ = init_workflow.variable_from_index(input_address)
+                        inputs.append(input_)
+                        if input_address in step_dict["group_inputs"]:
+                            group_inputs.append(input_)
+                    except IndexError:
+                        pass
                 step = Step.dict_to_object(dict_=step_dict, inputs=inputs, group_inputs=group_inputs)
                 steps.append(step)
         else:
@@ -2293,7 +2311,7 @@ class WorkflowRun(WorkflowState):
                 method_name = export_format.method_name
                 stream_class = StringFile if export_format.text else BinaryFile
                 stream = stream_class(filename=export_format.export_name)
-                block_index = export_format.args.get('block_index')
+                block_index = export_format.args.get("block_index")
                 getattr(self, method_name)(stream, block_index)
                 streams.append(stream)
         return streams
@@ -2303,18 +2321,18 @@ def initialize_workflow(dict_, global_dict, pointers_memo) -> Workflow:
     """ Generate blocks, pipes, detached_variables and output from a serialized state. """
     blocks = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
               for d in dict_["blocks"]]
-    if 'nonblock_variables' in dict_:
+    if "nonblock_variables" in dict_:
         nonblock_variables = [deserialize(serialized_element=d, global_dict=global_dict, pointers_memo=pointers_memo)
-                              for d in dict_['nonblock_variables']]
+                              for d in dict_["nonblock_variables"]]
     else:
         nonblock_variables = []
 
     connected_nbvs = {v: False for v in nonblock_variables}
-    pipes = deserialize_pipes(pipes_dict=dict_['pipes'], blocks=blocks, nonblock_variables=nonblock_variables,
+    pipes = deserialize_pipes(pipes_dict=dict_["pipes"], blocks=blocks, nonblock_variables=nonblock_variables,
                               connected_nbvs=connected_nbvs)
 
-    if dict_['output'] is not None:
-        output = blocks[dict_['output'][0]].outputs[dict_['output'][2]]
+    if dict_["output"] is not None:
+        output = blocks[dict_["output"][0]].outputs[dict_["output"][2]]
     else:
         output = None
     detached_variables = [v for v, is_connected in connected_nbvs.items() if not is_connected]

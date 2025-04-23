@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.19.5
+
+### Fixed
+
+- Workflow : HOTFIX | At workflow deserialization,
+  prevent input dicts that look like its block was removed from being set in the Wizard step 
+- Workflow : HOTFIX | When computing run schema,
+  search for inputs that have previously been connected in order to avoid breaking the wizard when
+  a configured input has been wired.
+
 ## 0.19.4
 
 ### Added
