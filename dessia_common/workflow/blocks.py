@@ -5,8 +5,11 @@ from __future__ import annotations
 import inspect
 import warnings
 from zipfile import ZipFile
-from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional, Annotated, Callable
+from typing import List, Type, Any, Dict, Tuple, get_type_hints, TypeVar, Optional, Annotated, Callable, Literal
 import itertools
+
+import plot_data
+
 from dessia_common.core import DessiaFilter, FiltersList, type_from_annotation, DessiaObject
 from dessia_common.schemas.core import split_argspecs, parse_docstring, EMPTY_PARSED_ATTRIBUTE
 from dessia_common.displays import DisplaySetting, DisplayObject
@@ -926,7 +929,6 @@ class MultiPlot(Display):
         block.deserialize_variables(dict_)
         return block
 
-
 class MultiObject(Display):
     """
     Generate a MultiObject view which axes will be the given attributes.
@@ -945,7 +947,8 @@ class MultiObject(Display):
     serialize = True
 
     def __init__(self, selector_name: str, configurations: List[Annotated[InstanceOf[PlotDataView], True]],
-                 load_by_default: bool = True, name: str = "Multi Object View", position:  Position = (0, 0)):
+                 load_by_default: bool = True,
+                 name: str = "Multi Object View", position:  Position = (0, 0)):
         self.configurations = configurations
         Display.__init__(self, inputs=[Variable(type_=List[DessiaObject])], load_by_default=load_by_default,
                          name=name, selector=PlotDataType(class_=DessiaObject, name=selector_name), position=position)
@@ -1540,8 +1543,9 @@ class Archive(Block):
 class PlotDataView(DessiaObject):
     """ Plot Data View framework base class. """
 
-    def __init__(self, attributes: List[str], name: str = ""):
+    def __init__(self, attributes: List[str], shapes: Literal["circle", "square", "crux"] = "circle", name: str = ""):
         self.attributes = attributes
+        self.shapes = shapes
 
         super().__init__(name)
 
@@ -1553,14 +1557,16 @@ class PlotDataView(DessiaObject):
 class ScatterView(PlotDataView):
     """ Scatter View Framework. """
 
-    def __init__(self, attributes: List[str], name: str = "Scatter Plot"):
-        super().__init__(attributes=list(attributes), name=name)
+    def __init__(self, attributes: List[str], shapes: Literal["circle", "square", "crux"] = "circle",
+                 name: str = "Scatter Plot"):
+        print("Init", shapes)
+        super().__init__(attributes=list(attributes), shapes=shapes, name=name)
 
     def plot_data_object(self, objects, reference_path: str = "#") -> pd.Scatter:
         tooltip = pd.Tooltip(name="Tooltip", attributes=list(self.attributes))
         samples = self.samples(objects=objects, reference_path=reference_path)
-        return pd.Scatter(tooltip=tooltip, x_variable=self.attributes[0], y_variable=self.attributes[1],
-                          elements=samples, name=self.name)
+        return pd.Scatter(x_variable=self.attributes[0], y_variable=self.attributes[1], tooltip=tooltip,
+                          point_style=plot_data.PointStyle(shape=self.shapes), elements=samples, name=self.name)
 
     def _to_script(self) -> str:
         attributes = "', '".join(self.attributes)
@@ -1570,8 +1576,9 @@ class ScatterView(PlotDataView):
 class ParallelView(PlotDataView):
     """ Scatter View Framework. """
 
-    def __init__(self, attributes: List[str], name: str = "Parallel Plot"):
-        super().__init__(attributes=attributes, name=name)
+    def __init__(self, attributes: List[str], shapes: Literal["circle", "square", "crux"] = "circle",
+                 name: str = "Parallel Plot"):
+        super().__init__(attributes=attributes, shapes=shapes, name=name)
 
     def plot_data_object(self, objects, reference_path: str = "#") -> pd.ParallelPlot:
         samples = self.samples(objects=objects, reference_path=reference_path)
