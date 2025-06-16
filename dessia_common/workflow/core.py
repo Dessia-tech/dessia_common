@@ -1432,6 +1432,7 @@ class Workflow(Block):
 
     def change_inputs_step(self, input_indices: List[int], new_step_index: int):
         """ Callable from frontend. """
+        print("ù**************************")
         for input_index in input_indices:
             self.change_input_step(input_index, new_step_index)
         return self.method_schemas["run"]
@@ -1506,13 +1507,16 @@ class Workflow(Block):
         """ Callable from frontend. """
         variable = self.variables[variable_index]
         upstream_inputs = self.upstream_inputs(variable)
+        step = self.steps[step_index]
         previous_step_inputs = [input_ for step in self.steps[:step_index] for input_ in step.inputs]
+        inputs_to_move = []
         for input_ in upstream_inputs:
-            if input_ in previous_step_inputs:
-                continue
+            if input_ not in previous_step_inputs and input_ not in step.inputs:
+                inputs_to_move.append(input_)
+
+        for input_ in inputs_to_move:
             index = self.input_index(input_)
             self.change_input_step(input_index=index, new_step_index=step_index)
-        step = self.steps[step_index]
         display_setting = display_settings_from_selector(display_settings=variable.available_display_settings,
                                                          selector=selector)
         step.add_display_setting(display_setting=display_setting, inputs=upstream_inputs, variable_index=variable_index)
